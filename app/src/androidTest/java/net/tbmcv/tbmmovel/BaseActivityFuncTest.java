@@ -6,9 +6,10 @@ import android.test.ActivityInstrumentationTestCase2;
 
 import static org.mockito.Mockito.mock;
 
-public abstract class BaseActivityTest<A extends Activity> extends ActivityInstrumentationTestCase2<A> {
+public abstract class BaseActivityFuncTest<A extends Activity>
+        extends ActivityInstrumentationTestCase2<A> {
     @SuppressWarnings("deprecation")
-    public BaseActivityTest(Class<A> activityClass) {
+    public BaseActivityFuncTest(Class<A> activityClass) {
         // Use deprecated constructor for compatibility with API level 7
         super(activityClass.getPackage().getName(), activityClass);
     }

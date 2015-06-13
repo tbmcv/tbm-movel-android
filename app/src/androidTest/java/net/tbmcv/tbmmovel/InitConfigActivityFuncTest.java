@@ -11,8 +11,8 @@ import org.mockito.InOrder;
 
 import static org.mockito.Mockito.*;
 
-public class InitConfigActivityTest extends BaseActivityTest<InitConfigActivity> {
-    public InitConfigActivityTest() {
+public class InitConfigActivityFuncTest extends BaseActivityFuncTest<InitConfigActivity> {
+    public InitConfigActivityFuncTest() {
         super(InitConfigActivity.class);
     }
 
@@ -39,7 +39,7 @@ public class InitConfigActivityTest extends BaseActivityTest<InitConfigActivity>
         TouchUtils.clickView(this, okButton);
     }
 
-    public void testRequestSent() throws Exception {
+    public void testLoginPwResetRequestSent() throws Exception {
         JsonRestClient restClient = getRestClient();
         String username = "9123456";
         String password = "123454321";
