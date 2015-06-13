@@ -16,27 +16,13 @@ public class InitConfigActivityFuncTest extends BaseActivityFuncTest<InitConfigA
         super(InitConfigActivity.class);
     }
 
-    private void enterText(int viewId, String text) {
-        final View view = getActivity().findViewById(viewId);
-        assertTrue(view.isEnabled());
-        getInstrumentation().runOnMainSync(new Runnable() {
-            @Override
-            public void run() {
-                view.requestFocus();
-            }
-        });
-        getInstrumentation().waitForIdleSync();
-        getInstrumentation().sendStringSync(text);
-        getInstrumentation().waitForIdleSync();
-        assertEquals(text, ((EditText) view).getText().toString());
-    }
-
     private void performLogin(String username, String password) {
         enterText(R.id.usernameEntry, username);
         enterText(R.id.passwordEntry, password);
         View okButton = getActivity().findViewById(R.id.okButton);
         assertTrue(okButton.isEnabled());
         TouchUtils.clickView(this, okButton);
+        getInstrumentation().waitForIdleSync();
     }
 
     public void testLoginPwResetRequestSent() throws Exception {
@@ -68,14 +54,15 @@ public class InitConfigActivityFuncTest extends BaseActivityFuncTest<InitConfigA
 
     public void testFailedLogin() {
         performLogin("9555000", "314159");
-        ArgumentCaptor<JsonRestClient.Callback> callback =
+        ArgumentCaptor<JsonRestClient.Callback> callbackCaptor =
                 ArgumentCaptor.forClass(JsonRestClient.Callback.class);
         verify(getRestClient()).fetch(
-                any(String.class),
+                anyString(),
                 any(Uri.class),
                 any(JSONObject.class),
-                callback.capture());
-        callback.getValue().onFailure(new Exception("nope"));
+                callbackCaptor.capture());
+        callbackCaptor.getValue().onFailure(new Exception("nope"));
+        getInstrumentation().waitForIdleSync();
         EditText passwordEntry = (EditText) getActivity().findViewById(R.id.passwordEntry);
         assertEquals("", passwordEntry.getText().toString());
         assertTrue(passwordEntry.isEnabled());
