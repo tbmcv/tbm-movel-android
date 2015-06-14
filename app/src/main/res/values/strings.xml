@@ -12,4 +12,8 @@
     <string name="set_up">Configurar</string>
     <string name="title_activity_main">@string/app_name</string>
     <string name="credit">Saldo</string>
+
+    <string name="settings_key">config</string>
+    <string name="setting_acctname">acct</string>
+    <string name="setting_password">pw</string>
 </resources>

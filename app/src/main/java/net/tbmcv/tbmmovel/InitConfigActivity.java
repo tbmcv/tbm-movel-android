@@ -1,5 +1,6 @@
 package net.tbmcv.tbmmovel;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -61,9 +62,12 @@ public class InitConfigActivity extends BaseActivity {
             public void onSuccess(JSONObject result) {
                 try {
                     String newPw = result.getString("pw");
-                    // TODO store new password
+                    getSharedPreferences(getString(R.string.settings_key), Context.MODE_PRIVATE)
+                            .edit()
+                            .putString(getString(R.string.setting_acctname), acctName)
+                            .putString(getString(R.string.setting_password), newPw)
+                            .commit();
                     restClient.setAuth(acctName, newPw);
-                    // TODO configure phone line?
                     startActivity(new Intent(InitConfigActivity.this, MainActivity.class));
                     finish();
                 } catch (JSONException e) {
