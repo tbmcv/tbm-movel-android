@@ -33,6 +33,7 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
     }
 
     public void testLoginResetSuccessLaunchesMainActivity() {
+        launch();
         fakeSuccessfulLogin("new-pw123");
         assertLaunched(MainActivity.class);
         assertTrue("Finish not called", isFinishCalled());
@@ -41,6 +42,7 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
     public void testLoginResetSuccessSavesCreds() {
         String phoneNumber = "9999999";
         String newPw = "gg";
+        launch();
         ((TextView) getActivity().findViewById(R.id.usernameEntry)).setText(phoneNumber);
         Context context = getInstrumentation().getTargetContext();
         SharedPreferences prefs = context.getSharedPreferences(

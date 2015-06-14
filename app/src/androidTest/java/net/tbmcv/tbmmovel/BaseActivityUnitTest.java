@@ -28,8 +28,12 @@ public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityU
             }
         });
         super.setUp();
+    }
+
+    protected void launch() {
         startActivity(new Intent(getInstrumentation().getTargetContext(), activityClass),
                 null, null);
+        getInstrumentation().waitForIdleSync();
     }
 
     protected JsonRestClient getRestClient() {
