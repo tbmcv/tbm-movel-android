@@ -1,5 +1,6 @@
 package net.tbmcv.tbmmovel;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -63,7 +64,8 @@ public class InitConfigActivity extends BaseActivity {
                     // TODO store new password
                     restClient.setAuth(acctName, newPw);
                     // TODO configure phone line?
-                    // TODO move to another activity
+                    startActivity(new Intent(InitConfigActivity.this, MainActivity.class));
+                    finish();
                 } catch (JSONException e) {
                     onLoginError(e);
                 }
