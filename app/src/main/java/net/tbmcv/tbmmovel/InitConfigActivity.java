@@ -1,22 +1,49 @@
 package net.tbmcv.tbmmovel;
 
+import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
 import android.view.View;
-import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-public class InitConfigActivity extends BaseActivity {
+public class InitConfigActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_init_config);
+
+        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+
+        lbm.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                startActivity(new Intent(InitConfigActivity.this, MainActivity.class));
+                finish();
+            }
+        }, new IntentFilter(AcctDataService.ACTION_PASSWORD_RESET));
+
+        lbm.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int error_msg = 0;
+                if (!intent.getBooleanExtra(AcctDataService.EXTRA_PASSWORD_OK, true)) {
+                    error_msg = R.string.login_error_auth;
+                    ((TextView) findViewById(R.id.passwordEntry)).setText("");
+                } else if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
+                    error_msg = R.string.login_error_net;
+                }
+                if (error_msg != 0) {
+                    Toast.makeText(InitConfigActivity.this, error_msg, Toast.LENGTH_LONG).show();
+                    setControlsEnabled(true);
+                }
+            }
+        }, new IntentFilter(AcctDataService.ACTION_STATUS));
     }
 
     @Override
@@ -33,52 +60,15 @@ public class InitConfigActivity extends BaseActivity {
         findViewById(R.id.usernameEntry).setEnabled(enabled);
     }
 
-    private void onLoginError(Exception err) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(
-                        InitConfigActivity.this, R.string.login_error, Toast.LENGTH_LONG).show();
-                ((EditText) findViewById(R.id.passwordEntry)).setText("");
-                setControlsEnabled(true);
-            }
-        });
-    }
-
-    public void onOkButtonClick(View view) throws JSONException {
+    public void onOkButtonClick(View view) {
         setControlsEnabled(false);
 
-        final String acctName = "c/" + ((EditText) findViewById(R.id.usernameEntry)).getText();
-        String tmpPw = ((EditText) findViewById(R.id.passwordEntry)).getText().toString();
+        String acctName = "c/" + ((TextView) findViewById(R.id.usernameEntry)).getText();
+        String tmpPw = ((TextView) findViewById(R.id.passwordEntry)).getText().toString();
 
-        final JsonRestClient restClient = getRestClient();
-        restClient.setAuth(acctName, tmpPw);
-        Uri uri = Uri.parse("/idens").buildUpon()
-                .appendEncodedPath(acctName).appendPath("pw")
-                .build();
-        JSONObject body = new JSONObject().put("reset", "base64").put("size", 4);
-        restClient.fetch("POST", uri, body, new JsonRestClient.Callback() {
-            @Override
-            public void onSuccess(JSONObject result) {
-                try {
-                    String newPw = result.getString("pw");
-                    getSharedPreferences(getString(R.string.settings_key), Context.MODE_PRIVATE)
-                            .edit()
-                            .putString(getString(R.string.setting_acctname), acctName)
-                            .putString(getString(R.string.setting_password), newPw)
-                            .commit();
-                    restClient.setAuth(acctName, newPw);
-                    startActivity(new Intent(InitConfigActivity.this, MainActivity.class));
-                    finish();
-                } catch (JSONException e) {
-                    onLoginError(e);
-                }
-            }
-
-            @Override
-            public void onFailure(Exception err) {
-                onLoginError(err);
-            }
-        });
+        startService(new Intent(this, AcctDataService.class)
+                .setAction(AcctDataService.ACTION_RESET_PASSWORD)
+                .putExtra(AcctDataService.EXTRA_ACCT_NAME, acctName)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, tmpPw));
     }
 }

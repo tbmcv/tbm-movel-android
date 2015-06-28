@@ -1,57 +1,73 @@
 package net.tbmcv.tbmmovel;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.net.Uri;
-import android.widget.TextView;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.mockito.ArgumentCaptor;
-
-import static org.mockito.Mockito.*;
+import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
+import android.view.View;
+import android.widget.EditText;
 
 public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigActivity> {
     public InitConfigActivityUnitTest() {
         super(InitConfigActivity.class);
     }
 
-    private void fakeSuccessfulLogin(String pw) {
+    private void fakeSuccessfulLogin() {
         getActivity().findViewById(R.id.okButton).performClick();
-        ArgumentCaptor<JsonRestClient.Callback> callbackCaptor =
-                ArgumentCaptor.forClass(JsonRestClient.Callback.class);
-        verify(getRestClient()).fetch(
-                anyString(), any(Uri.class), any(JSONObject.class), callbackCaptor.capture());
-        JSONObject result;
-        try {
-            result = new JSONObject().put("pw", pw);
-        } catch (JSONException e) {
-            throw new Error(e);
-        }
-        callbackCaptor.getValue().onSuccess(result);
+        getInstrumentation().waitForIdleSync();
+        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
+                new Intent(AcctDataService.ACTION_PASSWORD_RESET));
+        getInstrumentation().waitForIdleSync();
+    }
+
+    private void performLogin(String username, String password) {
+        enterText(R.id.usernameEntry, username);
+        enterText(R.id.passwordEntry, password);
+        View okButton = getActivity().findViewById(R.id.okButton);
+        assertTrue(okButton.isEnabled());
+        okButton.performClick();
         getInstrumentation().waitForIdleSync();
     }
 
     public void testLoginResetSuccessLaunchesMainActivity() {
         launch();
-        fakeSuccessfulLogin("new-pw123");
+        fakeSuccessfulLogin();
         assertLaunched(MainActivity.class);
         assertTrue("Finish not called", isFinishCalled());
     }
 
-    public void testLoginResetSuccessSavesCreds() {
-        String phoneNumber = "9999999";
-        String newPw = "gg";
+    public void testControlsDisabled() {
         launch();
-        ((TextView) getActivity().findViewById(R.id.usernameEntry)).setText(phoneNumber);
-        Context context = getInstrumentation().getTargetContext();
-        SharedPreferences prefs = context.getSharedPreferences(
-                context.getString(R.string.settings_key), Context.MODE_PRIVATE);
-        prefs.edit().clear().commit();
-        fakeSuccessfulLogin(newPw);
-        assertEquals("c/" + phoneNumber,
-                prefs.getString(context.getString(R.string.setting_acctname), "<NOTHING STORED>"));
-        assertEquals(newPw,
-                prefs.getString(context.getString(R.string.setting_password), "<NOTHING STORED>"));
+        performLogin("9111111", "012345");
+        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
+        assertFalse(getActivity().findViewById(R.id.usernameEntry).isEnabled());
+        assertFalse(getActivity().findViewById(R.id.passwordEntry).isEnabled());
+        assertFalse(getActivity().findViewById(R.id.helpButton).isEnabled());
+    }
+
+    public void testLoginPwResetRequestSent() {
+        launch();
+        String username = "9123456";
+        String password = "123454321";
+        performLogin(username, password);
+
+        Intent intent = assertServiceStarted(
+                AcctDataService.class, AcctDataService.ACTION_RESET_PASSWORD);
+        assertEquals("c/" + username, intent.getStringExtra(AcctDataService.EXTRA_ACCT_NAME));
+        assertEquals(password, intent.getStringExtra(AcctDataService.EXTRA_PASSWORD));
+    }
+
+    public void testFailedLogin() {
+        launch();
+        performLogin("9090909", "1984");
+        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
+                new Intent(AcctDataService.ACTION_STATUS)
+                        .putExtra(AcctDataService.EXTRA_PASSWORD_OK, false));
+        getInstrumentation().waitForIdleSync();
+
+        EditText passwordEntry = (EditText) getActivity().findViewById(R.id.passwordEntry);
+        assertEquals("", passwordEntry.getText().toString());
+        assertTrue(passwordEntry.isEnabled());
+        assertTrue(getActivity().findViewById(R.id.okButton).isEnabled());
+        assertTrue(getActivity().findViewById(R.id.usernameEntry).isEnabled());
+        assertTrue(getActivity().findViewById(R.id.helpButton).isEnabled());
     }
 }

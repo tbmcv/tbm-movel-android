@@ -1,18 +1,31 @@
 package net.tbmcv.tbmmovel;
 
-import android.net.Uri;
-import android.support.annotation.Nullable;
-
 import org.json.JSONObject;
 
+import java.net.URI;
+
 public interface JsonRestClient {
-    interface Callback {
-        void onSuccess(JSONObject result);
+    Request.Builder buildRequest();
 
-        void onFailure(Exception err);
+    interface Request {
+        Builder buildUpon();
+
+        JSONObject fetch();
+
+        interface Builder {
+            Builder auth(String username, String password);
+
+            Builder method(String method);
+
+            Builder body(JSONObject body);
+
+            Builder baseUri(URI uri);
+
+            Builder toUri(URI uri);
+
+            Builder toUri(String uri);
+
+            Request build();
+        }
     }
-
-    void setAuth(String username, String password);
-
-    void fetch(String method, Uri uri, @Nullable JSONObject body, @Nullable Callback callback);
 }
