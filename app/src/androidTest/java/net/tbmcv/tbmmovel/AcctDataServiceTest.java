@@ -9,7 +9,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
@@ -23,21 +22,17 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
 
     private MockJrcRequest.Fetcher fetcher;
     private ArgumentCaptor<Map<String, ?>> paramsCaptor;
-    private AnswerQueue<JSONObject> fetchQueue;
 
-    @Override
     protected void setUp() throws Exception {
         fetcher = MockJrcRequest.mockDefaultClient();
         paramsCaptor = ArgumentCaptor.forClass((Class) Map.class);
-        fetchQueue = new AnswerQueue<>(new JSONObject());
-        when(fetcher.fetch(any(Map.class))).then(fetchQueue);
         super.setUp();
     }
 
     @Override
     protected void tearDown() throws Exception {
-        AnswerQueue.unblockAll();
         super.tearDown();
+        AnswerPromise.cleanup();
     }
 
     protected void setStoredAcct(String acctName, String pw) {
@@ -54,9 +49,10 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         String acctName = "c/5050505";
         String pw = "anything";
         setStoredAcct(acctName, pw);
-        CountDownLatch fetchLatch = fetchQueue.addResult(new JSONObject());
+        AnswerPromise<?> fetchPromise = new AnswerPromise<>();
+        when(fetcher.fetch(any(Map.class))).then(fetchPromise);
         startService(new Intent(AcctDataService.ACTION_GET_CREDIT));
-        fetchLatch.await(2, TimeUnit.SECONDS);
+        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
 
         verify(fetcher).fetch(paramsCaptor.capture());
         Map<String, ?> params = paramsCaptor.getValue();
@@ -80,11 +76,12 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     public void testPwResetRequestSent() throws Exception {
         String username = "c/9123456";
         String password = "123454321";
-        CountDownLatch fetchLatch = fetchQueue.addResult(new JSONObject());
+        AnswerPromise<?> fetchPromise = new AnswerPromise<>();
+        when(fetcher.fetch(any(Map.class))).then(fetchPromise);
         startService(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                 .putExtra(AcctDataService.EXTRA_ACCT_NAME, username)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
-        fetchLatch.await(2, TimeUnit.SECONDS);
+        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
 
         verify(fetcher).fetch(paramsCaptor.capture());
         Map<String, ?> params = paramsCaptor.getValue();
@@ -108,7 +105,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 context.getString(R.string.settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
 
-        fetchQueue.addResult(new JSONObject().put("pw", newPw));
+        when(fetcher.fetch(any(Map.class))).thenReturn(new JSONObject().put("pw", newPw));
         startServiceAndWaitForBroadcast(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                         .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
                         .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"),
