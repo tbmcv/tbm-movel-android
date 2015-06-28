@@ -12,6 +12,7 @@ import org.json.JSONObject;
 public class AcctDataService extends IntentService {
     public static final String ACTION_RESET_PASSWORD = "net.tbmcv.tbmmovel.RESET_PASSWORD";
     public static final String ACTION_GET_CREDIT = "net.tbmcv.tbmmovel.GET_CREDIT";
+    public static final String ACTION_CONFIGURE_LINE = "net.tbmcv.tbmmovel.CONFIGURE_LINE";
     public static final String ACTION_STATUS = "net.tbmcv.tbmmovel.STATUS";
     public static final String ACTION_PASSWORD_RESET = "net.tbmcv.tbmmovel.PASSWORD_RESET";
     public static final String EXTRA_ACCT_NAME = "net.tbmcv.tbmmovel.ACCT_NAME";
@@ -38,6 +39,9 @@ public class AcctDataService extends IntentService {
                 onCommandResetPassword(
                         intent.getStringExtra(EXTRA_ACCT_NAME),
                         intent.getStringExtra(EXTRA_PASSWORD));
+                break;
+            case ACTION_CONFIGURE_LINE:
+                onCommandConfigureLine();
                 break;
         }
     }
@@ -91,5 +95,9 @@ public class AcctDataService extends IntentService {
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
         }
+    }
+
+    private void onCommandConfigureLine() {
+        // TODO
     }
 }

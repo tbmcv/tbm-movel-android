@@ -3,12 +3,14 @@ package net.tbmcv.tbmmovel;
 import android.app.Activity;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.test.ServiceTestCase;
+import android.test.mock.MockContentResolver;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
     private volatile Intent lastActivityIntent;
+    private MockContentResolver contentResolver;
 
     public BaseServiceUnitTest(Class<S> serviceClass) {
         super(serviceClass);
@@ -24,12 +27,22 @@ public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        contentResolver = new MockContentResolver();
         setContext(new ContextWrapper(getContext()) {
             @Override
             public void startActivity(Intent intent) {
                 lastActivityIntent = intent;
             }
+
+            @Override
+            public ContentResolver getContentResolver() {
+                return contentResolver;
+            }
         });
+    }
+
+    protected MockContentResolver getContentResolver() {
+        return contentResolver;
     }
 
     protected Intent assertActivityStarted(Class<? extends Activity> cls) {
