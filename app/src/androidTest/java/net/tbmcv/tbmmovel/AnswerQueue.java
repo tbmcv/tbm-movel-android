@@ -1,5 +1,8 @@
 package net.tbmcv.tbmmovel;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -18,7 +21,7 @@ public class AnswerQueue<T> implements Answer<T> {
     private boolean unblocked = false;
     private T emptyResult;
 
-    public AnswerQueue(T emptyResult) {
+    public AnswerQueue(@Nullable T emptyResult) {
         this.emptyResult = emptyResult;
         synchronized (allAnswerQueues) {
             allAnswerQueues.put(this, null);
@@ -39,11 +42,22 @@ public class AnswerQueue<T> implements Answer<T> {
         }
         AnswerPair<T> item = queue.remove();
         item.latch.countDown();
-        return item.value;
+        if (item.error == null) {
+            return item.value;
+        } else {
+            throw item.error;
+        }
     }
 
-    public synchronized CountDownLatch add(T result) {
-        AnswerPair<T> item = new AnswerPair<>(result);
+    public synchronized CountDownLatch addResult(@Nullable T result) {
+        AnswerPair<T> item = new AnswerPair<>(result, null);
+        queue.add(item);
+        notifyAll();
+        return item.latch;
+    }
+
+    public synchronized CountDownLatch addError(@NonNull Throwable error) {
+        AnswerPair<T> item = new AnswerPair<>(null, error);
         queue.add(item);
         notifyAll();
         return item.latch;
@@ -53,7 +67,7 @@ public class AnswerQueue<T> implements Answer<T> {
         queue.clear();
     }
 
-    public synchronized void setEmptyResult(T emptyResult) {
+    public synchronized void setEmptyResult(@Nullable T emptyResult) {
         this.emptyResult = emptyResult;
     }
 
@@ -69,11 +83,13 @@ public class AnswerQueue<T> implements Answer<T> {
     }
 
     private static class AnswerPair<T> {
-        final T value;
         final CountDownLatch latch = new CountDownLatch(1);
+        final T value;
+        final Throwable error;
 
-        AnswerPair(T value) {
+        AnswerPair(@Nullable T value, @Nullable Throwable error) {
             this.value = value;
+            this.error = error;
         }
     }
 

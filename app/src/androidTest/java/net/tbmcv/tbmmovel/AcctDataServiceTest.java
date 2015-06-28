@@ -54,7 +54,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         String acctName = "c/5050505";
         String pw = "anything";
         setStoredAcct(acctName, pw);
-        CountDownLatch fetchLatch = fetchQueue.add(new JSONObject());
+        CountDownLatch fetchLatch = fetchQueue.addResult(new JSONObject());
         startService(new Intent(AcctDataService.ACTION_GET_CREDIT));
         fetchLatch.await(2, TimeUnit.SECONDS);
 
@@ -80,7 +80,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     public void testPwResetRequestSent() throws Exception {
         String username = "c/9123456";
         String password = "123454321";
-        CountDownLatch fetchLatch = fetchQueue.add(new JSONObject());
+        CountDownLatch fetchLatch = fetchQueue.addResult(new JSONObject());
         startService(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                 .putExtra(AcctDataService.EXTRA_ACCT_NAME, username)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
@@ -108,7 +108,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 context.getString(R.string.settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
 
-        fetchQueue.add(new JSONObject().put("pw", newPw));
+        fetchQueue.addResult(new JSONObject().put("pw", newPw));
         startServiceAndWaitForBroadcast(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                         .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
                         .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"),
