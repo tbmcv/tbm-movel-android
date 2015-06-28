@@ -6,8 +6,6 @@ import android.content.SharedPreferences;
 
 import org.json.JSONObject;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.net.URI;
 import java.util.Map;
@@ -25,46 +23,21 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
 
     private MockJrcRequest.Fetcher fetcher;
     private ArgumentCaptor<Map<String, ?>> paramsCaptor;
-    private CountDownLatch startFetchLatch;
-    private CountDownLatch finishFetchLatch;
+    private AnswerQueue<JSONObject> fetchQueue;
 
     @Override
     protected void setUp() throws Exception {
         fetcher = MockJrcRequest.mockDefaultClient();
         paramsCaptor = ArgumentCaptor.forClass((Class) Map.class);
+        fetchQueue = new AnswerQueue<>(new JSONObject());
+        when(fetcher.fetch(any(Map.class))).then(fetchQueue);
         super.setUp();
     }
 
     @Override
     protected void tearDown() throws Exception {
-        unpauseFetchResults();
+        AnswerQueue.unblockAll();
         super.tearDown();
-    }
-
-    protected void pauseFetchResults(final JSONObject result) {
-        unpauseFetchResults();
-        final CountDownLatch startFetchLatch = new CountDownLatch(1);
-        final CountDownLatch finishFetchLatch = new CountDownLatch(1);
-        this.startFetchLatch = startFetchLatch;
-        this.finishFetchLatch = finishFetchLatch;
-        when(fetcher.fetch(any(Map.class))).then(new Answer<JSONObject>() {
-            @Override
-            public JSONObject answer(InvocationOnMock invocation) throws Throwable {
-                startFetchLatch.countDown();
-                finishFetchLatch.await(10, TimeUnit.SECONDS);
-                return result;
-            }
-        });
-    }
-
-    protected void pauseFetchResults() {
-        pauseFetchResults(new JSONObject());
-    }
-
-    protected void unpauseFetchResults() {
-        if (finishFetchLatch != null) {
-            finishFetchLatch.countDown();
-        }
     }
 
     protected void setStoredAcct(String acctName, String pw) {
@@ -81,9 +54,9 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         String acctName = "c/5050505";
         String pw = "anything";
         setStoredAcct(acctName, pw);
-        pauseFetchResults();
+        CountDownLatch fetchLatch = fetchQueue.add(new JSONObject());
         startService(new Intent(AcctDataService.ACTION_GET_CREDIT));
-        startFetchLatch.await(2, TimeUnit.SECONDS);
+        fetchLatch.await(2, TimeUnit.SECONDS);
 
         verify(fetcher).fetch(paramsCaptor.capture());
         Map<String, ?> params = paramsCaptor.getValue();
@@ -107,11 +80,11 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     public void testPwResetRequestSent() throws Exception {
         String username = "c/9123456";
         String password = "123454321";
-        pauseFetchResults();
+        CountDownLatch fetchLatch = fetchQueue.add(new JSONObject());
         startService(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                 .putExtra(AcctDataService.EXTRA_ACCT_NAME, username)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
-        startFetchLatch.await(2, TimeUnit.SECONDS);
+        fetchLatch.await(2, TimeUnit.SECONDS);
 
         verify(fetcher).fetch(paramsCaptor.capture());
         Map<String, ?> params = paramsCaptor.getValue();
@@ -135,7 +108,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 context.getString(R.string.settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
 
-        when(fetcher.fetch(any(Map.class))).thenReturn(new JSONObject().put("pw", newPw));
+        fetchQueue.add(new JSONObject().put("pw", newPw));
         startServiceAndWaitForBroadcast(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                         .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
                         .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"),
