@@ -3,6 +3,8 @@ package net.tbmcv.tbmmovel;
 import android.content.Context;
 
 import org.json.JSONObject;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.net.URI;
 import java.util.Collections;
@@ -18,8 +20,13 @@ public class MockJrcRequest implements JsonRestClient.Request {
 
     public static Fetcher mockDefaultClient() {
         final JsonRestClient mockClient = mock(JsonRestClient.class);
-        Fetcher mockFetcher = mock(MockJrcRequest.Fetcher.class);
-        when(mockClient.buildRequest()).thenReturn(new MockJrcRequest(mockFetcher).buildUpon());
+        final Fetcher mockFetcher = mock(MockJrcRequest.Fetcher.class);
+        when(mockClient.buildRequest()).then(new Answer<JsonRestClient.Request.Builder>() {
+            @Override
+            public JsonRestClient.Request.Builder answer(InvocationOnMock invocation) throws Throwable {
+                return new MockJrcRequest(mockFetcher).buildUpon();
+            }
+        });
         JsonRestClientFactory.Default.set(new JsonRestClientFactory() {
             @Override
             public JsonRestClient getRestClient(Context context) {
