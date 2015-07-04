@@ -4,14 +4,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -115,5 +118,75 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 prefs.getString(context.getString(R.string.setting_acctname), "(NOTHING STORED)"));
         assertEquals(newPw,
                 prefs.getString(context.getString(R.string.setting_password), "(NOTHING STORED)"));
+    }
+
+    public void testNewVoipLineRequest() throws Exception {
+        String acctName = "c/5123456";
+        String password = "blah";
+        setStoredAcct(acctName, password);
+        AnswerPromise<JSONObject> firstFetch = new AnswerPromise<>();
+        AnswerPromise<?> secondFetch = new AnswerPromise<>();
+        when(fetcher.fetch(any(Map.class))).then(firstFetch).then(secondFetch);
+        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+
+        firstFetch.getCallLatch().await(2, TimeUnit.SECONDS);
+        InOrder inOrder = inOrder(fetcher);
+        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
+        Map<String, ?> params = paramsCaptor.getValue();
+        assertEquals(acctName, params.get("username"));
+        assertEquals(password, params.get("password"));
+        assertEquals("GET", params.get("method"));
+        assertEquals(URI.create("/idens/" + acctName + "/lines/"),
+                URI.create("/").resolve((URI) params.get("uri")));
+
+        firstFetch.setResult(new JSONObject().put("lines", new JSONArray()));
+
+        secondFetch.getCallLatch().await(2, TimeUnit.SECONDS);
+        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
+        params = paramsCaptor.getValue();
+        assertEquals(acctName, params.get("username"));
+        assertEquals(password, params.get("password"));
+        assertEquals("POST", params.get("method"));
+        assertEquals(URI.create("/idens/" + acctName + "/lines/"),
+                URI.create("/").resolve((URI) params.get("uri")));
+        assertTrue(params.get("body") instanceof JSONObject);
+    }
+
+    public void testReconfigureVoipLineRequest() throws Exception {
+        String acctName = "c/5123456";
+        String password = "blah";
+        String lineName = "tbm1234";
+        setStoredAcct(acctName, password);
+        AnswerPromise<JSONObject> firstFetch = new AnswerPromise<>();
+        AnswerPromise<?> secondFetch = new AnswerPromise<>();
+        when(fetcher.fetch(any(Map.class))).then(firstFetch).then(secondFetch);
+        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+
+        firstFetch.getCallLatch().await(2, TimeUnit.SECONDS);
+        InOrder inOrder = inOrder(fetcher);
+        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
+        Map<String, ?> params = paramsCaptor.getValue();
+        assertEquals(acctName, params.get("username"));
+        assertEquals(password, params.get("password"));
+        assertEquals("GET", params.get("method"));
+        assertEquals(URI.create("/idens/" + acctName + "/lines/"),
+                URI.create("/").resolve((URI) params.get("uri")));
+
+        firstFetch.setResult(new JSONObject()
+                .put("lines", new JSONArray()
+                        .put(new JSONObject()
+                                .put("id", 1234)
+                                .put("name", lineName)
+                                .put("display", null))));
+
+        secondFetch.getCallLatch().await(2, TimeUnit.SECONDS);
+        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
+        params = paramsCaptor.getValue();
+        assertEquals(acctName, params.get("username"));
+        assertEquals(password, params.get("password"));
+        assertEquals("POST", params.get("method"));
+        assertEquals(URI.create("/idens/" + acctName + "/lines/" + lineName + "/pw"),
+                URI.create("/").resolve((URI) params.get("uri")));
+        assertTrue(params.get("body") instanceof JSONObject);
     }
 }

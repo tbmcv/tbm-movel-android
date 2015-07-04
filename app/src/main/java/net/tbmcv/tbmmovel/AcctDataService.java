@@ -4,8 +4,10 @@ import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -46,7 +48,16 @@ public class AcctDataService extends IntentService {
         }
     }
 
-    private void onCommandGetCredit() {
+    private static class AuthPair {
+        final String name, password;
+
+        AuthPair(@NonNull String name, @NonNull String password) {
+            this.name = name;
+            this.password = password;
+        }
+    }
+
+    private AuthPair getAcctAuth() {
         SharedPreferences config = getSharedPreferences(
                 getString(R.string.settings_key), Context.MODE_PRIVATE);
         String acctName = config.getString(getString(R.string.setting_acctname), null);
@@ -54,14 +65,22 @@ public class AcctDataService extends IntentService {
         if (acctName == null || password == null) {
             startActivity(new Intent(this, InitConfigActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            return null;
+        }
+        return new AuthPair(acctName, password);
+    }
+
+    private void onCommandGetCredit() {
+        AuthPair acct = getAcctAuth();
+        if (acct == null) {
             return;
         }
         Intent status = new Intent(ACTION_STATUS);
         try {
             JSONObject result = getRestClient().buildRequest()
-                    .auth(acctName, password)
+                    .auth(acct.name, acct.password)
                     .toUri("idens/")
-                    .toUri(acctName + "/")
+                    .toUri(acct.name + "/")
                     .toUri("saldo/")
                     .build()
                     .fetch();
@@ -97,7 +116,47 @@ public class AcctDataService extends IntentService {
         }
     }
 
+    private AuthPair resetLinePassword(AuthPair acct) throws JSONException {
+        JSONObject result = getRestClient().buildRequest()
+                .auth(acct.name, acct.password)
+                .toUri("idens/")
+                .toUri(acct.name + "/")
+                .toUri("lines/")
+                .build()
+                .fetch();
+        JsonRestClient.Request.Builder requestBuilder = getRestClient().buildRequest()
+                .auth(acct.name, acct.password)
+                .toUri("idens/")
+                .toUri(acct.name + "/")
+                .toUri("lines/")
+                .method("POST")
+                .body(new JSONObject());
+        JSONArray lines = result.getJSONArray("lines");
+        if (lines.length() > 0) {
+            String name = lines.getJSONObject(0).getString("name");
+            result = requestBuilder
+                    .toUri(name + "/")
+                    .toUri("pw")
+                    .build()
+                    .fetch();
+            return new AuthPair(name, result.getString("pw"));
+        } else {
+            result = requestBuilder.build().fetch();
+            return new AuthPair(result.getString("name"), result.getString("pw"));
+        }
+    }
+
     private void onCommandConfigureLine() {
-        // TODO
+        AuthPair acct = getAcctAuth();
+        if (acct == null) {
+            return;
+        }
+        try {
+            AuthPair lineAuth = resetLinePassword(acct);
+            // TODO configure line
+        } catch (JSONException e) {  // TODO other types of errors
+            LocalBroadcastManager.getInstance(this).sendBroadcast(
+                    new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+        }
     }
 }
