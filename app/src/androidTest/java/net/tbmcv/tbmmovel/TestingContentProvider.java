@@ -86,8 +86,10 @@ public class TestingContentProvider extends ContentProvider {
                     .append(table.idColumn)
                     .append(" integer primary key");
             for (String column : table.otherColumns) {
-                sqlBuilder.append(',');
-                sqlBuilder.append(column);
+                if (!column.equalsIgnoreCase(table.idColumn)) {
+                    sqlBuilder.append(',');
+                    sqlBuilder.append(column);
+                }
             }
             database.execSQL(sqlBuilder.append(");").toString());
         }
