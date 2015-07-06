@@ -84,8 +84,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertEquals(acctName, params.get("username"));
         assertEquals(pw, params.get("password"));
         assertEquals("GET", params.get("method"));
-        assertEquals(URI.create("/idens/" + acctName + "/saldo/"),
-                URI.create("/").resolve((URI) params.get("uri")));
+        assertUriEquals("/idens/" + acctName + "/saldo/", params.get("uri"));
         assertNull(params.get("body"));
     }
 
@@ -113,8 +112,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertEquals(username, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("POST", params.get("method"));
-        assertEquals(URI.create("/idens/" + username + "/pw"),
-                URI.create("/").resolve((URI) params.get("uri")));
+        assertUriEquals("/idens/" + username + "/pw", params.get("uri"));
         JSONObject body = (JSONObject) params.get("body");
         assertEquals("base64", body.get("reset"));
         int size = body.getInt("size");
@@ -162,15 +160,13 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("GET", params.get("method"));
-        assertEquals(URI.create("/idens/" + acctName + "/lines/"),
-                URI.create("/").resolve((URI) params.get("uri")));
+        assertUriEquals("/idens/" + acctName + "/lines/", params.get("uri"));
 
         params = paramsCaptor.getAllValues().get(1);
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("POST", params.get("method"));
-        assertEquals(URI.create("/idens/" + acctName + "/lines/"),
-                URI.create("/").resolve((URI) params.get("uri")));
+        assertUriEquals("/idens/" + acctName + "/lines/", params.get("uri"));
         assertTrue(params.get("body") instanceof JSONObject);
 
         assertEquals(AcctDataService.ACTION_CONFIGURE_LINE, resultIntent.getAction());
@@ -203,15 +199,13 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("GET", params.get("method"));
-        assertEquals(URI.create("/idens/" + acctName + "/lines/"),
-                URI.create("/").resolve((URI) params.get("uri")));
+        assertUriEquals("/idens/" + acctName + "/lines/", params.get("uri"));
 
         params = paramsCaptor.getAllValues().get(1);
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("POST", params.get("method"));
-        assertEquals(URI.create("/idens/" + acctName + "/lines/" + lineName + "/pw"),
-                URI.create("/").resolve((URI) params.get("uri")));
+        assertUriEquals("/idens/" + acctName + "/lines/" + lineName + "/pw", params.get("uri"));
         assertTrue(params.get("body") instanceof JSONObject);
 
         assertEquals(AcctDataService.ACTION_CONFIGURE_LINE, resultIntent.getAction());
@@ -311,5 +305,13 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         ContentValues oldValues = new ContentValues();
         oldValues.put(SipProfile.FIELD_DISPLAY_NAME, "TBM Móvel (auto)");
         checkOtherVoipLinesLeft("tbm1111", "abcdefg");
+    }
+
+    private static void assertUriEquals(URI expected, Object actual) {
+        assertEquals(expected, URI.create("/").resolve((URI) actual));
+    }
+
+    private static void assertUriEquals(String expected, Object actual) {
+        assertUriEquals(URI.create(expected), actual);
     }
 }
