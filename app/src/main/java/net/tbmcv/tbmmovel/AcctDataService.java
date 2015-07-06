@@ -1,11 +1,16 @@
 package net.tbmcv.tbmmovel;
 
 import android.app.IntentService;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
+
+import com.csipsimple.api.SipProfile;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,6 +23,7 @@ public class AcctDataService extends IntentService {
     public static final String ACTION_STATUS = "net.tbmcv.tbmmovel.STATUS";
     public static final String ACTION_PASSWORD_RESET = "net.tbmcv.tbmmovel.PASSWORD_RESET";
     public static final String EXTRA_ACCT_NAME = "net.tbmcv.tbmmovel.ACCT_NAME";
+    public static final String EXTRA_LINE_NAME = "net.tbmcv.tbmmovel.LINE_NAME";
     public static final String EXTRA_PASSWORD = "net.tbmcv.tbmmovel.PASSWORD";
     public static final String EXTRA_CONNECTION_OK = "net.tbmcv.tbmmovel.CONNECTION_OK";
     public static final String EXTRA_PASSWORD_OK = "net.tbmcv.tbmmovel.PASSWORD_OK";
@@ -43,7 +49,13 @@ public class AcctDataService extends IntentService {
                         intent.getStringExtra(EXTRA_PASSWORD));
                 break;
             case ACTION_CONFIGURE_LINE:
-                onCommandConfigureLine();
+                if (intent.hasExtra(EXTRA_PASSWORD)) {
+                    onCommandConfigureLine(
+                            intent.getStringExtra(EXTRA_LINE_NAME),
+                            intent.getStringExtra(EXTRA_PASSWORD));
+                } else {
+                    onCommandConfigureLine();
+                }
                 break;
         }
     }
@@ -153,10 +165,47 @@ public class AcctDataService extends IntentService {
         }
         try {
             AuthPair lineAuth = resetLinePassword(acct);
-            // TODO configure line
+            LocalBroadcastManager.getInstance(this).sendBroadcast(
+                    new Intent(ACTION_CONFIGURE_LINE)
+                            .putExtra(EXTRA_LINE_NAME, lineAuth.name)
+                            .putExtra(EXTRA_PASSWORD, lineAuth.password));
         } catch (JSONException e) {  // TODO other types of errors
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+        }
+    }
+
+    private static final String[] SELECTION_FIELD_ID = {SipProfile.FIELD_ID};
+
+    private void onCommandConfigureLine(String username, String password) {
+        final String realm = getString(R.string.sip_realm);
+        final String displayName = getString(R.string.csipsimple_display_name);
+        final Cursor cursor = getContentResolver().query(
+                SipProfile.ACCOUNT_URI, SELECTION_FIELD_ID,
+                SipProfile.FIELD_DISPLAY_NAME + "=?", new String[]{displayName}, null);
+        if (cursor == null) {
+            return;  // TODO
+        }
+        try {
+            final ContentValues values = new ContentValues();
+            values.put(SipProfile.FIELD_ACC_ID, "sip:" + username + '@' + realm);
+            values.put(SipProfile.FIELD_REG_URI, "sip:" + realm);
+            values.put(SipProfile.FIELD_ACTIVE, 1);
+            values.put(SipProfile.FIELD_REALM, realm);
+            values.put(SipProfile.FIELD_SCHEME, SipProfile.CRED_SCHEME_DIGEST);
+            values.put(SipProfile.FIELD_USERNAME, username);
+            values.put(SipProfile.FIELD_DATATYPE, SipProfile.CRED_DATA_PLAIN_PASSWD);
+            values.put(SipProfile.FIELD_DATA, password);
+            if (cursor.moveToFirst()) {
+                getContentResolver().update(
+                        ContentUris.withAppendedId(SipProfile.ACCOUNT_URI, cursor.getLong(0)),
+                        values, null, null);
+            } else {
+                values.put(SipProfile.FIELD_DISPLAY_NAME, displayName);
+                getContentResolver().insert(SipProfile.ACCOUNT_URI, values);
+            }
+        } finally {
+            cursor.close();
         }
     }
 }

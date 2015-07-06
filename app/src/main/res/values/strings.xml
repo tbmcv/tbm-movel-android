@@ -16,4 +16,6 @@
     <string name="settings_key">config</string>
     <string name="setting_acctname">acct</string>
     <string name="setting_password">pw</string>
+    <string name="csipsimple_display_name">TBM Móvel (auto)</string>
+    <string name="sip_realm">sip.tbmcv.com</string>
 </resources>

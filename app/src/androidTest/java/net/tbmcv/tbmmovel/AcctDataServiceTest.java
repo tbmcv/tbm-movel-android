@@ -1,8 +1,14 @@
 package net.tbmcv.tbmmovel;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
+
+import com.csipsimple.api.SipProfile;
+import com.csipsimple.api.SipProfileState;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,11 +31,28 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
 
     private MockJrcRequest.Fetcher fetcher;
     private ArgumentCaptor<Map<String, ?>> paramsCaptor;
+    private TestingContentProvider contentProvider;
 
     protected void setUp() throws Exception {
         fetcher = MockJrcRequest.mockDefaultClient();
         paramsCaptor = ArgumentCaptor.forClass((Class) Map.class);
         super.setUp();
+        contentProvider = new TestingContentProvider(SipProfile.ACCOUNT_URI.getAuthority())
+                .addTable(SipProfile.ACCOUNTS_TABLE_NAME, SipProfile.FIELD_ID,
+                        SipProfile.FIELD_DISPLAY_NAME,
+                        SipProfile.FIELD_ACTIVE,
+                        SipProfile.FIELD_ACC_ID,
+                        SipProfile.FIELD_REG_URI,
+                        SipProfile.FIELD_REALM,
+                        SipProfile.FIELD_SCHEME,
+                        SipProfile.FIELD_USERNAME,
+                        SipProfile.FIELD_DATATYPE,
+                        SipProfile.FIELD_DATA)
+                .addTable(SipProfile.ACCOUNTS_STATUS_TABLE_NAME, SipProfileState.ACCOUNT_ID,
+                        SipProfileState.FULL_PROJECTION);
+        contentProvider.attachInfo(getContext(), null);
+        contentProvider.onCreate();
+        getContentResolver().addProvider(SipProfile.ACCOUNT_URI.getAuthority(), contentProvider);
     }
 
     @Override
@@ -153,9 +176,9 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     }
 
     public void testReconfigureVoipLineRequest() throws Exception {
-        String acctName = "c/5123456";
-        String password = "blah";
-        String lineName = "tbm1234";
+        String acctName = "c/5110023";
+        String password = "segredos";
+        String lineName = "tbm2222";
         setStoredAcct(acctName, password);
         AnswerPromise<JSONObject> firstFetch = new AnswerPromise<>();
         AnswerPromise<?> secondFetch = new AnswerPromise<>();
@@ -188,5 +211,99 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertEquals(URI.create("/idens/" + acctName + "/lines/" + lineName + "/pw"),
                 URI.create("/").resolve((URI) params.get("uri")));
         assertTrue(params.get("body") instanceof JSONObject);
+    }
+
+    void checkVoipLine(String lineName, String password) {
+        final String realm = getContext().getString(R.string.sip_realm);
+        final String displayName = getContext().getString(R.string.csipsimple_display_name);
+        Cursor cursor = contentProvider.query(
+                SipProfile.ACCOUNT_URI,
+                new String[]{
+                        SipProfile.FIELD_ACTIVE,
+                        SipProfile.FIELD_ACC_ID,
+                        SipProfile.FIELD_REG_URI,
+                        SipProfile.FIELD_REALM,
+                        SipProfile.FIELD_SCHEME,
+                        SipProfile.FIELD_USERNAME,
+                        SipProfile.FIELD_DATATYPE,
+                        SipProfile.FIELD_DATA,
+                },
+                SipProfile.FIELD_DISPLAY_NAME + " = ?", new String[]{displayName},
+                null);
+        try {
+            assertTrue("No CSipSimple line with display name", cursor.moveToFirst());
+            int i = 0;
+            assertEquals(1, cursor.getInt(i++));
+            assertEquals("sip:" + lineName + "@" + realm, cursor.getString(i++));
+            assertEquals("sip:" + realm, cursor.getString(i++));
+            assertEquals(realm, cursor.getString(i++));
+            assertEquals(SipProfile.CRED_SCHEME_DIGEST, cursor.getString(i++));
+            assertEquals(lineName, cursor.getString(i++));
+            assertEquals(SipProfile.CRED_DATA_PLAIN_PASSWD, cursor.getInt(i++));
+            assertEquals(password, cursor.getString(i++));
+            assertFalse("More than one CSipSimple line with display name", cursor.moveToNext());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    public void testConfigureNewVoipLine() {
+        String lineName = "tbm9999";
+        String password = "pass";
+        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
+        checkVoipLine(lineName, password);
+    }
+
+    public void testReconfigureVoipLine() {
+        String lineName = "tbm5555";
+        String password = "*****";
+        ContentValues oldValues = new ContentValues();
+        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, "TBM Móvel (auto)");
+        contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
+        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
+        checkVoipLine(lineName, password);
+    }
+
+    void checkOtherVoipLinesLeft(String lineName, String password) {
+        String otherDisplayName = "leave me alone!";
+        String otherAccId = "sip:leave@me.alone.net";
+        ContentValues oldValues = new ContentValues();
+        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, otherDisplayName);
+        oldValues.put(SipProfile.FIELD_ACC_ID, otherAccId);
+        Uri otherUri = contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
+        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
+        Cursor cursor = contentProvider.query(otherUri,
+                new String[]{
+                        SipProfile.FIELD_DISPLAY_NAME,
+                        SipProfile.FIELD_ACC_ID,
+                }, null, null, null);
+        try {
+            assertTrue("Other CSipSimple line gone", cursor.moveToFirst());
+            int i = 0;
+            assertEquals(otherDisplayName, cursor.getString(i++));
+            assertEquals(otherAccId, cursor.getString(i++));
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    public void testNewLineLeavesOtherVoipLines() {
+        checkOtherVoipLinesLeft("tbm5432", "lalala");
+    }
+
+    public void testReconfigureLeavesOtherVoipLines() {
+        ContentValues oldValues = new ContentValues();
+        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, "TBM Móvel (auto)");
+        checkOtherVoipLinesLeft("tbm1111", "abcdefg");
     }
 }
