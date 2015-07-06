@@ -13,14 +13,13 @@ import com.csipsimple.api.SipProfileState;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -146,71 +145,78 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     public void testNewVoipLineRequest() throws Exception {
         String acctName = "c/5123456";
         String password = "blah";
+        String lineName = "tbm7777";
+        String linePassword = "bleh";
         setStoredAcct(acctName, password);
-        AnswerPromise<JSONObject> firstFetch = new AnswerPromise<>();
-        AnswerPromise<?> secondFetch = new AnswerPromise<>();
-        when(fetcher.fetch(any(Map.class))).then(firstFetch).then(secondFetch);
-        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        when(fetcher.fetch(any(Map.class)))
+                .thenReturn(new JSONObject().put("lines", new JSONArray()))
+                .thenReturn(new JSONObject().put("name", lineName).put("pw", linePassword));
 
-        firstFetch.getCallLatch().await(2, TimeUnit.SECONDS);
-        InOrder inOrder = inOrder(fetcher);
-        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
-        Map<String, ?> params = paramsCaptor.getValue();
+        Intent resultIntent = startServiceAndWaitForBroadcast(
+                new Intent(AcctDataService.ACTION_CONFIGURE_LINE),
+                AcctDataService.ACTION_CONFIGURE_LINE);
+
+        verify(fetcher, times(2)).fetch(paramsCaptor.capture());
+
+        Map<String, ?> params = paramsCaptor.getAllValues().get(0);
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("GET", params.get("method"));
         assertEquals(URI.create("/idens/" + acctName + "/lines/"),
                 URI.create("/").resolve((URI) params.get("uri")));
 
-        firstFetch.setResult(new JSONObject().put("lines", new JSONArray()));
-
-        secondFetch.getCallLatch().await(2, TimeUnit.SECONDS);
-        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
-        params = paramsCaptor.getValue();
+        params = paramsCaptor.getAllValues().get(1);
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("POST", params.get("method"));
         assertEquals(URI.create("/idens/" + acctName + "/lines/"),
                 URI.create("/").resolve((URI) params.get("uri")));
         assertTrue(params.get("body") instanceof JSONObject);
+
+        assertEquals(AcctDataService.ACTION_CONFIGURE_LINE, resultIntent.getAction());
+        assertEquals(lineName, resultIntent.getStringExtra(AcctDataService.EXTRA_LINE_NAME));
+        assertEquals(linePassword, resultIntent.getStringExtra(AcctDataService.EXTRA_PASSWORD));
     }
 
     public void testReconfigureVoipLineRequest() throws Exception {
         String acctName = "c/5110023";
         String password = "segredos";
         String lineName = "tbm2222";
+        String linePassword = "caten";
         setStoredAcct(acctName, password);
-        AnswerPromise<JSONObject> firstFetch = new AnswerPromise<>();
-        AnswerPromise<?> secondFetch = new AnswerPromise<>();
-        when(fetcher.fetch(any(Map.class))).then(firstFetch).then(secondFetch);
-        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        when(fetcher.fetch(any(Map.class)))
+                .thenReturn(new JSONObject()
+                        .put("lines", new JSONArray()
+                                .put(new JSONObject()
+                                        .put("id", 1234)
+                                        .put("name", lineName)
+                                        .put("display", null))))
+                .thenReturn(new JSONObject().put("pw", linePassword));
 
-        firstFetch.getCallLatch().await(2, TimeUnit.SECONDS);
-        InOrder inOrder = inOrder(fetcher);
-        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
-        Map<String, ?> params = paramsCaptor.getValue();
+        Intent resultIntent = startServiceAndWaitForBroadcast(
+                new Intent(AcctDataService.ACTION_CONFIGURE_LINE),
+                AcctDataService.ACTION_CONFIGURE_LINE);
+
+        verify(fetcher, times(2)).fetch(paramsCaptor.capture());
+
+        Map<String, ?> params = paramsCaptor.getAllValues().get(0);
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("GET", params.get("method"));
         assertEquals(URI.create("/idens/" + acctName + "/lines/"),
                 URI.create("/").resolve((URI) params.get("uri")));
 
-        firstFetch.setResult(new JSONObject()
-                .put("lines", new JSONArray()
-                        .put(new JSONObject()
-                                .put("id", 1234)
-                                .put("name", lineName)
-                                .put("display", null))));
-
-        secondFetch.getCallLatch().await(2, TimeUnit.SECONDS);
-        inOrder.verify(fetcher).fetch(paramsCaptor.capture());
-        params = paramsCaptor.getValue();
+        params = paramsCaptor.getAllValues().get(1);
         assertEquals(acctName, params.get("username"));
         assertEquals(password, params.get("password"));
         assertEquals("POST", params.get("method"));
         assertEquals(URI.create("/idens/" + acctName + "/lines/" + lineName + "/pw"),
                 URI.create("/").resolve((URI) params.get("uri")));
         assertTrue(params.get("body") instanceof JSONObject);
+
+        assertEquals(AcctDataService.ACTION_CONFIGURE_LINE, resultIntent.getAction());
+        assertEquals(lineName, resultIntent.getStringExtra(AcctDataService.EXTRA_LINE_NAME));
+        assertEquals(linePassword, resultIntent.getStringExtra(AcctDataService.EXTRA_PASSWORD));
     }
 
     void checkVoipLine(String lineName, String password) {
