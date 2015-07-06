@@ -24,11 +24,17 @@ public class TestingContentProviderTest extends AndroidTestCase {
         provider.getDatabase().insertOrThrow("tbl", "id", null);
         Cursor cursor = provider.query(baseUri, new String[] { "y", "id" },
                 "x = ?", new String[] { x }, null);
-        assertTrue(cursor.moveToFirst());
-        assertEquals(2, cursor.getColumnCount());
-        assertEquals(y, cursor.getInt(0));
-        assertEquals(id, cursor.getLong(1));
-        assertFalse(cursor.moveToNext());
+        try {
+            assertTrue(cursor.moveToFirst());
+            assertEquals(2, cursor.getColumnCount());
+            assertEquals(y, cursor.getInt(0));
+            assertEquals(id, cursor.getLong(1));
+            assertFalse(cursor.moveToNext());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     public void testQuery() {
@@ -47,11 +53,17 @@ public class TestingContentProviderTest extends AndroidTestCase {
         Cursor cursor = provider.query(
                 ContentUris.withAppendedId(baseUri, id), new String[] { "x", "y" },
                 null, null, null);
-        assertTrue(cursor.moveToFirst());
-        assertEquals(2, cursor.getColumnCount());
-        assertEquals(x, cursor.getString(0));
-        assertEquals(y, cursor.getFloat(1));
-        assertFalse(cursor.moveToNext());
+        try {
+            assertTrue(cursor.moveToFirst());
+            assertEquals(2, cursor.getColumnCount());
+            assertEquals(x, cursor.getString(0));
+            assertEquals(y, cursor.getFloat(1));
+            assertFalse(cursor.moveToNext());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     public void testInsert() {
@@ -67,11 +79,17 @@ public class TestingContentProviderTest extends AndroidTestCase {
         long id = ContentUris.parseId(uri);
         Cursor cursor = provider.getDatabase().query("tbl", new String[] { "y", "x" },
                 "id = ?", new String[]{ Long.toString(id) }, null, null, null);
-        assertTrue(cursor.moveToFirst());
-        assertEquals(2, cursor.getColumnCount());
-        assertEquals(y, cursor.getString(0));
-        assertEquals(x, cursor.getDouble(1));
-        assertFalse(cursor.moveToNext());
+        try {
+            assertTrue(cursor.moveToFirst());
+            assertEquals(2, cursor.getColumnCount());
+            assertEquals(y, cursor.getString(0));
+            assertEquals(x, cursor.getDouble(1));
+            assertFalse(cursor.moveToNext());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     public void testDelete() {
