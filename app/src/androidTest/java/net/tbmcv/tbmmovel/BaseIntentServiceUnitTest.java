@@ -1,7 +1,7 @@
 package net.tbmcv.tbmmovel;
 
 import android.app.Activity;
-import android.app.Service;
+import android.app.IntentService;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -11,16 +11,24 @@ import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 import android.test.ServiceTestCase;
 import android.test.mock.MockContentResolver;
+import android.util.Log;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
+public class BaseIntentServiceUnitTest<S extends IntentService> extends ServiceTestCase<S> {
+    static final String LOG_TAG = "BaseIntentServiceUTest";
+
     private volatile Intent lastActivityIntent;
     private MockContentResolver contentResolver;
+    private Map<Intent, CountDownLatch> processingIntents;
 
-    public BaseServiceUnitTest(Class<S> serviceClass) {
+    public BaseIntentServiceUnitTest(Class<S> serviceClass) {
         super(serviceClass);
     }
 
@@ -28,17 +36,66 @@ public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
     protected void setUp() throws Exception {
         super.setUp();
         contentResolver = new MockContentResolver();
-        setContext(new ContextWrapper(getContext()) {
-            @Override
-            public void startActivity(Intent intent) {
-                lastActivityIntent = intent;
-            }
+        processingIntents = Collections.synchronizedMap(new HashMap<Intent, CountDownLatch>());
+        setContext(new TestingContext(getContext()));
+    }
 
-            @Override
-            public ContentResolver getContentResolver() {
-                return contentResolver;
+    private class TestingContext extends ContextWrapper {
+        TestingContext(Context base) {
+            super(base);
+        }
+
+        @Override
+        public void startActivity(Intent intent) {
+            lastActivityIntent = intent;
+        }
+
+        @Override
+        public ContentResolver getContentResolver() {
+            return contentResolver;
+        }
+
+        BaseIntentServiceUnitTest<S> getCurrentTest() {
+            return BaseIntentServiceUnitTest.this;
+        }
+    }
+
+    protected void setIntentHandled(Intent intent) {
+        CountDownLatch latch = processingIntents.get(intent);
+        if (latch != null) {
+            if (latch.getCount() == 0) {
+                Log.w(LOG_TAG, "Latch already counted down for intent " + intent);
             }
-        });
+            latch.countDown();
+        } else {
+            Log.w(LOG_TAG, "No latch for intent " + intent);
+        }
+    }
+
+    public static void setIntentHandled(Context context, Intent intent) {
+        ((BaseIntentServiceUnitTest<?>.TestingContext) context)
+                .getCurrentTest().setIntentHandled(intent);
+    }
+
+    @Override
+    protected void startService(Intent intent) {
+        processingIntents.put(intent, new CountDownLatch(1));
+        super.startService(intent);
+    }
+
+    protected CountDownLatch sendServiceIntent(Intent intent) {
+        startService(intent);
+        return processingIntents.get(intent);
+    }
+
+    protected void sendServiceIntentAndWait(Intent intent, long timeout, TimeUnit unit)
+            throws InterruptedException {
+        assertTrue("Not processed in time: " + intent,
+                sendServiceIntent(intent).await(timeout, unit));
+    }
+
+    protected void sendServiceIntentAndWait(Intent intent) throws InterruptedException {
+        sendServiceIntentAndWait(intent, 5, TimeUnit.SECONDS);
     }
 
     protected MockContentResolver getContentResolver() {

@@ -23,9 +23,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
+public class AcctDataServiceTest
+        extends BaseIntentServiceUnitTest<AcctDataServiceTest.TestingAcctDataService> {
+    public static class TestingAcctDataService extends AcctDataService {
+        @Override
+        protected void onHandleIntent(Intent intent) {
+            super.onHandleIntent(intent);
+            setIntentHandled(getBaseContext(), intent);
+        }
+    }
+
     public AcctDataServiceTest() {
-        super(AcctDataService.class);
+        super(TestingAcctDataService.class);
     }
 
     private MockJrcRequest.Fetcher fetcher;
@@ -129,10 +138,9 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         prefs.edit().clear().commit();
 
         when(fetcher.fetch(any(Map.class))).thenReturn(new JSONObject().put("pw", newPw));
-        startServiceAndWaitForBroadcast(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                         .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
-                        .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"),
-                AcctDataService.ACTION_STATUS, AcctDataService.ACTION_PASSWORD_RESET);
+                        .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"));
 
         assertEquals("c/" + phoneNumber,
                 prefs.getString(context.getString(R.string.setting_acctname), "(NOTHING STORED)"));
@@ -249,35 +257,35 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         }
     }
 
-    public void testConfigureNewVoipLine() {
+    public void testConfigureNewVoipLine() throws Exception {
         String lineName = "tbm9999";
         String password = "pass";
-        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
                 .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
         checkVoipLine(lineName, password);
     }
 
-    public void testReconfigureVoipLine() {
+    public void testReconfigureVoipLine() throws Exception {
         String lineName = "tbm5555";
         String password = "*****";
         ContentValues oldValues = new ContentValues();
         oldValues.put(SipProfile.FIELD_DISPLAY_NAME, "TBM Móvel (auto)");
         contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
-        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
                 .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
         checkVoipLine(lineName, password);
     }
 
-    void checkOtherVoipLinesLeft(String lineName, String password) {
+    void checkOtherVoipLinesLeft(String lineName, String password) throws InterruptedException {
         String otherDisplayName = "leave me alone!";
         String otherAccId = "sip:leave@me.alone.net";
         ContentValues oldValues = new ContentValues();
         oldValues.put(SipProfile.FIELD_DISPLAY_NAME, otherDisplayName);
         oldValues.put(SipProfile.FIELD_ACC_ID, otherAccId);
         Uri otherUri = contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
-        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
                 .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
         Cursor cursor = contentProvider.query(otherUri,
@@ -297,13 +305,14 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         }
     }
 
-    public void testNewLineLeavesOtherVoipLines() {
+    public void testNewLineLeavesOtherVoipLines() throws Exception {
         checkOtherVoipLinesLeft("tbm5432", "lalala");
     }
 
-    public void testReconfigureLeavesOtherVoipLines() {
+    public void testReconfigureLeavesOtherVoipLines() throws Exception {
         ContentValues oldValues = new ContentValues();
         oldValues.put(SipProfile.FIELD_DISPLAY_NAME, "TBM Móvel (auto)");
+        contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
         checkOtherVoipLinesLeft("tbm1111", "abcdefg");
     }
 
