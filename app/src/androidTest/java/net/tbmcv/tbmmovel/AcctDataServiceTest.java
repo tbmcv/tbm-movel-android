@@ -11,6 +11,7 @@ import com.csipsimple.api.SipProfile;
 import com.csipsimple.api.SipProfileState;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.mockito.ArgumentCaptor;
 
@@ -25,6 +26,11 @@ import static org.mockito.Mockito.when;
 
 public class AcctDataServiceTest
         extends BaseIntentServiceUnitTest<AcctDataServiceTest.TestingAcctDataService> {
+    private static final String LINE_DISPLAY_NAME = "TBM Móvel (auto)";
+
+    /* Can't be static in Android 2.3 */
+    private final String[] WRONG_LINE_NAMES = {"TBM", "line1", ""};
+
     public static class TestingAcctDataService extends AcctDataService {
         @Override
         protected void onHandleIntent(Intent intent) {
@@ -139,8 +145,8 @@ public class AcctDataServiceTest
 
         when(fetcher.fetch(any(Map.class))).thenReturn(new JSONObject().put("pw", newPw));
         sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
-                        .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
-                        .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"));
+                .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"));
 
         assertEquals("c/" + phoneNumber,
                 prefs.getString(context.getString(R.string.setting_acctname), "(NOTHING STORED)"));
@@ -270,7 +276,7 @@ public class AcctDataServiceTest
         String lineName = "tbm5555";
         String password = "*****";
         ContentValues oldValues = new ContentValues();
-        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, "TBM Móvel (auto)");
+        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, LINE_DISPLAY_NAME);
         contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
         sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
                 .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
@@ -311,7 +317,7 @@ public class AcctDataServiceTest
 
     public void testReconfigureLeavesOtherVoipLines() throws Exception {
         ContentValues oldValues = new ContentValues();
-        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, "TBM Móvel (auto)");
+        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, LINE_DISPLAY_NAME);
         contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
         checkOtherVoipLinesLeft("tbm1111", "abcdefg");
     }
@@ -322,5 +328,91 @@ public class AcctDataServiceTest
 
     private static void assertUriEquals(String expected, Object actual) {
         assertUriEquals(URI.create(expected), actual);
+    }
+
+    public void testEnsureLineNoExisting() throws Exception {
+        checkEnsureLineTriggersConfigure();
+    }
+
+    public void testEnsureLineExistingDifferentName() throws Exception {
+        for (String name : WRONG_LINE_NAMES) {
+            int i = name.hashCode();
+            insertProfileAndStatus(i, name, "tbm" + i, name, true, 3600);
+            checkEnsureLineTriggersConfigure();
+        }
+    }
+
+    private Intent checkEnsureLineTriggersConfigure() throws InterruptedException {
+        return startServiceAndWaitForBroadcast(
+                new Intent(AcctDataService.ACTION_ENSURE_LINE),
+                AcctDataService.ACTION_CONFIGURE_LINE);
+    }
+
+    private void insertProfileAndStatus(int id, String displayName, String lineName,
+                                        String password, boolean active, int expires) {
+        ContentValues values = new ContentValues();
+        values.put(SipProfile.FIELD_ID, id);
+        values.put(SipProfile.FIELD_DISPLAY_NAME, displayName);
+        values.put(SipProfile.FIELD_USERNAME, lineName);
+        values.put(SipProfile.FIELD_DATATYPE, SipProfile.CRED_DATA_PLAIN_PASSWD);
+        values.put(SipProfile.FIELD_DATA, password);
+        values.put(SipProfile.FIELD_ACTIVE, active);
+        contentProvider.insert(SipProfile.ACCOUNT_URI, values);
+        ContentValues statusValues = new ContentValues();
+        statusValues.put(SipProfileState.ACCOUNT_ID, id);
+        statusValues.put(SipProfileState.ACTIVE, active);
+        statusValues.put(SipProfileState.DISPLAY_NAME, displayName);
+        statusValues.put(SipProfileState.EXPIRES, expires);
+        contentProvider.insert(SipProfile.ACCOUNT_STATUS_URI, statusValues);
+    }
+
+    public void testEnsureLineExistsDisabled() throws Exception {
+        insertProfileAndStatus(123, LINE_DISPLAY_NAME, "tbm0101", "blah", false, 0);
+        assertNull("Ran CONFIGURE_LINE even though exists and disabled",
+                startServiceAndGetBroadcast(new Intent(AcctDataService.ACTION_ENSURE_LINE),
+                        AcctDataService.ACTION_CONFIGURE_LINE));
+    }
+
+    public void testEnsureLineExistsUp() throws Exception {
+        insertProfileAndStatus(321, LINE_DISPLAY_NAME, "tbm1010", "i'mup", true, 3600);
+        assertNull("Ran CONFIGURE_LINE even though exists and up",
+                startServiceAndGetBroadcast(new Intent(AcctDataService.ACTION_ENSURE_LINE),
+                        AcctDataService.ACTION_CONFIGURE_LINE));
+    }
+
+    private Intent callEnsureLineAndCheckApiCalls(String acctName, String acctPw, String lineName,
+                                                  String storedLinePw, String apiLinePw)
+            throws InterruptedException, JSONException {
+        setStoredAcct(acctName, acctPw);
+        insertProfileAndStatus(6, LINE_DISPLAY_NAME, lineName, storedLinePw, true, 0);
+        when(fetcher.fetch(any(Map.class)))
+                .thenReturn(new JSONObject().put("pw", apiLinePw));
+
+        Intent resultIntent = startServiceAndGetBroadcast(
+                new Intent(AcctDataService.ACTION_ENSURE_LINE),
+                AcctDataService.ACTION_CONFIGURE_LINE);
+
+        verify(fetcher).fetch(paramsCaptor.capture());
+
+        Map<String, ?> params = paramsCaptor.getValue();
+        assertEquals(acctName, params.get("username"));
+        assertEquals(acctPw, params.get("password"));
+        assertEquals("GET", params.get("method"));
+        assertUriEquals("/idens/" + acctName + "/lines/" + lineName + "/pw", params.get("uri"));
+
+        return resultIntent;
+    }
+
+    public void testEnsureLineKeepsCorrectCreds() throws Exception {
+        String pw = "98w7efyu";
+        assertNull("Reconfigured when credentials were the same as on the server",
+                callEnsureLineAndCheckApiCalls("c/9119119", "joao*who?", "tbm8814", pw, pw));
+    }
+
+    public void testEnsureLineReconfiguresWhenCredsDifferent() throws Exception {
+        assertNotNull("Didn't reconfigure when credentials were different from server's",
+                callEnsureLineAndCheckApiCalls(
+                        "c/9881889", "duvinha", "tbm8324",
+                        "jk324h", "23kj4h"));
     }
 }

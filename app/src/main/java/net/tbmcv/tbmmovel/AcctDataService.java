@@ -11,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 
 import com.csipsimple.api.SipProfile;
+import com.csipsimple.api.SipProfileState;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,6 +23,7 @@ public class AcctDataService extends IntentService {
     public static final String ACTION_CONFIGURE_LINE = "net.tbmcv.tbmmovel.CONFIGURE_LINE";
     public static final String ACTION_STATUS = "net.tbmcv.tbmmovel.STATUS";
     public static final String ACTION_PASSWORD_RESET = "net.tbmcv.tbmmovel.PASSWORD_RESET";
+    public static final String ACTION_ENSURE_LINE = "net.tbmcv.tbmmovel.ENSURE_LINE";
     public static final String EXTRA_ACCT_NAME = "net.tbmcv.tbmmovel.ACCT_NAME";
     public static final String EXTRA_LINE_NAME = "net.tbmcv.tbmmovel.LINE_NAME";
     public static final String EXTRA_PASSWORD = "net.tbmcv.tbmmovel.PASSWORD";
@@ -42,6 +44,9 @@ public class AcctDataService extends IntentService {
         switch (intent.getAction()) {
             case ACTION_GET_CREDIT:
                 onCommandGetCredit();
+                break;
+            case ACTION_ENSURE_LINE:
+                onCommandEnsureLine();
                 break;
             case ACTION_RESET_PASSWORD:
                 onCommandResetPassword(
@@ -206,6 +211,89 @@ public class AcctDataService extends IntentService {
             }
         } finally {
             cursor.close();
+        }
+    }
+
+    private static final String[] SELECTION_LINE_STATUS = {
+            SipProfileState.ACCOUNT_ID,
+            SipProfileState.ACTIVE,
+            SipProfileState.EXPIRES,
+    };
+
+    private static final String[] SELECTION_LINE_CREDS = {
+            SipProfile.FIELD_USERNAME,
+            SipProfile.FIELD_DATATYPE,
+            SipProfile.FIELD_DATA,
+    };
+
+    private boolean shouldReconfigure() {
+        AuthPair acct = getAcctAuth();
+        if (acct == null) {
+            return false;
+        }
+        final String displayName = getString(R.string.csipsimple_display_name);
+        Cursor cursor = getContentResolver().query(
+                SipProfile.ACCOUNT_STATUS_URI, SELECTION_LINE_STATUS,
+                SipProfile.FIELD_DISPLAY_NAME + "=?", new String[]{displayName}, null);
+        if (cursor == null) {
+            return false;
+        }
+        final int lineId;
+        try {
+            if (!cursor.moveToFirst()) {
+                return true;  // no such line exists
+            } else if (cursor.getInt(1) == 0 || cursor.getInt(2) > 0) {
+                return false;  // line disactivated or up
+            } else {
+                lineId = cursor.getInt(0);
+            }
+        } finally {
+            cursor.close();
+        }
+        final String lineName;
+        final String linePw;
+        cursor = getContentResolver().query(
+                SipProfile.ACCOUNT_URI, SELECTION_LINE_CREDS,
+                SipProfile.FIELD_ID + "=?", new String[]{Integer.toString(lineId)}, null);
+        if (cursor == null) {
+            return false;
+        }
+        try {
+            if (!cursor.moveToFirst()) {
+                return true;
+            } else if (cursor.getInt(1) != SipProfile.CRED_DATA_PLAIN_PASSWD) {
+                return true;  // TODO
+            }
+            lineName = cursor.getString(0);
+            linePw = cursor.getString(2);
+        } finally {
+            cursor.close();
+        }
+        if (lineName == null || linePw == null) {
+            return true;
+        }
+        try {
+            JSONObject result = getRestClient().buildRequest()
+                    .auth(acct.name, acct.password)
+                    .toUri("idens/")
+                    .toUri(acct.name + "/")
+                    .toUri("lines/")
+                    .toUri(lineName + "/")
+                    .toUri("pw")
+                    .build()
+                    .fetch();
+            return !linePw.equals(result.getString("pw"));
+        } catch (JSONException e) {  // TODO other types of errors
+            LocalBroadcastManager.getInstance(this).sendBroadcast(
+                    new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+            return false;
+        }
+    }
+
+    private void onCommandEnsureLine() {
+        if (shouldReconfigure()) {
+            LocalBroadcastManager.getInstance(this).sendBroadcast(
+                    new Intent(ACTION_CONFIGURE_LINE));
         }
     }
 }

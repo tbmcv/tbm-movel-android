@@ -130,6 +130,13 @@ public class BaseIntentServiceUnitTest<S extends IntentService> extends ServiceT
 
     protected Intent startServiceAndWaitForBroadcast(Intent intent, String... broadcastActions)
             throws InterruptedException {
+        Intent broadcastIntent = startServiceAndGetBroadcast(intent, broadcastActions);
+        assertNotNull("No broadcast received", broadcastIntent);
+        return broadcastIntent;
+    }
+
+    protected Intent startServiceAndGetBroadcast(Intent intent, String... broadcastActions)
+            throws InterruptedException {
         final BlockingQueue<Intent> queue = new ArrayBlockingQueue<>(1);
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
@@ -142,10 +149,8 @@ public class BaseIntentServiceUnitTest<S extends IntentService> extends ServiceT
             for (String action : broadcastActions) {
                 broadcastManager.registerReceiver(receiver, new IntentFilter(action));
             }
-            startService(intent);
-            Intent broadcastIntent = queue.poll(2, TimeUnit.SECONDS);
-            assertNotNull("No broadcast received", broadcastIntent);
-            return broadcastIntent;
+            sendServiceIntentAndWait(intent);
+            return queue.poll(100, TimeUnit.MILLISECONDS);
         } finally {
             broadcastManager.unregisterReceiver(receiver);
         }
