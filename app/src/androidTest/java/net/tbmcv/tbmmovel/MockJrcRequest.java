@@ -97,12 +97,6 @@ public class MockJrcRequest implements JsonRestClient.Request {
         }
 
         @Override
-        public JsonRestClient.Request.Builder baseUri(URI uri) {
-            params.put("baseUri", uri);
-            return this;
-        }
-
-        @Override
         public JsonRestClient.Request.Builder toUri(URI uri) {
             params.put("uri", ((URI) params.get("uri")).resolve(uri));
             return this;

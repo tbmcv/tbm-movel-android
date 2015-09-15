@@ -20,8 +20,6 @@ public interface JsonRestClient {
 
             Builder body(JSONObject body);
 
-            Builder baseUri(URI uri);
-
             Builder toUri(URI uri);
 
             Builder toUri(String uri);
