@@ -9,8 +9,6 @@ public interface JsonRestClient {
     Request.Builder buildRequest();
 
     interface Request {
-        Builder buildUpon();
-
         JSONObject fetch() throws IOException;
 
         interface Builder {

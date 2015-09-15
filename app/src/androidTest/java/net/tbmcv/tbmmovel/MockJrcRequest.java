@@ -25,7 +25,7 @@ public class MockJrcRequest implements JsonRestClient.Request {
         when(mockClient.buildRequest()).then(new Answer<JsonRestClient.Request.Builder>() {
             @Override
             public JsonRestClient.Request.Builder answer(InvocationOnMock invocation) throws Throwable {
-                return new MockJrcRequest(mockFetcher).buildUpon();
+                return new Builder(new MockJrcRequest(mockFetcher));
             }
         });
         JsonRestClientFactory.Default.set(new JsonRestClientFactory() {
@@ -48,11 +48,6 @@ public class MockJrcRequest implements JsonRestClient.Request {
     private MockJrcRequest(Fetcher fetcher, Map<String, ?> params) {
         this.fetcher = fetcher;
         this.params = Collections.unmodifiableMap(new HashMap<>(params));
-    }
-
-    @Override
-    public JsonRestClient.Request.Builder buildUpon() {
-        return new Builder(this);
     }
 
     @Override
