@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,7 +56,7 @@ public class MockJrcRequest implements JsonRestClient.Request {
     }
 
     @Override
-    public JSONObject fetch() {
+    public JSONObject fetch() throws IOException {
         return fetcher.fetch(params);
     }
 
@@ -64,7 +65,7 @@ public class MockJrcRequest implements JsonRestClient.Request {
     }
 
     public interface Fetcher {
-        JSONObject fetch(Map<String, ?> params);
+        JSONObject fetch(Map<String, ?> params) throws IOException;
     }
 
     private static class Builder implements JsonRestClient.Request.Builder {

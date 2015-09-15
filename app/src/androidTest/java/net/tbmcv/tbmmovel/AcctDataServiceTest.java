@@ -15,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -382,7 +383,7 @@ public class AcctDataServiceTest
 
     private Intent callEnsureLineAndCheckApiCalls(String acctName, String acctPw, String lineName,
                                                   String storedLinePw, String apiLinePw)
-            throws InterruptedException, JSONException {
+            throws InterruptedException, JSONException, IOException {
         setStoredAcct(acctName, acctPw);
         insertProfileAndStatus(6, LINE_DISPLAY_NAME, lineName, storedLinePw, true, 0);
         when(fetcher.fetch(any(Map.class)))

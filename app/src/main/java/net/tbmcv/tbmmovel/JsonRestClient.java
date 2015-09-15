@@ -2,6 +2,7 @@ package net.tbmcv.tbmmovel;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.URI;
 
 public interface JsonRestClient {
@@ -10,7 +11,7 @@ public interface JsonRestClient {
     interface Request {
         Builder buildUpon();
 
-        JSONObject fetch();
+        JSONObject fetch() throws IOException;
 
         interface Builder {
             Builder auth(String username, String password);

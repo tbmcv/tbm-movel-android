@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.csipsimple.api.SipProfile;
 import com.csipsimple.api.SipProfileState;
@@ -16,6 +17,8 @@ import com.csipsimple.api.SipProfileState;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.IOException;
 
 public class AcctDataService extends IntentService {
     public static final String ACTION_RESET_PASSWORD = "net.tbmcv.tbmmovel.RESET_PASSWORD";
@@ -30,6 +33,8 @@ public class AcctDataService extends IntentService {
     public static final String EXTRA_CONNECTION_OK = "net.tbmcv.tbmmovel.CONNECTION_OK";
     public static final String EXTRA_PASSWORD_OK = "net.tbmcv.tbmmovel.PASSWORD_OK";
     public static final String EXTRA_CREDIT = "net.tbmcv.tbmmovel.CREDIT";
+
+    static final String LOG_TAG = "AcctDataService";
 
     public AcctDataService() {
         super("AcctDataService");
@@ -102,7 +107,8 @@ public class AcctDataService extends IntentService {
                     .build()
                     .fetch();
             status.putExtra(EXTRA_CREDIT, result.getInt("saldo"));
-        } catch (JSONException e) {  // TODO other types of errors
+        } catch (JSONException|IOException e) {
+            Log.e(LOG_TAG, "Error fetching saldo", e);
             status.putExtra(EXTRA_CONNECTION_OK, false);
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(status);
@@ -127,13 +133,14 @@ public class AcctDataService extends IntentService {
                     .commit();
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_PASSWORD_RESET));
-        } catch (JSONException e) {  // TODO other types of errors
+        } catch (JSONException|IOException e) {
+            Log.e(LOG_TAG, "Error resetting account password", e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
         }
     }
 
-    private AuthPair resetLinePassword(AuthPair acct) throws JSONException {
+    private AuthPair resetLinePassword(AuthPair acct) throws JSONException, IOException {
         JSONObject result = getRestClient().buildRequest()
                 .auth(acct.name, acct.password)
                 .toUri("idens/")
@@ -174,7 +181,8 @@ public class AcctDataService extends IntentService {
                     new Intent(ACTION_CONFIGURE_LINE)
                             .putExtra(EXTRA_LINE_NAME, lineAuth.name)
                             .putExtra(EXTRA_PASSWORD, lineAuth.password));
-        } catch (JSONException e) {  // TODO other types of errors
+        } catch (JSONException|IOException e) {
+            Log.e(LOG_TAG, "Error reconfiguring line", e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
         }
@@ -283,7 +291,8 @@ public class AcctDataService extends IntentService {
                     .build()
                     .fetch();
             return !linePw.equals(result.getString("pw"));
-        } catch (JSONException e) {  // TODO other types of errors
+        } catch (JSONException|IOException e) {
+            Log.e(LOG_TAG, "Error retrieving line password", e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
             return false;
