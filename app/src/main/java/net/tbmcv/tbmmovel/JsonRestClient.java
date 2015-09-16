@@ -1,28 +1,25 @@
 package net.tbmcv.tbmmovel;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URI;
 
 public interface JsonRestClient {
-    Request.Builder buildRequest();
+    RequestBuilder buildRequest();
 
-    interface Request {
-        JSONObject fetch() throws IOException;
+    interface RequestBuilder {
+        JSONObject fetch() throws IOException, JSONException;
 
-        interface Builder {
-            Builder auth(String username, String password);
+        RequestBuilder auth(String username, String password);
 
-            Builder method(String method);
+        RequestBuilder method(String method);
 
-            Builder body(JSONObject body);
+        RequestBuilder body(JSONObject body);
 
-            Builder toUri(URI uri);
+        RequestBuilder toUri(URI uri);
 
-            Builder toUri(String uri);
-
-            Request build();
-        }
+        RequestBuilder toUri(String uri);
     }
 }

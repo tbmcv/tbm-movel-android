@@ -104,7 +104,6 @@ public class AcctDataService extends IntentService {
                     .toUri("idens/")
                     .toUri(acct.name + "/")
                     .toUri("saldo/")
-                    .build()
                     .fetch();
             status.putExtra(EXTRA_CREDIT, result.getInt("saldo"));
         } catch (JSONException|IOException e) {
@@ -123,7 +122,6 @@ public class AcctDataService extends IntentService {
                     .toUri("pw")
                     .method("POST")
                     .body(new JSONObject().put("reset", "base64").put("size", 4))
-                    .build()
                     .fetch();
             String newPw = result.getString("pw");
             getSharedPreferences(getString(R.string.settings_key), Context.MODE_PRIVATE)
@@ -146,9 +144,8 @@ public class AcctDataService extends IntentService {
                 .toUri("idens/")
                 .toUri(acct.name + "/")
                 .toUri("lines/")
-                .build()
                 .fetch();
-        JsonRestClient.Request.Builder requestBuilder = getRestClient().buildRequest()
+        JsonRestClient.RequestBuilder requestBuilder = getRestClient().buildRequest()
                 .auth(acct.name, acct.password)
                 .toUri("idens/")
                 .toUri(acct.name + "/")
@@ -161,11 +158,10 @@ public class AcctDataService extends IntentService {
             result = requestBuilder
                     .toUri(name + "/")
                     .toUri("pw")
-                    .build()
                     .fetch();
             return new AuthPair(name, result.getString("pw"));
         } else {
-            result = requestBuilder.build().fetch();
+            result = requestBuilder.fetch();
             return new AuthPair(result.getString("name"), result.getString("pw"));
         }
     }
@@ -288,7 +284,6 @@ public class AcctDataService extends IntentService {
                     .toUri("lines/")
                     .toUri(lineName + "/")
                     .toUri("pw")
-                    .build()
                     .fetch();
             return !linePw.equals(result.getString("pw"));
         } catch (JSONException|IOException e) {

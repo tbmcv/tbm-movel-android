@@ -44,12 +44,12 @@ public class AcctDataServiceTest
         super(TestingAcctDataService.class);
     }
 
-    private MockJrcRequest.Fetcher fetcher;
+    private MockJrcRequestBuilder.Fetcher fetcher;
     private ArgumentCaptor<Map<String, ?>> paramsCaptor;
     private TestingContentProvider contentProvider;
 
     protected void setUp() throws Exception {
-        fetcher = MockJrcRequest.mockDefaultClient();
+        fetcher = MockJrcRequestBuilder.mockDefaultClient();
         paramsCaptor = ArgumentCaptor.forClass((Class) Map.class);
         super.setUp();
         contentProvider = new TestingContentProvider(SipProfile.ACCOUNT_URI.getAuthority())
