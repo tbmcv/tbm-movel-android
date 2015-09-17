@@ -41,7 +41,7 @@ public class AcctDataService extends IntentService {
     }
 
     protected JsonRestClient getRestClient() {
-        return JsonRestClientFactory.Default.get().getRestClient(this);
+        return TbmApi.getInstance(this).getRestClient();
     }
 
     @Override

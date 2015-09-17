@@ -1,7 +1,5 @@
 package net.tbmcv.tbmmovel;
 
-import android.content.Context;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mockito.invocation.InvocationOnMock;
@@ -9,6 +7,7 @@ import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,12 +28,17 @@ public class MockJrcRequestBuilder implements JsonRestClient.RequestBuilder {
                 return new MockJrcRequestBuilder(mockFetcher);
             }
         });
-        JsonRestClientFactory.Default.set(new JsonRestClientFactory() {
+        TbmApi.instance = new TbmApi() {
             @Override
-            public JsonRestClient getRestClient(Context context) {
+            public URL getBaseUrl() {
+                return null;
+            }
+
+            @Override
+            public JsonRestClient getRestClient() {
                 return mockClient;
             }
-        });
+        };
         return mockFetcher;
     }
 

@@ -18,4 +18,5 @@
     <string name="setting_password">pw</string>
     <string name="csipsimple_display_name">TBM Móvel (auto)</string>
     <string name="sip_realm">sip.tbmcv.com</string>
+    <string name="api_base_url">https://api.tbmcv.com:8608/</string>
 </resources>
