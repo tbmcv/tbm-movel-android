@@ -36,8 +36,7 @@ public abstract class TbmApi {
 
         private Default(Context context) throws IOException, GeneralSecurityException {
             sslContext = SSLContext.getInstance("TLS");
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-                    TrustManagerFactory.getDefaultAlgorithm());
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             InputStream certStream = context.getResources().openRawResource(R.raw.tbmds_cert);
             try {
