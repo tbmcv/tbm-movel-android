@@ -366,7 +366,7 @@ public class StatusFragment extends Fragment {
 		if (isInCall && (call != null || lc.getConferenceSize() > 1 || lc.getCallsNb() > 0)) {
 			if (call != null) {
 				startCallQuality();
-				refreshStatusItems(call, call.getCurrentParamsCopy().getVideoEnabled());
+				refreshStatusItems(call);
 			}
 			
 			statusText.setVisibility(View.GONE);
@@ -411,17 +411,13 @@ public class StatusFragment extends Fragment {
 		super.onDestroy();
 	}
 	
-	public void refreshStatusItems(final LinphoneCall call, boolean isVideoEnabled) {
+	public void refreshStatusItems(final LinphoneCall call) {
 		if (call != null) {
 			voicemailCount.setVisibility(View.GONE);
 			MediaEncryption mediaEncryption = call.getCurrentParamsCopy().getMediaEncryption();
 
-			if (isVideoEnabled) {
-				background.setVisibility(View.GONE);
-			} else {
-				background.setVisibility(View.VISIBLE);
-			}
-			
+			background.setVisibility(View.VISIBLE);
+
 			if (mediaEncryption == MediaEncryption.SRTP || (mediaEncryption == MediaEncryption.ZRTP && call.isAuthenticationTokenVerified()) || mediaEncryption == MediaEncryption.DTLS) {
 				encryption.setImageResource(R.drawable.security_ok);
 			} else if (mediaEncryption == MediaEncryption.ZRTP && !call.isAuthenticationTokenVerified()) {
@@ -491,10 +487,8 @@ public class StatusFragment extends Fragment {
 				final TextView dl = (TextView) view.findViewById(R.id.downloadBandwith);
 				final TextView ul = (TextView) view.findViewById(R.id.uploadBandwith);
 				final TextView ice = (TextView) view.findViewById(R.id.ice);
-				final TextView videoResolution = (TextView) view.findViewById(R.id.video_resolution);
-				final View videoResolutionLayout = view.findViewById(R.id.video_resolution_layout);
-				
-				if (codec == null || dl == null || ul == null || ice == null || videoResolution == null || videoResolutionLayout == null) {
+
+				if (codec == null || dl == null || ul == null || ice == null) {
 					mTimer.cancel();
 					return;
 				}
@@ -504,37 +498,16 @@ public class StatusFragment extends Fragment {
 					public void run() {
 						synchronized(LinphoneManager.getLc()) {
 							final LinphoneCallParams params = call.getCurrentParamsCopy();
-							if (params.getVideoEnabled()) {
-								final LinphoneCallStats videoStats = call.getVideoStats();
-								final LinphoneCallStats audioStats = call.getAudioStats();
-								if (videoStats != null && audioStats != null) {
-									title.setText("Video");
-									PayloadType payloadAudio = params.getUsedAudioCodec();
-									PayloadType payloadVideo = params.getUsedVideoCodec();
-									if (payloadVideo != null && payloadAudio != null) {
-										codec.setText(payloadVideo.getMime() + " / " + payloadAudio.getMime() + (payloadAudio.getRate() / 1000));
-									}
-									dl.setText(String.valueOf((int) videoStats.getDownloadBandwidth()) + " / " + (int) audioStats.getDownloadBandwidth() + " kbits/s");
-									ul.setText(String.valueOf((int) videoStats.getUploadBandwidth()) +  " / " + (int) audioStats.getUploadBandwidth() + " kbits/s");
-									ice.setText(videoStats.getIceState().toString());
-									
-									videoResolutionLayout.setVisibility(View.VISIBLE);
-									videoResolution.setText("\u2191 " + params.getSentVideoSize().toDisplayableString() + " / \u2193 " + params.getReceivedVideoSize().toDisplayableString());
+							final LinphoneCallStats audioStats = call.getAudioStats();
+							if (audioStats != null) {
+								title.setText("Audio");
+								PayloadType payload = params.getUsedAudioCodec();
+								if (payload != null) {
+									codec.setText(payload.getMime() + (payload.getRate() / 1000));
 								}
-							} else {
-								final LinphoneCallStats audioStats = call.getAudioStats();
-								if (audioStats != null) {
-									title.setText("Audio");
-									PayloadType payload = params.getUsedAudioCodec();
-									if (payload != null) {
-										codec.setText(payload.getMime() + (payload.getRate() / 1000));
-									}
-									dl.setText(String.valueOf((int) audioStats.getDownloadBandwidth()) + " kbits/s");
-									ul.setText(String.valueOf((int) audioStats.getUploadBandwidth()) + " kbits/s");
-									ice.setText(audioStats.getIceState().toString());
-									
-									videoResolutionLayout.setVisibility(View.GONE);
-								}
+								dl.setText(String.valueOf((int) audioStats.getDownloadBandwidth()) + " kbits/s");
+								ul.setText(String.valueOf((int) audioStats.getUploadBandwidth()) + " kbits/s");
+								ice.setText(audioStats.getIceState().toString());
 							}
 						}
 					}

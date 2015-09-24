@@ -41,10 +41,6 @@
 	<PreferenceCategory
 	    android:title="@string/pref_preferences">
 
-		<CheckBoxPreference
-			android:title="@string/pref_video_enable_title"
-			android:key="@string/pref_video_enable_key"/>
-
 		<PreferenceScreen
 		    android:title="@string/pref_audio">
 
@@ -76,62 +72,6 @@
 			<PreferenceCategory
 				android:title="@string/pref_codecs"
 				android:key="@string/pref_codecs_key"/>
-
-		</PreferenceScreen>
-
-		<PreferenceScreen
-		    android:title="@string/pref_video"
-		    android:key="@string/pref_video_key"
-		    android:dependency="@string/pref_video_enable_key"
-		    android:shouldDisableView="true">
-
-			<CheckBoxPreference
-				android:title="@string/pref_video_use_front_camera_title"
-			    android:key="@string/pref_video_use_front_camera_key"
-				android:dependency="@string/pref_video_enable_key"
-				android:layout="@layout/hidden"/>
-
-			<CheckBoxPreference
-				android:title="@string/pref_video_initiate_call_with_video_title"
-			    android:key="@string/pref_video_initiate_call_with_video_key"
-				android:summary="@string/pref_video_initiate_call_with_video"
-				android:dependency="@string/pref_video_enable_key"/>
-
-			<CheckBoxPreference
-				android:title="@string/pref_video_automatically_share_my_video_title"
-				android:key="@string/pref_video_automatically_share_my_video_key"
-				android:summary="@string/pref_video_automatically_share_my_video"
-				android:dependency="@string/pref_video_enable_key"
-				android:layout="@layout/hidden"/>
-
-		    <CheckBoxPreference
-				android:title="@string/pref_video_automatically_accept_video_title"
-				android:key="@string/pref_video_automatically_accept_video_key"
-				android:summary="@string/pref_video_automatically_accept_video"
-				android:dependency="@string/pref_video_enable_key"/>
-
-			<ListPreference
-				android:title="Video preset"
-				android:key="@string/pref_video_preset_key"/>
-
-			<ListPreference
-			    android:title="@string/pref_preferred_video_size"
-				android:key="@string/pref_preferred_video_size_key"/>
-
-			<ListPreference
-				android:title="Preferred FPS"
-				android:key="@string/pref_preferred_video_fps_key"/>
-
-			<EditTextPreference
-				android:title="@string/pref_bandwidth_limit"
-				android:key="@string/pref_bandwidth_limit_key"
-				android:numeric="integer" />
-
-				<PreferenceCategory
-					android:title="@string/pref_video_codecs_title"
-					android:key="@string/pref_video_codecs_key"
-				    android:dependency="@string/pref_video_enable_key"
-					android:shouldDisableView="true"/>
 
 		</PreferenceScreen>
 
@@ -184,12 +124,6 @@
 			    android:title="@string/pref_audio_port_title"
 			    android:key="@string/pref_audio_port_key"
 			    android:summary="@string/pref_audio_port_description"
-				android:layout="@layout/hidden"/>
-
-			<EditTextPreference
-			    android:title="@string/pref_video_port_title"
-			    android:key="@string/pref_video_port_key"
-			    android:summary="@string/pref_video_port_description"
 				android:layout="@layout/hidden"/>
 
 			<ListPreference

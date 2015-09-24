@@ -55,11 +55,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.Fragment.SavedState;
 import android.support.v4.app.FragmentActivity;
@@ -220,11 +218,7 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 				if (state == State.IncomingReceived) {
 					startActivity(new Intent(LinphoneActivity.instance(), IncomingCallActivity.class));
 				} else if (state == State.OutgoingInit) {
-					if (call.getCurrentParamsCopy().getVideoEnabled()) {
-						startVideoActivity(call);
-					} else {
-						startIncallActivity(call);
-					}
+					startIncallActivity(call);
 				} else if (state == State.CallEnd || state == State.Error || state == State.CallReleased) {
 					// Convert LinphoneCore message for internalization
 					if (message != null && call.getReason() == Reason.Declined) {
@@ -896,13 +890,6 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 		changeCurrentFragment(FragmentsAvailable.DIALER, null);
 	}
 
-	public void startVideoActivity(LinphoneCall currentCall) {
-		Intent intent = new Intent(this, InCallActivity.class);
-		intent.putExtra("VideoEnabled", true);
-		startOrientationSensor();
-		startActivityForResult(intent, CALL_ACTIVITY);
-	}
-
 	public void startIncallActivity(LinphoneCall currentCall) {
 		Intent intent = new Intent(this, InCallActivity.class);
 		intent.putExtra("VideoEnabled", false);
@@ -967,10 +954,6 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 			LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
 			if (lc != null) {
 				lc.setDeviceRotation(rotation);
-				LinphoneCall currentCall = lc.getCurrentCall();
-				if (currentCall != null && currentCall.cameraEnabled() && currentCall.getCurrentParamsCopy().getVideoEnabled()) {
-					lc.updateCall(currentCall, null);
-				}
 			}
 		}
 	}
@@ -991,8 +974,6 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 			LinphoneCall call = LinphoneManager.getLc().getCalls()[0];
 			if (call.getState() == LinphoneCall.State.IncomingReceived) {
 				startActivity(new Intent(LinphoneActivity.this, IncomingCallActivity.class));
-			} else if (call.getCurrentParamsCopy().getVideoEnabled()) {
-				startVideoActivity(call);
 			} else {
 				startIncallActivity(call);
 			}
@@ -1102,14 +1083,9 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 				if (callState == State.IncomingReceived) {
 					startActivity(new Intent(this, IncomingCallActivity.class));
 				} else {
-
-						if (call.getCurrentParamsCopy().getVideoEnabled()) {
-							startVideoActivity(call);
-						} else {
-							startIncallActivity(call);
-						}
-					}
+					startIncallActivity(call);
 				}
+			}
 		}
 	}
 
@@ -1156,11 +1132,7 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 		} else if (extras != null && extras.getBoolean("Notification", false)) {
 			if (LinphoneManager.getLc().getCallsNb() > 0) {
 				LinphoneCall call = LinphoneManager.getLc().getCalls()[0];
-				if (call.getCurrentParamsCopy().getVideoEnabled()) {
-					startVideoActivity(call);
-				} else {
-					startIncallActivity(call);
-				}
+				startIncallActivity(call);
 			}
 		} else {
 			if (dialerFragment != null) {
@@ -1180,11 +1152,7 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 					LinphoneCall call = calls[0];
 
 					if (call != null && call.getState() != LinphoneCall.State.IncomingReceived) {
-						if (call.getCurrentParamsCopy().getVideoEnabled()) {
-							startVideoActivity(call);
-						} else {
-							startIncallActivity(call);
-						}
+						startIncallActivity(call);
 					}
 				}
 

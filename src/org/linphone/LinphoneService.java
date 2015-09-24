@@ -172,20 +172,6 @@ public final class LinphoneService extends Service {
 				if (state == LinphoneCall.State.IncomingReceived) {
 					onIncomingReceived();
 				}
-				
-				if (state == State.CallUpdatedByRemote) {
-					// If the correspondent proposes video while audio call
-					boolean remoteVideo = call.getRemoteParams().getVideoEnabled();
-					boolean localVideo = call.getCurrentParamsCopy().getVideoEnabled();
-					boolean autoAcceptCameraPolicy = LinphonePreferences.instance().shouldAutomaticallyAcceptVideoRequests();
-					if (remoteVideo && !localVideo && !autoAcceptCameraPolicy && !LinphoneManager.getLc().isInConference()) {
-						try {
-							LinphoneManager.getLc().deferCallUpdate(call);
-						} catch (LinphoneCoreException e) {
-							e.printStackTrace();
-						}
-					}
-				}
 
 				if (state == State.StreamsRunning) {
 					// Workaround bug current call seems to be updated after state changed to streams running
@@ -275,7 +261,7 @@ public final class LinphoneService extends Service {
 	};
 		
 
-	private enum IncallIconState {INCALL, PAUSE, VIDEO, IDLE}
+	private enum IncallIconState {INCALL, PAUSE, IDLE}
 	private IncallIconState mCurrentIncallIconState = IncallIconState.IDLE;
 	private synchronized void setIncallIcon(IncallIconState state) {
 		if (state == mCurrentIncallIconState) return;
@@ -296,10 +282,6 @@ public final class LinphoneService extends Service {
 			inconId = R.drawable.conf_status_paused;
 			notificationTextId = R.string.incall_notif_paused;
 			break;
-		case VIDEO:
-			inconId = R.drawable.conf_video;
-			notificationTextId = R.string.incall_notif_video;
-			break;	
 		default:
 			throw new IllegalArgumentException("Unknown state " + state);
 		}
@@ -332,12 +314,7 @@ public final class LinphoneService extends Service {
 	public void refreshIncallIcon(LinphoneCall currentCall) {
 		LinphoneCore lc = LinphoneManager.getLc();
 		if (currentCall != null) {
-			if (currentCall.getCurrentParamsCopy().getVideoEnabled() && currentCall.cameraEnabled()) {
-				// checking first current params is mandatory
-				setIncallIcon(IncallIconState.VIDEO);
-			} else {
-				setIncallIcon(IncallIconState.INCALL);
-			}
+			setIncallIcon(IncallIconState.INCALL);
 		} else if (lc.getCallsNb() == 0) {
 			setIncallIcon(IncallIconState.IDLE);
 		}  else if (lc.isInConference()) {

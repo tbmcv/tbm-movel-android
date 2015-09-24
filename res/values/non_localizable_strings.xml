@@ -34,8 +34,6 @@
 	<string name="pref_sipaccounts_key">pref_sipaccounts_key</string>
 	<string name="setup_key">setup_key</string>
 	<string name="pref_add_account_key">pref_add_account_key</string>
-	<string name="pref_video_key">pref_video_key</string>
-    <string name="pref_video_codecs_key">pref_video_codecs_key</string>
 	<string name="pref_linphone_friend_key">pref_linphone_friend_key</string>
 
 	<string name="pref_transport_key">pref_transport_key</string>
@@ -59,17 +57,6 @@
 
     <string name="pref_wifi_only_key">pref_wifi_only_key</string>
 
-    <string name="pref_video_use_front_camera_key">pref_video_use_front_camera_key</string>
-    <string name="pref_video_codec_h263_key">pref_video_codec_h263_key</string>
-    <string name="pref_video_codec_mpeg4_key">pref_video_codec_mpeg4_key</string>
-    <string name="pref_video_codec_h264_key">pref_video_codec_h264_key</string>
-    <string name="pref_video_automatically_share_my_video_key">pref_video_automatically_share_my_video_key</string>
-    <string name="pref_video_automatically_accept_video_key">pref_video_automatically_accept_video_key</string>
-    <string name="pref_video_initiate_call_with_video_key">pref_video_initiate_call_with_video_key</string>
-    <string name="pref_video_enable_key">pref_video_enable_key</string>
-	<string name="pref_video_preset_key">pref_video_preset_key</string>
-	<string name="pref_preferred_video_size_key">pref_preferred_video_size_key</string>
-	<string name="pref_preferred_video_fps_key">pref_preferred_video_fps_key</string>
 	<string name="pref_bandwidth_limit_key">pref_bandwidth_limit_key</string>
     <string name="pref_animation_enable_key">pref_animation_enable_key</string>
     <string name="pref_escape_plus_key">pref_escape_plus_key</string>
@@ -95,7 +82,6 @@
     <string name="pref_codecs_key">pref_codecs_key</string>
     <string name="pref_stun_server_key">pref_stun_server_key</string>
     <string name="pref_ice_enable_key">pref_ice_enable_key</string>
-    <string name="pref_video_codec_vp8_key">pref_video_codec_vp8_key</string>
     <string name="pref_media_encryption_key">pref_media_encryption_key</string>
     <string name="pref_media_encryption_key_none">none</string>
     <string name="pref_media_encryption_key_srtp">srtp</string>
@@ -116,7 +102,6 @@
 	<string name="pref_image_sharing_server_key">pref_image_sharing_server_key</string>
 	<string name="pref_remote_provisioning_key">pref_remote_provisioning_key</string>
 
-    <string name="pref_video_port_key">pref_video_port_key</string>
     <string name="pref_audio_port_key">pref_audio_port_key</string>
     <string name="pref_incoming_call_timeout_key">pref_incoming_expire_key</string>
 
@@ -138,9 +123,6 @@
 	<string name="pref_manage_key">pref_manage_key</string>
 
 
-	<string name="pref_video_codec_h263_title">H263</string>
-	<string name="pref_video_codec_mpeg4_title">MP4V-ES</string>
-	<string name="pref_video_codec_h264_title">H264</string>
 	<string name="pref_codec_pcma">pcma</string>
 	<string name="pref_codec_pcmu">pcmu</string>
 	<string name="pref_codec_gsm">gsm</string>
@@ -168,7 +150,6 @@
 		<item>Simple</item>
 		<item>Stateful</item>
 	</string-array>
-	<string name="pref_video_codec_vp8_title">VP8</string>
 	<string name="media_encryption_srtp">SRTP</string>
 	<string name="media_encryption_zrtp">ZRTP</string>
     <string name="media_encryption_dtls">DTLS</string>

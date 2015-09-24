@@ -32,7 +32,6 @@ import org.linphone.ui.LinphoneSliders;
 import org.linphone.ui.LinphoneSliders.LinphoneSliderTriggered;
 
 import android.app.Activity;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.WindowManager;
@@ -183,12 +182,7 @@ public class IncomingCallActivity extends Activity implements LinphoneSliderTrig
 			if (!LinphoneActivity.isInstanciated()) {
 				return;
 			}
-			final LinphoneCallParams remoteParams = mCall.getRemoteParams();
-			if (remoteParams != null && remoteParams.getVideoEnabled() && LinphonePreferences.instance().shouldAutomaticallyAcceptVideoRequests()) {
-				LinphoneActivity.instance().startVideoActivity(mCall);
-			} else {
-				LinphoneActivity.instance().startIncallActivity(mCall);
-			}
+			LinphoneActivity.instance().startIncallActivity(mCall);
 		}
 	}
 

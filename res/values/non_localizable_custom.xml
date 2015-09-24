@@ -17,7 +17,6 @@
     <bool name="display_about_in_settings">true</bool>
     <bool name="exit_button_on_dialer">false</bool>
 
-    <bool name="hide_camera_settings">false</bool>
     <bool name="replace_wizard_with_old_interface">false</bool>
     <bool name="hide_wizard">false</bool>
     <string name="setup_forced_proxy"></string>
@@ -52,7 +51,6 @@
 	<bool name="use_linphone_tag">true</bool>
 
 	<bool name="display_call_stats">true</bool>
-	<bool name="show_current_calls_above_video">false</bool>
 	<bool name="disable_options_in_call">false</bool>
 
 	<!-- Behavior Settings -->

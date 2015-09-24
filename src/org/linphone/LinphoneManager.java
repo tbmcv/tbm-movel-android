@@ -69,8 +69,6 @@ import org.linphone.core.SubscriptionState;
 import org.linphone.core.TunnelConfig;
 import org.linphone.mediastream.Log;
 import org.linphone.mediastream.Version;
-import org.linphone.mediastream.video.capture.hwconf.AndroidCameraConfiguration;
-import org.linphone.mediastream.video.capture.hwconf.AndroidCameraConfiguration.AndroidCamera;
 import org.linphone.mediastream.video.capture.hwconf.Hacks;
 
 import android.annotation.SuppressLint;
@@ -413,15 +411,7 @@ public class LinphoneManager implements LinphoneCoreListener, LinphoneChatMessag
 
 		if (mLc.isNetworkReachable()) {
 			try {
-				if (Version.isVideoCapable()) {
-					boolean prefVideoEnable = mPrefs.isVideoEnabled();
-					boolean prefInitiateWithVideo = mPrefs.shouldInitiateVideoCall();
-					CallManager.getInstance().inviteAddress(lAddress, prefVideoEnable && prefInitiateWithVideo, isLowBandwidthConnection);
-				} else {
-					CallManager.getInstance().inviteAddress(lAddress, false, isLowBandwidthConnection);
-				}
-
-
+				CallManager.getInstance().inviteAddress(lAddress, isLowBandwidthConnection);
 			} catch (LinphoneCoreException e) {
 				return;
 			}
@@ -430,18 +420,6 @@ public class LinphoneManager implements LinphoneCoreListener, LinphoneChatMessag
 		} else {
 			Log.e("Error: " + getString(R.string.error_network_unreachable));
 		}
-	}
-
-	private void resetCameraFromPreferences() {
-		boolean useFrontCam = mPrefs.useFrontCam();
-
-		int camId = 0;
-		AndroidCamera[] cameras = AndroidCameraConfiguration.retrieveCameras();
-		for (AndroidCamera androidCamera : cameras) {
-			if (androidCamera.frontFacing == useFrontCam)
-				camId = androidCamera.id;
-		}
-		LinphoneManager.getLc().setVideoDevice(camId);
 	}
 
 	public static interface AddressType {
@@ -456,29 +434,6 @@ public class LinphoneManager implements LinphoneCoreListener, LinphoneChatMessag
 		public void onWrongDestinationAddress();
 		public void onCannotGetCallParameters();
 		public void onAlreadyInCall();
-	}
-
-	public boolean toggleEnableCamera() {
-		if (mLc.isIncall()) {
-			boolean enabled = !mLc.getCurrentCall().cameraEnabled();
-			enableCamera(mLc.getCurrentCall(), enabled);
-			return enabled;
-		}
-		return false;
-	}
-
-	public void enableCamera(LinphoneCall call, boolean enable) {
-		if (call != null) {
-			call.enableCamera(enable);
-			if (mServiceContext.getResources().getBoolean(R.bool.enable_call_notification))
-				LinphoneService.instance().refreshIncallIcon(mLc.getCurrentCall());
-		}
-	}
-
-	public void sendStaticImage(boolean send) {
-		if (mLc.isIncall()) {
-			enableCamera(mLc.getCurrentCall(), !send);
-		}
 	}
 
 	public void playDtmf(ContentResolver r, char dtmf) {
@@ -653,8 +608,7 @@ public class LinphoneManager implements LinphoneCoreListener, LinphoneChatMessag
 		if (Version.sdkAboveOrEqual(Version.API11_HONEYCOMB_30)) {
 			BluetoothManager.getInstance().initBluetooth();
 		}
-        resetCameraFromPreferences();
-        
+
 		mLc.setFileTransferServer(LinphonePreferences.instance().getSharingPictureServerUrl());
 	}
 
@@ -687,13 +641,6 @@ public class LinphoneManager implements LinphoneCoreListener, LinphoneChatMessag
 		lOutputStream.flush();
 		lOutputStream.close();
 		lInputStream.close();
-	}
-
-	public boolean detectVideoCodec(String mime) {
-		for (PayloadType videoCodec : mLc.getVideoCodecs()) {
-			if (mime.equals(videoCodec.getMime())) return true;
-		}
-		return false;
 	}
 
 	public boolean detectAudioCodec(String mime){
@@ -1126,20 +1073,6 @@ public class LinphoneManager implements LinphoneCoreListener, LinphoneChatMessag
 
 			return r.getString(R.string.unknown_incoming_call_name);
 		}
-	}
-
-	public static boolean reinviteWithVideo() {
-		return CallManager.getInstance().reinviteWithVideo();
-	}
-
-	/**
-	 *
-	 * @return false if already in video call.
-	 */
-	public boolean addVideo() {
-		LinphoneCall call = mLc.getCurrentCall();
-		enableCamera(call, true);
-		return reinviteWithVideo();
 	}
 
 	public boolean acceptCallIfIncomingPending() throws LinphoneCoreException {

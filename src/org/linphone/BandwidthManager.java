@@ -48,18 +48,8 @@ public class BandwidthManager {
 
 	public void updateWithProfileSettings(LinphoneCore lc, LinphoneCallParams callParams) {
 		if (callParams != null) { // in call
-			// Update video parm if
-			if (!isVideoPossible()) { // NO VIDEO
-				callParams.setVideoEnabled(false);
-				callParams.setAudioBandwidth(40);
-			} else {
-				callParams.setVideoEnabled(true);
-				callParams.setAudioBandwidth(0); // disable limitation
-			}
+			callParams.setVideoEnabled(false);
+			callParams.setAudioBandwidth(40);
 		}
-	}
-
-	public boolean isVideoPossible() {
-		return currentProfile != LOW_BANDWIDTH;
 	}
 }
