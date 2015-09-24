@@ -30,9 +30,7 @@ public enum FragmentsAvailable {
 	EDIT_CONTACT,
 	ABOUT,
 	ACCOUNT_SETTINGS,
-	SETTINGS,
-	CHATLIST,
-	CHAT;
+	SETTINGS;
 
 	public boolean shouldAnimate() {
 		return true;
@@ -58,19 +56,13 @@ public enum FragmentsAvailable {
 		case DIALER:
 			return EDIT_CONTACT.isRightOf(fragment) || fragment == EDIT_CONTACT;
 			
-		case CHATLIST:
-			return DIALER.isRightOf(fragment) || fragment == DIALER;
-			
 		case SETTINGS:
-			return CHATLIST.isRightOf(fragment) || fragment == CHATLIST;
-		
+			return DIALER.isRightOf(fragment) || fragment == DIALER;
+
 		case ABOUT:
 		case ACCOUNT_SETTINGS:
 			return SETTINGS.isRightOf(fragment) || fragment == SETTINGS;
-			
-		case CHAT:
-			return CHATLIST.isRightOf(fragment) || fragment == CHATLIST;
-			
+
 		default:
 			return false;
 		}
@@ -86,10 +78,7 @@ public enum FragmentsAvailable {
 			
 		case EDIT_CONTACT:
 			return fragment == CONTACT || fragment == CONTACTS;
-			
-		case CHAT:
-			return fragment == CHATLIST;
-			
+
 		default:
 			return false;
 		}

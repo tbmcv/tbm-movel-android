@@ -85,7 +85,6 @@ public class PreferencesMigrator {
 		mNewPrefs.setBackgroundModeEnabled(getPrefBoolean(R.string.pref_background_mode_key, true));
 		mNewPrefs.setAnimationsEnabled(getPrefBoolean(R.string.pref_animation_enable_key, false));
 		mNewPrefs.setAutoStart(getPrefBoolean(R.string.pref_autostart_key, false));
-		mNewPrefs.setSharingPictureServerUrl(getPrefString(R.string.pref_image_sharing_server_key, null));
 		mNewPrefs.setRemoteProvisioningUrl(getPrefString(R.string.pref_remote_provisioning_key, null));
 		
 		doAccountsMigration();
@@ -102,14 +101,6 @@ public class PreferencesMigrator {
 		}
 	}
 
-	public void migrateSharingServerUrlIfNeeded() {
-		String currentUrl = mNewPrefs.getConfig().getString("app", "sharing_server", null);
-		if (currentUrl == null || currentUrl.equals("https://www.linphone.org:444/upload.php")) {
-			mNewPrefs.setSharingPictureServerUrl("https://www.linphone.org:444/lft.php");
-			mNewPrefs.getConfig().sync();
-		}
-	}
-	
 	private void doAccountsMigration() {
 		LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
 		lc.clearAuthInfos();

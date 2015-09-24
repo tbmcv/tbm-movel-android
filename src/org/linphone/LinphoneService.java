@@ -28,7 +28,6 @@ import org.linphone.core.LinphoneCall.State;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCore.GlobalState;
 import org.linphone.core.LinphoneCore.RegistrationState;
-import org.linphone.core.LinphoneCoreException;
 import org.linphone.core.LinphoneCoreFactory;
 import org.linphone.core.LinphoneCoreListenerBase;
 import org.linphone.core.LinphoneProxyConfig;
@@ -348,52 +347,6 @@ public final class LinphoneService extends Service {
 	
 	public void removeCustomNotification() {
 		mNM.cancel(CUSTOM_NOTIF_ID);
-		resetIntentLaunchedOnNotificationClick();
-	}
-	
-	public void displayMessageNotification(String fromSipUri, String fromName, String message) {
-		Intent notifIntent = new Intent(this, LinphoneActivity.class);
-		notifIntent.putExtra("GoToChat", true);
-		notifIntent.putExtra("ChatContactSipUri", fromSipUri);
-		
-		PendingIntent notifContentIntent = PendingIntent.getActivity(this, 0, notifIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-		
-		if (fromName == null) {
-			fromName = fromSipUri;
-		}
-		
-		if (mMsgNotif == null) {
-			mMsgNotifCount = 1;
-		} else {
-			mMsgNotifCount++;
-		}
-		
-		Uri pictureUri = null;
-		try {
-			Contact contact = ContactsManager.getInstance().findContactWithAddress(getContentResolver(), LinphoneCoreFactory.instance().createLinphoneAddress(fromSipUri));
-			if (contact != null)
-				pictureUri = contact.getPhotoUri();
-		} catch (LinphoneCoreException e1) {
-			Log.e("Cannot parse from address ", e1);
-		}
-		
-		Bitmap bm = null;
-		if (pictureUri != null) {
-			try {
-				bm = MediaStore.Images.Media.getBitmap(getContentResolver(), pictureUri);
-			} catch (Exception e) {
-				bm = BitmapFactory.decodeResource(getResources(), R.drawable.unknown_small);
-			}
-		} else {
-			bm = BitmapFactory.decodeResource(getResources(), R.drawable.unknown_small);
-		}
-		mMsgNotif = Compatibility.createMessageNotification(getApplicationContext(), mMsgNotifCount, fromName, message, bm, notifContentIntent);
-		
-		notifyWrapper(MESSAGE_NOTIF_ID, mMsgNotif);
-	}
-	
-	public void removeMessageNotification() {
-		mNM.cancel(MESSAGE_NOTIF_ID);
 		resetIntentLaunchedOnNotificationClick();
 	}
 

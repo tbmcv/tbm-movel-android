@@ -116,35 +116,8 @@
         <RelativeLayout
 		    android:layout_width="match_parent"
 		    android:layout_height="wrap_content"
-		    android:id="@+id/chatRow"
-		    android:layout_below="@id/callBackRow"
-	    	android:layout_marginTop="5dp"
-            android:paddingLeft="20dp"
-            android:paddingRight="20dp">
-            
-	        <ImageView
-	            android:contentDescription="@string/content_description_chat"
-	            android:id="@+id/chat"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:adjustViewBounds="true"
-	            android:src="@drawable/button"
-		    	android:layout_centerInParent="true" />
-	        
-	        <TextView 
-			    android:layout_width="wrap_content"
-			    android:layout_height="wrap_content"
-			    android:text="@string/chat"
-		    	android:textColor="@android:color/black"
-		    	android:layout_centerInParent="true" />
-        
-        </RelativeLayout>
-        
-        <RelativeLayout
-		    android:layout_width="match_parent"
-		    android:layout_height="wrap_content"
 		    android:id="@+id/addContactRow"
-		    android:layout_below="@id/chatRow"
+		    android:layout_below="@id/callBackRow"
 	    	android:layout_marginTop="5dp"
             android:paddingLeft="20dp"
             android:paddingRight="20dp">

@@ -939,14 +939,6 @@ public class LinphonePreferences {
 		getConfig().setBool("app", "auto_start", autoStartEnabled);
 	}
 
-	public String getSharingPictureServerUrl() {
-		return getConfig().getString("app", "sharing_server", null);
-	}
-
-	public void setSharingPictureServerUrl(String url) {
-		getConfig().setString("app", "sharing_server", url);
-	}
-
 	public void setRemoteProvisioningUrl(String url) {
 		if (url != null && url.length() == 0) {
 			url = null;

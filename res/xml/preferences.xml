@@ -161,10 +161,6 @@
 			    android:layout="@layout/hidden"/>
 
 			 <EditTextPreference
-				android:title="@string/pref_image_sharing_server_title"
-				android:key="@string/pref_image_sharing_server_key"/>
-
-			 <EditTextPreference
 				android:title="@string/pref_remote_provisioning_title"
 				android:key="@string/pref_remote_provisioning_key"/>
 

@@ -94,7 +94,6 @@
 	<string name="pref_push_notification_key">pref_push_notification_key</string>
 
 	<string name="pref_auto_accept_friends_key">pref_auto_accept_friends_key</string>
-	<string name="pref_image_sharing_server_key">pref_image_sharing_server_key</string>
 	<string name="pref_remote_provisioning_key">pref_remote_provisioning_key</string>
 
     <string name="pref_audio_port_key">pref_audio_port_key</string>
@@ -110,8 +109,6 @@
 	<string name="pref_sipinfo_dtmf_key">pref_sipinfo_dtmf_key</string>
 	<string name="pref_voice_mail_key">pref_voice_mail_key</string>
 	<string name="pref_upnp_enable_key">pref_upnp_enable_key</string>
-
-	<string name="pref_first_time_linphone_chat_storage">pref_first_time_linphone_chat_storage</string>
 
 	<string name="pref_sipaccount_key">pref_sipaccount_key</string>
 	<string name="pref_advanced_key">pref_advanced_key</string>

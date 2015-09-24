@@ -169,10 +169,6 @@ public class SettingsFragment extends PreferencesListFragment {
 			emptyAndHidePreference(R.string.pref_linphone_friend_key);
 		}
 
-		if (getResources().getBoolean(R.bool.disable_chat)) {
-			findPreference(getString(R.string.pref_image_sharing_server_key)).setLayoutResource(R.layout.hidden);
-		}
-
 		if (!getResources().getBoolean(R.bool.enable_push_id)) {
 			hidePreference(R.string.pref_push_notification_key);
 		}
@@ -669,7 +665,6 @@ public class SettingsFragment extends PreferencesListFragment {
 		((CheckBoxPreference)findPreference(getString(R.string.pref_background_mode_key))).setChecked(mPrefs.isBackgroundModeEnabled());
 		((CheckBoxPreference)findPreference(getString(R.string.pref_animation_enable_key))).setChecked(mPrefs.areAnimationsEnabled());
 		((CheckBoxPreference)findPreference(getString(R.string.pref_autostart_key))).setChecked(mPrefs.isAutoStartEnabled());
-		setPreferenceDefaultValueAndSummary(R.string.pref_image_sharing_server_key, mPrefs.getSharingPictureServerUrl());
 		setPreferenceDefaultValueAndSummary(R.string.pref_remote_provisioning_key, mPrefs.getRemoteProvisioningUrl());
 		setPreferenceDefaultValueAndSummary(R.string.pref_display_name_key, mPrefs.getDefaultDisplayName());
 		setPreferenceDefaultValueAndSummary(R.string.pref_user_name_key, mPrefs.getDefaultUsername());
@@ -708,16 +703,6 @@ public class SettingsFragment extends PreferencesListFragment {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean value = (Boolean) newValue;
 				mPrefs.setAutoStart(value);
-				return true;
-			}
-		});
-
-		findPreference(getString(R.string.pref_image_sharing_server_key)).setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-			@Override
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				String value = (String) newValue;
-				mPrefs.setSharingPictureServerUrl(value);
-				preference.setSummary(value);
 				return true;
 			}
 		});

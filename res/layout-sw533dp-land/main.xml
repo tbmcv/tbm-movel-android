@@ -158,17 +158,6 @@
 
             <include layout="@layout/menu_chat_button" />
 
-            <TextView
-                android:id="@+id/missedChats"
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:layout_alignParentRight="true"
-                android:layout_alignParentTop="true"
-                android:background="@drawable/missed_calls_bg"
-                android:gravity="center"
-                android:textSize="20dp"
-                android:visibility="gone" />
-            
         </RelativeLayout>
 
         <include layout="@layout/menu_settings_button" />
