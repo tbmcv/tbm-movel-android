@@ -19,14 +19,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.linphone.core.LinphoneAddress;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCore.AdaptiveRateAlgorithm;
 import org.linphone.core.LinphoneCore.EcCalibratorStatus;
-import org.linphone.core.LinphoneCore.MediaEncryption;
 import org.linphone.core.LinphoneCoreException;
 import org.linphone.core.LinphoneCoreFactory;
 import org.linphone.core.LinphoneCoreListenerBase;
@@ -362,54 +360,6 @@ public class SettingsFragment extends PreferencesListFragment {
 		}
 	}
 
-	private void initMediaEncryptionPreference(ListPreference pref) {
-		List<CharSequence> entries = new ArrayList<CharSequence>();
-		List<CharSequence> values = new ArrayList<CharSequence>();
-		entries.add(getString(R.string.media_encryption_none));
-		values.add(getString(R.string.pref_media_encryption_key_none));
-
-		LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
-		if (lc == null || getResources().getBoolean(R.bool.disable_all_security_features_for_markets)) {
-			setListPreferenceValues(pref, entries, values);
-			return;
-		}
-
-		boolean hasZrtp = lc.mediaEncryptionSupported(MediaEncryption.ZRTP);
-		boolean hasSrtp = lc.mediaEncryptionSupported(MediaEncryption.SRTP);
-		boolean hasDtls = lc.mediaEncryptionSupported(MediaEncryption.DTLS);
-
-		if (!hasSrtp && !hasZrtp && !hasDtls) {
-			pref.setEnabled(false);
-		} else {
-			if (hasSrtp){
-				entries.add(getString(R.string.media_encryption_srtp));
-				values.add(getString(R.string.pref_media_encryption_key_srtp));
-			}
-			if (hasZrtp){
-				entries.add(getString(R.string.media_encryption_zrtp));
-				values.add(getString(R.string.pref_media_encryption_key_zrtp));
-			}
-			if (hasDtls){
-				entries.add(getString(R.string.media_encryption_dtls));
-				values.add(getString(R.string.pref_media_encryption_key_dtls));
-
-			}
-			setListPreferenceValues(pref, entries, values);
-		}
-
-		MediaEncryption value = mPrefs.getMediaEncryption();
-		pref.setSummary(value.toString());
-
-		String key = getString(R.string.pref_media_encryption_key_none);
-		if (value.toString().equals(getString(R.string.media_encryption_srtp)))
-			key = getString(R.string.pref_media_encryption_key_srtp);
-		else if (value.toString().equals(getString(R.string.media_encryption_zrtp)))
-			key = getString(R.string.pref_media_encryption_key_zrtp);
-		else if (value.toString().equals(getString(R.string.media_encryption_dtls)))
-			key = getString(R.string.pref_media_encryption_key_dtls);
-		pref.setValue(key);
-	}
-
 	private static void setListPreferenceValues(ListPreference pref, List<CharSequence> entries, List<CharSequence> values) {
 		CharSequence[] contents = new CharSequence[entries.size()];
 		entries.toArray(contents);
@@ -599,8 +549,6 @@ public class SettingsFragment extends PreferencesListFragment {
 	}
 
 	private void initNetworkSettings() {
-		initMediaEncryptionPreference((ListPreference) findPreference(getString(R.string.pref_media_encryption_key)));
-
 		((CheckBoxPreference) findPreference(getString(R.string.pref_wifi_only_key))).setChecked(mPrefs.isWifiOnlyEnabled());
 
 		// Disable UPnP if ICE si enabled, or disable ICE if UPnP is enabled
@@ -695,24 +643,6 @@ public class SettingsFragment extends PreferencesListFragment {
 
 				mPrefs.setSipPort(port);
 				preference.setSummary(newValue.toString());
-				return true;
-			}
-		});
-
-		findPreference(getString(R.string.pref_media_encryption_key)).setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-			@Override
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				String value = newValue.toString();
-				MediaEncryption menc = MediaEncryption.None;
-				if (value.equals(getString(R.string.pref_media_encryption_key_srtp)))
-					menc = MediaEncryption.SRTP;
-				else if (value.equals(getString(R.string.pref_media_encryption_key_zrtp)))
-					menc = MediaEncryption.ZRTP;
-				else if (value.equals(getString(R.string.pref_media_encryption_key_dtls)))
-					menc = MediaEncryption.DTLS;
-				mPrefs.setMediaEncryption(menc);
-
-				preference.setSummary(mPrefs.getMediaEncryption().toString());
 				return true;
 			}
 		});

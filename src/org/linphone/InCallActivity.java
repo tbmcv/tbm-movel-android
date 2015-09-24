@@ -148,14 +148,6 @@ public class InCallActivity extends FragmentActivity implements OnClickListener 
         		
         		transfer.setEnabled(LinphoneManager.getLc().getCurrentCall() != null);
         	}
-        	
-        	@Override
-        	public void callEncryptionChanged(LinphoneCore lc, final LinphoneCall call, boolean encrypted, String authenticationToken) {
-        		if (status != null) {
-        			status.refreshStatusItems(call);
-        		}
-        	}
-        	
         };
         
         if (findViewById(R.id.fragmentContainer) != null) {

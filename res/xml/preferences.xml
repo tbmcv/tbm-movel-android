@@ -126,10 +126,6 @@
 			    android:summary="@string/pref_audio_port_description"
 				android:layout="@layout/hidden"/>
 
-			<ListPreference
-			    android:title="@string/pref_media_encryption"
-				android:key="@string/pref_media_encryption_key"/>
-
 			<CheckBoxPreference
 				android:title="@string/pref_push_notification"
 			    android:key="@string/pref_push_notification_key"/>

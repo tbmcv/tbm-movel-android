@@ -594,9 +594,5 @@ public final class LinphoneService extends Service {
 
 	public void tryingNewOutgoingCallButWrongDestinationAddress() {
 	}
-
-	public void onCallEncryptionChanged(final LinphoneCall call, final boolean encrypted,
-			final String authenticationToken) {
-	}
 }
 

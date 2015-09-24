@@ -27,20 +27,16 @@ import org.linphone.core.LinphoneCallParams;
 import org.linphone.core.LinphoneCallStats;
 import org.linphone.core.LinphoneContent;
 import org.linphone.core.LinphoneCore;
-import org.linphone.core.LinphoneCore.MediaEncryption;
 import org.linphone.core.LinphoneCore.RegistrationState;
 import org.linphone.core.LinphoneCoreListenerBase;
 import org.linphone.core.LinphoneEvent;
 import org.linphone.core.LinphoneProxyConfig;
 import org.linphone.core.PayloadType;
-import org.linphone.mediastream.Log;
 import org.linphone.ui.SlidingDrawer;
 import org.linphone.ui.SlidingDrawer.OnDrawerOpenListener;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
@@ -62,7 +58,7 @@ public class StatusFragment extends Fragment {
 	private Handler mHandler = new Handler();
 	private Handler refreshHandler = new Handler();
 	private TextView statusText, exit, voicemailCount;
-	private ImageView statusLed, callQuality, encryption, background;
+	private ImageView statusLed, callQuality, background;
 	private ListView sliderContentAccounts;
 	private TableLayout callStats;
 	private SlidingDrawer drawer;
@@ -81,7 +77,6 @@ public class StatusFragment extends Fragment {
 		statusText = (TextView) view.findViewById(R.id.statusText);
 		statusLed = (ImageView) view.findViewById(R.id.statusLed);
 		callQuality = (ImageView) view.findViewById(R.id.callQuality);
-		encryption = (ImageView) view.findViewById(R.id.encryption);
 		background = (ImageView) view.findViewById(R.id.background);
 //		allAccountsLed = (LinearLayout) view.findViewById(R.id.moreStatusLed);
 		callStats = (TableLayout) view.findViewById(R.id.callStats);
@@ -370,7 +365,6 @@ public class StatusFragment extends Fragment {
 			}
 			
 			statusText.setVisibility(View.GONE);
-			encryption.setVisibility(View.VISIBLE);
 			exit.setVisibility(View.GONE);
 			
 			// We are obviously connected
@@ -379,7 +373,6 @@ public class StatusFragment extends Fragment {
 		} else {
 			statusText.setVisibility(View.VISIBLE);
 			background.setVisibility(View.VISIBLE);
-			encryption.setVisibility(View.GONE);
 			if (getResources().getBoolean(R.bool.exit_button_on_dialer))
 				exit.setVisibility(View.VISIBLE);
 			
@@ -414,58 +407,8 @@ public class StatusFragment extends Fragment {
 	public void refreshStatusItems(final LinphoneCall call) {
 		if (call != null) {
 			voicemailCount.setVisibility(View.GONE);
-			MediaEncryption mediaEncryption = call.getCurrentParamsCopy().getMediaEncryption();
-
 			background.setVisibility(View.VISIBLE);
-
-			if (mediaEncryption == MediaEncryption.SRTP || (mediaEncryption == MediaEncryption.ZRTP && call.isAuthenticationTokenVerified()) || mediaEncryption == MediaEncryption.DTLS) {
-				encryption.setImageResource(R.drawable.security_ok);
-			} else if (mediaEncryption == MediaEncryption.ZRTP && !call.isAuthenticationTokenVerified()) {
-				encryption.setImageResource(R.drawable.security_pending);
-			} else {
-				encryption.setImageResource(R.drawable.security_ko);
-			}
-			
-			if (mediaEncryption == MediaEncryption.ZRTP) {
-				encryption.setOnClickListener(new OnClickListener() {
-					@Override
-					public void onClick(View v) {
-						showZRTPDialog(call);
-					}
-				});
-			} else {
-				encryption.setOnClickListener(null);
-			}
 		}
-	}
-	
-	private void showZRTPDialog(final LinphoneCall call) {
-		if (getActivity() == null) {
-			Log.w("Can't display ZRTP popup, no Activity");
-			return;
-		}
-		new AlertDialog.Builder(getActivity())
-	        .setTitle(call.getAuthenticationToken())
-	        .setMessage(getString(R.string.zrtp_help))
-	        .setPositiveButton(R.string.zrtp_accept, new DialogInterface.OnClickListener() {
-	            public void onClick(DialogInterface dialog, int which) { 
-	            	call.setAuthenticationTokenVerified(true);
-					if (encryption != null) {
-						encryption.setImageResource(R.drawable.security_ok);
-					}
-	            }
-	         })
-	        .setNegativeButton(R.string.zrtp_deny, new DialogInterface.OnClickListener() {
-	            public void onClick(DialogInterface dialog, int which) { 
-	            	if (call != null) {
-						call.setAuthenticationTokenVerified(false);
-						if (encryption != null) {
-							encryption.setImageResource(R.drawable.security_pending);
-						}
-					}
-	            }
-	         })
-	         .show();
 	}
 	
 	private void initCallStatsRefresher(final LinphoneCall call, final View view) {

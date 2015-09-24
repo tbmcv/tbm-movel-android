@@ -25,7 +25,6 @@ import org.linphone.core.LinphoneAuthInfo;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCore.AdaptiveRateAlgorithm;
 import org.linphone.core.LinphoneCore.FirewallPolicy;
-import org.linphone.core.LinphoneCore.MediaEncryption;
 import org.linphone.core.LinphoneCore.Transports;
 import org.linphone.core.LinphoneCoreException;
 import org.linphone.core.LinphoneCoreFactory;
@@ -852,17 +851,6 @@ public class LinphonePreferences {
 
 	public boolean isIceEnabled() {
 		return getLc().getFirewallPolicy() == FirewallPolicy.UseIce;
-	}
-
-	public MediaEncryption getMediaEncryption() {
-		return getLc().getMediaEncryption();
-	}
-
-	public void setMediaEncryption(MediaEncryption menc) {
-		if (menc == null)
-			return;
-
-		getLc().setMediaEncryption(menc);
 	}
 
 	public void setPushNotificationEnabled(boolean enable) {
