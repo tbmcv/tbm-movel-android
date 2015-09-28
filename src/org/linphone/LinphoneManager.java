@@ -502,7 +502,7 @@ public class LinphoneManager implements LinphoneCoreListener {
 		copyIfNotExist(R.raw.linphonerc_default, mLinphoneConfigFile);
 		copyFromPackage(R.raw.linphonerc_factory, new File(mLinphoneFactoryConfigFile).getName());
 		copyIfNotExist(R.raw.lpconfig, mLPConfigXsd);
-		copyIfNotExist(R.raw.rootca, mLinphoneRootCaFile);
+		//copyIfNotExist(R.raw.rootca, mLinphoneRootCaFile);
 	}
 
 	public void copyIfNotExist(int ressourceId, String target) throws IOException {
