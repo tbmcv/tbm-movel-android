@@ -2,6 +2,8 @@
               *   LINPHONE for ANDROID   *
               ****************************
 
+Reduced in size by Daniel Getz
+
 COMPILATION INSTRUCTIONS
 ************************
 
@@ -31,8 +33,8 @@ key.store.password=[your_password]
 key.alias.password=[your_password]
 If you don't, the passwords will be asked at the signing phase.
 
-To run the tutorials:
---------------------
+To run the "tutorials" (test applications):
+-------------------------------------------
 1) open the res/values/non_localizable_custom.xml file and change the value of the show_tutorials_instead_of_app to true.
 2) compile again using make && make install.
 3) /!\ don't forget to put it back to false to run the linphone application normally. /!\
@@ -76,36 +78,36 @@ BUILD OPTIONS
 Some options can be passed to make, like "make SOME_OPTION=SOME_VALUE".
 
 ENABLE_GPL_THIRD_PARTIES
-	values: 0 (GPL third parties disabled) or 1 (GPL third parties enabled), default value: 1
+	values: 0 (GPL third parties disabled) or 1 (GPL third parties enabled), default value: 0
 	GPL third parties are: X264 and G729
 
 BUILD_VIDEO
-	values: 0 (no video) or 1 (video enabled), default value: 1
+	values: 0 (no video) or 1 (video enabled), default value: 0
 
 BUILD_OPENH264
-	values: 0 (don't build openH264) or 1 (build openH264), default value: 1
+	values: 0 (don't build openH264) or 1 (build openH264), default value: 0
 
 ENABLE_OPENH264_DECODER
-	values: 0 (disable openh264 decoder) or 1 (enable openh264 decoder), default value: 1
+	values: 0 (disable openh264 decoder) or 1 (enable openh264 decoder), default value: 0
 
 BUILD_X264
 	values: 0 (don't build x264) or 1 (build x264), default value: 0
 
 BUILD_AMRNB
-	values: 0 (don't build amrnb codec), light (try to use amrnb codec from android), full (build your own amrnb codec), default value: full
+	values: 0 (don't build amrnb codec), light (try to use amrnb codec from android), full (build your own amrnb codec), default value: light
 
 BUILD_AMRWB
-	values: 0 (don't build amrwb codec), 1 (build your own amrwb codec): default value: 1
+	values: 0 (don't build amrwb codec), 1 (build your own amrwb codec): default value: 0
 
 BUILD_ZRTP
-	values: 0 (don't support ZRTP), 1 (support ZRTP), default value: 1
+	values: 0 (don't support ZRTP), 1 (support ZRTP), default value: 0
 
 BUILD_SILK
-	values: 0 (don't build silk plugin), 1 (build silk) [silk is Skype nonfree patented audio codec], default value: 1
+	values: 0 (don't build silk plugin), 1 (build silk) [silk is Skype nonfree patented audio codec], default value: 0
 
 BUILD_G729
 	values: 0 (don't build g729 plugin), 1 (build g729) [g729 is nonfree patented audio codec, contact Sipro lab for more details]
-	default value: 1
+	default value: 0
 
 BUILD_TUNNEL
 	values: 0 (don't build tunnel), 1 (build tunnel) [requires a non-free tunnel implementation in submodules/linphone/tunnel]
@@ -113,7 +115,7 @@ BUILD_TUNNEL
 
 BUILD_WEBRTC_AECM
 	values: 0 (don't build echo canceler), 1 (build echo canceler)
-	default value: 1
+	default value: 0
 
 USE_JAVAH
 	values: 0 (don't generate header), 1 (generate header for linphone_core_jni) [used to check errors at liblinphone compilation]
@@ -125,16 +127,16 @@ BUILD_FOR_X86
 
 BUILD_SQLITE
 	values: 0 (don't build sqlite3), 1 (build sqlite3) [used to store chat messages inside liblinphone]
-	default value: 1
+	default value: 0
 
 BUILD_TLS
 	values: 0 (don't build tls), 1 (do build tls), default value: 1
 
 BUILD_WEBRTC_ISAC
-	values: 0 (don't build isac), 1 (do build isac), default value: 1
+	values: 0 (don't build isac), 1 (do build isac), default value: 0
 
 BUILD_OPUS
-	values: 0 (don't build opus), 1 (do build opus), default value: 1
+	values: 0 (don't build opus), 1 (do build opus), default value: 0
 
 BUILD_UPNP
 	values: 0 (don't build upnp), 1 (do build upnp), default value: 1
