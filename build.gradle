@@ -18,7 +18,8 @@ def allSrcDirs = ['submodules/linphone/mediastreamer2/java/src',
                   'submodules/linphone/java/impl',
                   'submodules/externals/axmlrpc/src/main/java',
                   'submodules/linphone/coreapi/help/java',
-                  'src']
+                  'src',
+                  'tbm/src/main/java']
 
 android {
     compileSdkVersion 22
@@ -31,7 +32,7 @@ android {
             resources.srcDirs = allSrcDirs
             aidl.srcDirs = allSrcDirs
             renderscript.srcDirs = allSrcDirs
-            res.srcDirs = ['res']
+            res.srcDirs = ['res', 'tbm/src/main/res']
             assets.srcDirs = ['assets']
             jniLibs.srcDir 'libs'
 
