@@ -78,11 +78,11 @@ public class AcctDataServiceTest
 
     protected void setStoredAcct(String acctName, String pw) {
         Context context = getContext();
-        context.getSharedPreferences(context.getString(R.string.settings_key), Context.MODE_PRIVATE)
+        context.getSharedPreferences(context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE)
                 .edit()
                 .clear()
-                .putString(context.getString(R.string.setting_acctname), acctName)
-                .putString(context.getString(R.string.setting_password), pw)
+                .putString(context.getString(R.string.tbm_setting_acctname), acctName)
+                .putString(context.getString(R.string.tbm_setting_password), pw)
                 .commit();
     }
 
@@ -107,7 +107,7 @@ public class AcctDataServiceTest
     public void testGetCreditUnconfiguredActivitySwitch() throws Exception {
         Context context = getContext();
         SharedPreferences prefs = context.getSharedPreferences(
-                context.getString(R.string.settings_key), Context.MODE_PRIVATE);
+                context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
         startService(new Intent(AcctDataService.ACTION_GET_CREDIT));
         assertActivityStarted(InitConfigActivity.class, 2, TimeUnit.SECONDS);
@@ -141,7 +141,7 @@ public class AcctDataServiceTest
         String newPw = "gg";
         Context context = getContext();
         SharedPreferences prefs = context.getSharedPreferences(
-                context.getString(R.string.settings_key), Context.MODE_PRIVATE);
+                context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
 
         when(fetcher.fetch(any(Map.class))).thenReturn(new JSONObject().put("pw", newPw));
@@ -150,9 +150,9 @@ public class AcctDataServiceTest
                 .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"));
 
         assertEquals("c/" + phoneNumber,
-                prefs.getString(context.getString(R.string.setting_acctname), "(NOTHING STORED)"));
+                prefs.getString(context.getString(R.string.tbm_setting_acctname), "(NOTHING STORED)"));
         assertEquals(newPw,
-                prefs.getString(context.getString(R.string.setting_password), "(NOTHING STORED)"));
+                prefs.getString(context.getString(R.string.tbm_setting_password), "(NOTHING STORED)"));
     }
 
     public void testNewVoipLineRequest() throws Exception {
@@ -229,8 +229,8 @@ public class AcctDataServiceTest
     }
 
     void checkVoipLine(String lineName, String password) {
-        final String realm = getContext().getString(R.string.sip_realm);
-        final String displayName = getContext().getString(R.string.csipsimple_display_name);
+        final String realm = getContext().getString(R.string.tbm_sip_realm);
+        final String displayName = getContext().getString(R.string.tbm_csipsimple_display_name);
         Cursor cursor = contentProvider.query(
                 SipProfile.ACCOUNT_URI,
                 new String[]{

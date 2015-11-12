@@ -16,7 +16,7 @@ public class InitConfigActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_init_config);
+        setContentView(R.layout.tbm_activity_init_config);
 
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
 
@@ -33,10 +33,10 @@ public class InitConfigActivity extends Activity {
             public void onReceive(Context context, Intent intent) {
                 int error_msg = 0;
                 if (!intent.getBooleanExtra(AcctDataService.EXTRA_PASSWORD_OK, true)) {
-                    error_msg = R.string.login_error_auth;
+                    error_msg = R.string.tbm_login_error_auth;
                     ((TextView) findViewById(R.id.passwordEntry)).setText("");
                 } else if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
-                    error_msg = R.string.login_error_net;
+                    error_msg = R.string.tbm_login_error_net;
                 }
                 if (error_msg != 0) {
                     Toast.makeText(InitConfigActivity.this, error_msg, Toast.LENGTH_LONG).show();
@@ -49,7 +49,7 @@ public class InitConfigActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_init_config, menu);
+        getMenuInflater().inflate(R.menu.tbm_menu_init_config, menu);
         return true;
     }
 

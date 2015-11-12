@@ -81,9 +81,9 @@ public class AcctDataService extends IntentService {
 
     private AuthPair getAcctAuth() {
         SharedPreferences config = getSharedPreferences(
-                getString(R.string.settings_key), Context.MODE_PRIVATE);
-        String acctName = config.getString(getString(R.string.setting_acctname), null);
-        String password = config.getString(getString(R.string.setting_password), null);
+                getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
+        String acctName = config.getString(getString(R.string.tbm_setting_acctname), null);
+        String password = config.getString(getString(R.string.tbm_setting_password), null);
         if (acctName == null || password == null) {
             startActivity(new Intent(this, InitConfigActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -124,10 +124,10 @@ public class AcctDataService extends IntentService {
                     .body(new JSONObject().put("reset", "base64").put("size", 4))
                     .fetch();
             String newPw = result.getString("pw");
-            getSharedPreferences(getString(R.string.settings_key), Context.MODE_PRIVATE)
+            getSharedPreferences(getString(R.string.tbm_settings_key), Context.MODE_PRIVATE)
                     .edit()
-                    .putString(getString(R.string.setting_acctname), acctName)
-                    .putString(getString(R.string.setting_password), newPw)
+                    .putString(getString(R.string.tbm_setting_acctname), acctName)
+                    .putString(getString(R.string.tbm_setting_password), newPw)
                     .commit();
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_PASSWORD_RESET));
@@ -187,8 +187,8 @@ public class AcctDataService extends IntentService {
     private static final String[] SELECTION_FIELD_ID = {SipProfile.FIELD_ID};
 
     private void onCommandConfigureLine(String username, String password) {
-        final String realm = getString(R.string.sip_realm);
-        final String displayName = getString(R.string.csipsimple_display_name);
+        final String realm = getString(R.string.tbm_sip_realm);
+        final String displayName = getString(R.string.tbm_csipsimple_display_name);
         final Cursor cursor = getContentResolver().query(
                 SipProfile.ACCOUNT_URI, SELECTION_FIELD_ID,
                 SipProfile.FIELD_DISPLAY_NAME + "=?", new String[]{displayName}, null);
@@ -235,7 +235,7 @@ public class AcctDataService extends IntentService {
         if (acct == null) {
             return false;
         }
-        final String displayName = getString(R.string.csipsimple_display_name);
+        final String displayName = getString(R.string.tbm_csipsimple_display_name);
         Cursor cursor = getContentResolver().query(
                 SipProfile.ACCOUNT_STATUS_URI, SELECTION_LINE_STATUS,
                 SipProfile.FIELD_DISPLAY_NAME + "=?", new String[]{displayName}, null);

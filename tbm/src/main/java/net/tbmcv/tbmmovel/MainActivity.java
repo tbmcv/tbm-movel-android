@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
         formatSymbols.setGroupingSeparator('.');
         creditFormat = new DecimalFormat("#,##0'$00'", formatSymbols);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.tbm_activity_main);
         LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -34,7 +34,7 @@ public class MainActivity extends Activity {
                 }
                 if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
                     Toast.makeText(MainActivity.this,
-                            R.string.login_error_net, Toast.LENGTH_LONG).show();
+                            R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
                 }
             }
         }, new IntentFilter(AcctDataService.ACTION_STATUS));
@@ -42,7 +42,7 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.tbm_menu_main, menu);
         return true;
     }
 

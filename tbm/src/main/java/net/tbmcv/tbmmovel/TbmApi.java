@@ -47,7 +47,7 @@ public abstract class TbmApi {
             }
             trustManagerFactory.init(keyStore);
             sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
-            baseUrl = new URL(context.getString(R.string.api_base_url));
+            baseUrl = new URL(context.getString(R.string.tbm_api_base_url));
         }
 
         @Override
