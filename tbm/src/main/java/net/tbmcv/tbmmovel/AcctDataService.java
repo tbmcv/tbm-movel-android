@@ -1,18 +1,12 @@
 package net.tbmcv.tbmmovel;
 
 import android.app.IntentService;
-import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-
-import com.csipsimple.api.SipProfile;
-import com.csipsimple.api.SipProfileState;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -52,7 +46,7 @@ public class AcctDataService extends IntentService {
                 onCommandGetCredit();
                 break;
             case ACTION_ENSURE_LINE:
-                onCommandEnsureLine();
+                //onCommandEnsureLine();
                 break;
             case ACTION_RESET_PASSWORD:
                 onCommandResetPassword(
@@ -61,9 +55,11 @@ public class AcctDataService extends IntentService {
                 break;
             case ACTION_CONFIGURE_LINE:
                 if (intent.hasExtra(EXTRA_PASSWORD)) {
+                    /*
                     onCommandConfigureLine(
                             intent.getStringExtra(EXTRA_LINE_NAME),
                             intent.getStringExtra(EXTRA_PASSWORD));
+                    */
                 } else {
                     onCommandConfigureLine();
                 }
@@ -185,6 +181,7 @@ public class AcctDataService extends IntentService {
         }
     }
 
+    /*
     private static final String[] SELECTION_FIELD_ID = {SipProfile.FIELD_ID};
 
     private void onCommandConfigureLine(String username, String password) {
@@ -301,4 +298,5 @@ public class AcctDataService extends IntentService {
                     new Intent(ACTION_CONFIGURE_LINE));
         }
     }
+    */
 }
