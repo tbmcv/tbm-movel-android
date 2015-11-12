@@ -11,6 +11,8 @@ import android.view.Menu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.linphone.R;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;

@@ -17,6 +17,7 @@ import com.csipsimple.api.SipProfileState;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.linphone.R;
 
 import java.io.IOException;
 

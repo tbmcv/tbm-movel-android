@@ -2,6 +2,8 @@ package net.tbmcv.tbmmovel;
 
 import android.content.Context;
 
+import org.linphone.R;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;

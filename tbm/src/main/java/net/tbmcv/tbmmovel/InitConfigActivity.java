@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.linphone.R;
+
 public class InitConfigActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
