@@ -25,7 +25,7 @@ public class InitConfigActivity extends Activity {
         lbm.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                startActivity(new Intent(InitConfigActivity.this, MainActivity.class));
+                //startActivity(new Intent(InitConfigActivity.this, MainActivity.class));
                 finish();
             }
         }, new IntentFilter(AcctDataService.ACTION_PASSWORD_RESET));

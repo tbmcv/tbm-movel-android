@@ -193,7 +193,14 @@
 		        android:layout_height="10dp"
 		        android:orientation="horizontal"
 		        android:layout_toRightOf="@id/statusLed"/>
-		    
+
+			<fragment
+				android:id="@+id/saldo"
+				android:name="net.tbmcv.tbmmovel.SaldoFragment"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_alignParentRight="true"/>
+
 		    <ImageView
 		        android:contentDescription="@string/content_description_call_quality"
 		        android:id="@+id/callQuality"

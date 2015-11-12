@@ -6,8 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.view.Menu;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,17 +20,26 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 
-public class MainActivity extends Activity {
+public class SaldoFragment extends Fragment {
     private NumberFormat creditFormat;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         DecimalFormatSymbols formatSymbols = new DecimalFormatSymbols();
         formatSymbols.setGroupingSeparator('.');
         creditFormat = new DecimalFormat("#,##0'$00'", formatSymbols);
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.tbm_activity_main);
-        LocalBroadcastManager.getInstance(this).registerReceiver(new BroadcastReceiver() {
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.tbm_fragment_saldo, container, false);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 int credit = intent.getIntExtra(AcctDataService.EXTRA_CREDIT, Integer.MIN_VALUE);
@@ -35,7 +47,7 @@ public class MainActivity extends Activity {
                     setCredit(credit);
                 }
                 if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
-                    Toast.makeText(MainActivity.this,
+                    Toast.makeText(getActivity(),
                             R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
                 }
             }
@@ -43,23 +55,18 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.tbm_menu_main, menu);
-        return true;
-    }
-
-    @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         loadCredit();
     }
 
     protected void setCredit(int credit) {
-        ((TextView) findViewById(R.id.creditValue)).setText(creditFormat.format(credit));
+        ((TextView) getView().findViewById(R.id.creditValue)).setText(creditFormat.format(credit));
     }
 
     protected void loadCredit() {
-        startService(new Intent(this, AcctDataService.class)
+        Activity activity = getActivity();
+        activity.startService(new Intent(activity, AcctDataService.class)
                 .setAction(AcctDataService.ACTION_GET_CREDIT));
     }
 }
