@@ -20,10 +20,7 @@
     <string name="contact_name">Wizard</string>
     <string name="contact_number">+33952636505</string>
     <string name="contact_sip">wizard@sip.linphone.org</string>
-    
-    <string name="chat_test_text_sent">Ping!</string>
-    <string name="chat_test_text_received">Pong!</string>
-    
+
     <string name="conference_account_login">wizard16</string>
     <string name="conference_account_password">wizard16</string>
     <string name="conference_account_domain">sip.linphone.org</string>

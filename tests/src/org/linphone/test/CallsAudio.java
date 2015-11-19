@@ -26,23 +26,7 @@ import java.util.List;
  * @author Sylvain Berfini
  */
 public class CallsAudio extends SampleTest {
-	
-	@SmallTest
-	@MediumTest
-	@LargeTest
-	public void testAInit() {
-		//Disable video
-		goToSettings();
 
-		selectItemInListOnUIThread(3);
-		solo.clickOnText(aContext.getString(org.linphone.R.string.pref_video_enable_title));
-		solo.sleep(500);
-		
-		solo.goBack();
-		solo.sleep(1000);
-		Assert.assertFalse(LinphoneManager.getLc().isVideoEnabled());
-	}
-	
 	@SmallTest
 	@MediumTest
 	@LargeTest
@@ -133,21 +117,6 @@ public class CallsAudio extends SampleTest {
 
 	@MediumTest
 	@LargeTest
-	public void testFOutgoingCallToVideoClient() {
-		LinphoneTestManager.getLc().enableVideo(true, true);
-		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
-		
-		assertCallIsCorrectlyRunning();
-		
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
-		solo.waitForActivity("LinphoneActivity", 5000);
-		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
-	}
-
-	@MediumTest
-	@LargeTest
 	public void testGOutgoingCallCancelled() {
 		LinphoneTestManager.getInstance().autoAnswer = false;
 		
@@ -214,32 +183,6 @@ public class CallsAudio extends SampleTest {
 		assertCallIsCorrectlyRunning();
 	}
 
-	@LargeTest
-	public void testJIncomingVideoCall() {
-		LinphoneTestManager.getLc().enableVideo(true, true);
-
-		solo.sleep(2000);
-		try {
-			LinphoneTestManager.getLc().invite("sip:" + iContext.getString(org.linphone.test.R.string.account_linphone_login) + "@" + iContext.getString(org.linphone.test.R.string.account_linphone_domain));
-		} catch (LinphoneCoreException e) {
-			e.printStackTrace();
-		}
-		
-		solo.waitForActivity("IncomingCallActivity", 5000);
-		solo.assertCurrentActivity("Expected Incoming Call Activity", IncomingCallActivity.class);
-
-		solo.sleep(1000);
-		View topLayout = solo.getView(org.linphone.R.id.topLayout);
-		int topLayoutHeigh = topLayout.getMeasuredHeight();
-		DisplayMetrics dm = new DisplayMetrics();
-		getActivity().getWindowManager().getDefaultDisplay().getMetrics(dm);
-		int topOffset = dm.heightPixels - topLayoutHeigh;
-		int slidersTop = topLayoutHeigh - 80 - topOffset; // 80 is the bottom margin set in incoming.xml
-		solo.drag(10, topLayout.getMeasuredWidth() - 10, slidersTop, slidersTop, 10);
-		
-		assertCallIsCorrectlyRunning();
-	}
-
 	@MediumTest
 	@LargeTest
 	public void testKSelfPauseResumeCall() {
@@ -282,20 +225,6 @@ public class CallsAudio extends SampleTest {
 		waitForCallResumed(LinphoneManager.getLc().getCalls()[0]);
 		
 		solo.clickLongOnScreen(200, 200); //To ensure controls are shown
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
-		solo.waitForActivity("LinphoneActivity", 5000);
-		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
-	}
-
-	@LargeTest
-	public void testMSwitchOnVideoInCallIsNotAllowed() {
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
-		
-		assertCallIsCorrectlyRunning();
-		
-		Assert.assertFalse(solo.getView(org.linphone.R.id.video).isEnabled());
-		
 		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);

@@ -96,16 +96,6 @@ public class Contacts extends SampleTest {
 		Assert.assertTrue(solo.searchText(iContext.getString(org.linphone.test.R.string.contact_name)));
 	}
 
-	@MediumTest
-	@LargeTest
-	public void testFStartChatFromContact() {
-		goToContacts();
-
-		solo.clickOnText(iContext.getString(org.linphone.test.R.string.contact_name));
-		solo.clickOnView(solo.getView(org.linphone.R.id.start_chat));
-		Assert.assertTrue(solo.searchText(aContext.getString(org.linphone.R.string.button_send_message)));
-	}
-
 	@SmallTest
 	@MediumTest
 	@LargeTest

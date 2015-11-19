@@ -29,17 +29,6 @@ public class ConferenceAndMultiCall extends SampleTest {
 
 		solo.sleep(2000);
 		waitForRegistration(LinphoneTestManager.getLc(2).getProxyConfigList()[0]);
-
-		//Disable video
-		goToSettings();
-
-		selectItemInListOnUIThread(3);
-		solo.clickOnText(aContext.getString(org.linphone.R.string.pref_video_enable_title));
-		solo.sleep(500);
-
-		solo.goBack();
-		solo.sleep(1000);
-		Assert.assertFalse(LinphoneManager.getLc().isVideoEnabled());
 	}
 
 	@SmallTest
