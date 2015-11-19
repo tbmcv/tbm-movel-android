@@ -5,6 +5,9 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
 import android.widget.EditText;
 
+import org.linphone.LinphoneActivity;
+import org.linphone.R;
+
 public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigActivity> {
     public InitConfigActivityUnitTest() {
         super(InitConfigActivity.class);
@@ -30,7 +33,7 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
     public void testLoginResetSuccessLaunchesMainActivity() {
         launch();
         fakeSuccessfulLogin();
-        assertLaunched(MainActivity.class);
+        assertLaunched(LinphoneActivity.class);
         assertTrue("Finish not called", isFinishCalled());
     }
 

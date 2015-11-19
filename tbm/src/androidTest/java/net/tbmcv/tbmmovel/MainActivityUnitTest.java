@@ -4,9 +4,12 @@ import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.TextView;
 
-public class MainActivityUnitTest extends BaseActivityUnitTest<MainActivity> {
+import org.linphone.LinphoneActivity;
+import org.linphone.R;
+
+public class MainActivityUnitTest extends BaseActivityUnitTest<LinphoneActivity> {
     public MainActivityUnitTest() {
-        super(MainActivity.class);
+        super(LinphoneActivity.class);
     }
 
     public void testSaldoRequestSent() {
