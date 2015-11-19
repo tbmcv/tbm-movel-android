@@ -5,7 +5,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.linphone.LinphoneException;
-import org.linphone.LinphoneManager;
 import org.linphone.LinphoneManager.LinphoneConfigException;
 import org.linphone.LinphoneService;
 import org.linphone.core.LinphoneAddress;
@@ -20,7 +19,6 @@ import org.linphone.core.LinphoneContent;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCore.EcCalibratorStatus;
 import org.linphone.core.LinphoneCore.GlobalState;
-import org.linphone.core.LinphoneCore.MediaEncryption;
 import org.linphone.core.LinphoneCore.RegistrationState;
 import org.linphone.core.LinphoneCore.RemoteProvisioningState;
 import org.linphone.core.LinphoneCore.Transports;
@@ -36,8 +34,6 @@ import org.linphone.core.PayloadType;
 import org.linphone.core.PublishState;
 import org.linphone.core.SubscriptionState;
 import org.linphone.mediastream.Log;
-import org.linphone.mediastream.video.capture.hwconf.AndroidCameraConfiguration;
-import org.linphone.mediastream.video.capture.hwconf.AndroidCameraConfiguration.AndroidCamera;
 
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -130,23 +126,10 @@ public class LinphoneTestManager implements LinphoneCoreListener{
 			} else {
 				mTimer1.scheduleAtFixedRate(lTask, 0, 20);
 			}
-
-	        resetCameraFromPreferences();
 		}
 		catch (Exception e) {
 			Log.e(e, "Cannot start linphone");
 		}
-	}
-
-	private void resetCameraFromPreferences() {
-		boolean useFrontCam = true;
-		int camId = 0;
-		AndroidCamera[] cameras = AndroidCameraConfiguration.retrieveCameras();
-		for (AndroidCamera androidCamera : cameras) {
-			if (androidCamera.frontFacing == useFrontCam)
-				camId = androidCamera.id;
-		}
-		LinphoneManager.getLc().setVideoDevice(camId);
 	}
 
 	public void initFromConf(LinphoneCore mLc) throws LinphoneConfigException, LinphoneCoreException {
@@ -154,8 +137,8 @@ public class LinphoneTestManager implements LinphoneCoreListener{
 
 		initAccounts(mLc);
 
-		mLc.setVideoPolicy(true, true);
-		mLc.enableVideo(true, true);
+		mLc.setVideoPolicy(false, false);
+		mLc.enableVideo(false, false);
 
 		mLc.setUseRfc2833ForDtmfs(false);
 		mLc.setUseSipInfoForDtmfs(true);
@@ -163,23 +146,11 @@ public class LinphoneTestManager implements LinphoneCoreListener{
 		mLc.setNetworkReachable(true);
 	}
 
-	public boolean detectVideoCodec(String mime, LinphoneCore mLc) {
-		for (PayloadType videoCodec : mLc.getVideoCodecs()) {
-			if (mime.equals(videoCodec.getMime())) return true;
-		}
-		return false;
-	}
-
 	public boolean detectAudioCodec(String mime, LinphoneCore mLc){
 		for (PayloadType audioCodec : mLc.getAudioCodecs()) {
 			if (mime.equals(audioCodec.getMime())) return true;
 		}
 		return false;
-	}
-
-	void initMediaEncryption(LinphoneCore mLc){
-		MediaEncryption me = MediaEncryption.None;
-		mLc.setMediaEncryption(me);
 	}
 
 	private void initAccounts(LinphoneCore mLc) throws LinphoneCoreException {
