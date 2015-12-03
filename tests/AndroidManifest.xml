@@ -38,6 +38,8 @@
     <application
         android:label="@string/app_name" >
         <uses-library android:name="android.test.runner" />
+
+		<activity android:name="net.tbmcv.tbmmovel.SaldoFragmentUnitTest.TestActivity"/>
 	
     </application>
 
