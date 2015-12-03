@@ -1,51 +1,23 @@
 package net.tbmcv.tbmmovel;
 
 import android.content.Intent;
-import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.TextView;
 
 import org.linphone.R;
 
-public class SaldoFragmentUnitTest extends BaseActivityUnitTest<SaldoFragmentUnitTest.TestActivity> {
-    public static final class TestActivity extends FragmentActivity {
-        static final String FRAGMENT_TAG = "FragmentTag";
-
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-
-            getSupportFragmentManager().beginTransaction()
-                    .add(android.R.id.content, new SaldoFragment(), FRAGMENT_TAG)
-                    .commit();
-        }
-    }
-
-    public SaldoFragmentUnitTest() {
-        super(TestActivity.class);
-    }
-
-    protected void startAndResumeAll() {
-        getInstrumentation().callActivityOnStart(getActivity());
-        getInstrumentation().callActivityOnResume(getActivity());
-        for (Fragment fragment : getActivity().getSupportFragmentManager().getFragments()) {
-            fragment.onStart();
-            fragment.onResume();
-        }
-        getInstrumentation().waitForIdleSync();
-        getActivity().getSupportFragmentManager().executePendingTransactions();
+public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
+    @Override
+    protected SaldoFragment createFragment() {
+        return new SaldoFragment();
     }
 
     public void testSaldoRequestSent() {
-        launch();
         startAndResumeAll();
         assertServiceStarted(AcctDataService.class, AcctDataService.ACTION_GET_CREDIT);
     }
 
     protected void checkSaldoResponseDisplayed(int saldo, String formattedSaldo) {
-        launch();
         startAndResumeAll();
         LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
                 new Intent(AcctDataService.ACTION_STATUS)
