@@ -30,6 +30,8 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
 
+import net.tbmcv.tbmmovel.AcctDataService;
+
 /**
  * 
  * Launch Linphone main activity when Service is ready.
@@ -78,7 +80,10 @@ public class LinphoneLauncherActivity extends Activity {
 		} else {
 			classToStart = LinphoneActivity.class;
 		}
-		
+
+		startService(new Intent(this, AcctDataService.class)
+				.setAction(AcctDataService.ACTION_ENSURE_LINE));
+
 		LinphoneService.instance().setActivityToLaunchOnIncomingReceived(classToStart);
 		mHandler.postDelayed(new Runnable() {
 			@Override

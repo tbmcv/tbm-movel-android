@@ -243,6 +243,14 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
+
+        <service android:name="net.tbmcv.tbmmovel.AcctDataService" />
+
+        <activity android:name="net.tbmcv.tbmmovel.InitConfigActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
+        </activity>
 	
 	</application>
 

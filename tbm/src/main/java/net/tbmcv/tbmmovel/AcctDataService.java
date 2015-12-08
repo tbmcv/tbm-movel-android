@@ -86,6 +86,7 @@ public class AcctDataService extends IntentService {
         String acctName = config.getString(getString(R.string.tbm_setting_acctname), null);
         String password = config.getString(getString(R.string.tbm_setting_password), null);
         if (acctName == null || password == null) {
+            Log.d(LOG_TAG, "Account not configured; running initial configuration");
             startActivity(new Intent(this, InitConfigActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             return null;
