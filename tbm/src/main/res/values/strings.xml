@@ -13,10 +13,9 @@
     <string name="tbm_title_activity_main">@string/tbm_app_name</string>
     <string name="tbm_credit">Saldo</string>
 
-    <string name="tbm_settings_key">config</string>
+    <string name="tbm_settings_key">tbm_config</string>
     <string name="tbm_setting_acctname">acct</string>
     <string name="tbm_setting_password">pw</string>
-    <string name="tbm_csipsimple_display_name">TBM Móvel (auto)</string>
     <string name="tbm_sip_realm">sip.tbmcv.com</string>
     <string name="tbm_api_base_url">https://api.tbmcv.com:8608/</string>
 </resources>
