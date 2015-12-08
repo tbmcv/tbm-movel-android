@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.linphone.LinphoneActivity;
 import org.linphone.R;
 
 public class InitConfigActivity extends Activity {
@@ -25,7 +26,7 @@ public class InitConfigActivity extends Activity {
         lbm.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                //startActivity(new Intent(InitConfigActivity.this, MainActivity.class));
+                startActivity(new Intent(InitConfigActivity.this, LinphoneActivity.class));
                 finish();
             }
         }, new IntentFilter(AcctDataService.ACTION_PASSWORD_RESET));
