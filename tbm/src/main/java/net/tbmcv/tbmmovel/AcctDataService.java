@@ -11,9 +11,15 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.linphone.LinphoneManager;
+import org.linphone.LinphonePreferences;
 import org.linphone.R;
+import org.linphone.core.LinphoneCore;
+import org.linphone.core.LinphoneCoreException;
 
 import java.io.IOException;
+
+import static org.linphone.core.LinphoneAddress.*;
 
 public class AcctDataService extends IntentService {
     public static final String ACTION_RESET_PASSWORD = "net.tbmcv.tbmmovel.RESET_PASSWORD";
@@ -46,7 +52,7 @@ public class AcctDataService extends IntentService {
                 onCommandGetCredit();
                 break;
             case ACTION_ENSURE_LINE:
-                //onCommandEnsureLine();
+                onCommandEnsureLine();
                 break;
             case ACTION_RESET_PASSWORD:
                 onCommandResetPassword(
@@ -55,11 +61,9 @@ public class AcctDataService extends IntentService {
                 break;
             case ACTION_CONFIGURE_LINE:
                 if (intent.hasExtra(EXTRA_PASSWORD)) {
-                    /*
                     onCommandConfigureLine(
                             intent.getStringExtra(EXTRA_LINE_NAME),
                             intent.getStringExtra(EXTRA_PASSWORD));
-                    */
                 } else {
                     onCommandConfigureLine();
                 }
@@ -181,97 +185,38 @@ public class AcctDataService extends IntentService {
         }
     }
 
-    /*
-    private static final String[] SELECTION_FIELD_ID = {SipProfile.FIELD_ID};
-
     private void onCommandConfigureLine(String username, String password) {
         final String realm = getString(R.string.tbm_sip_realm);
-        final String displayName = getString(R.string.tbm_csipsimple_display_name);
-        final Cursor cursor = getContentResolver().query(
-                SipProfile.ACCOUNT_URI, SELECTION_FIELD_ID,
-                SipProfile.FIELD_DISPLAY_NAME + "=?", new String[]{displayName}, null);
-        if (cursor == null) {
-            return;  // TODO
-        }
         try {
-            final ContentValues values = new ContentValues();
-            values.put(SipProfile.FIELD_ACC_ID, "sip:" + username + '@' + realm);
-            values.put(SipProfile.FIELD_REG_URI, "sip:" + realm);
-            values.put(SipProfile.FIELD_ACTIVE, 1);
-            values.put(SipProfile.FIELD_REALM, realm);
-            values.put(SipProfile.FIELD_SCHEME, SipProfile.CRED_SCHEME_DIGEST);
-            values.put(SipProfile.FIELD_USERNAME, username);
-            values.put(SipProfile.FIELD_DATATYPE, SipProfile.CRED_DATA_PLAIN_PASSWD);
-            values.put(SipProfile.FIELD_DATA, password);
-            if (cursor.moveToFirst()) {
-                getContentResolver().update(
-                        ContentUris.withAppendedId(SipProfile.ACCOUNT_URI, cursor.getLong(0)),
-                        values, null, null);
-            } else {
-                values.put(SipProfile.FIELD_DISPLAY_NAME, displayName);
-                getContentResolver().insert(SipProfile.ACCOUNT_URI, values);
-            }
-        } finally {
-            cursor.close();
+            LinphoneCore lc = LinphoneManager.getLc();
+            lc.clearAuthInfos();
+            lc.clearProxyConfigs();
+            new LinphonePreferences.AccountBuilder(LinphoneManager.getLc())
+                    .setUsername(username)
+                    .setPassword(password)
+                    .setDomain(realm)
+                    .setRealm(realm)
+                    .setProxy(realm)
+                    .setTransport(TransportType.LinphoneTransportTcp)
+                    .saveNewAccount();
+        } catch (LinphoneCoreException e) {
+            Log.e(LOG_TAG, "Error saving line configuration", e);
         }
     }
-
-    private static final String[] SELECTION_LINE_STATUS = {
-            SipProfileState.ACCOUNT_ID,
-            SipProfileState.ACTIVE,
-            SipProfileState.EXPIRES,
-    };
-
-    private static final String[] SELECTION_LINE_CREDS = {
-            SipProfile.FIELD_USERNAME,
-            SipProfile.FIELD_DATATYPE,
-            SipProfile.FIELD_DATA,
-    };
 
     private boolean shouldReconfigure() {
         AuthPair acct = getAcctAuth();
         if (acct == null) {
             return false;
         }
-        final String displayName = getString(R.string.tbm_csipsimple_display_name);
-        Cursor cursor = getContentResolver().query(
-                SipProfile.ACCOUNT_STATUS_URI, SELECTION_LINE_STATUS,
-                SipProfile.FIELD_DISPLAY_NAME + "=?", new String[]{displayName}, null);
-        if (cursor == null) {
-            return false;
+        LinphonePreferences prefs = LinphonePreferences.instance();
+        if (prefs.getAccountCount() != 1) {
+            return true;
         }
-        final int lineId;
-        try {
-            if (!cursor.moveToFirst()) {
-                return true;  // no such line exists
-            } else if (cursor.getInt(1) == 0 || cursor.getInt(2) > 0) {
-                return false;  // line disactivated or up
-            } else {
-                lineId = cursor.getInt(0);
-            }
-        } finally {
-            cursor.close();
-        }
-        final String lineName;
-        final String linePw;
-        cursor = getContentResolver().query(
-                SipProfile.ACCOUNT_URI, SELECTION_LINE_CREDS,
-                SipProfile.FIELD_ID + "=?", new String[]{Integer.toString(lineId)}, null);
-        if (cursor == null) {
-            return false;
-        }
-        try {
-            if (!cursor.moveToFirst()) {
-                return true;
-            } else if (cursor.getInt(1) != SipProfile.CRED_DATA_PLAIN_PASSWD) {
-                return true;  // TODO
-            }
-            lineName = cursor.getString(0);
-            linePw = cursor.getString(2);
-        } finally {
-            cursor.close();
-        }
-        if (lineName == null || linePw == null) {
+        String lineName = prefs.getAccountUsername(0);
+        String linePw = prefs.getAccountPassword(0);
+        Log.d(LOG_TAG, "Line name: " + lineName + " line pw: " + linePw);
+        if (linePw == null || lineName == null) {
             return true;
         }
         try {
@@ -298,5 +243,4 @@ public class AcctDataService extends IntentService {
                     new Intent(ACTION_CONFIGURE_LINE));
         }
     }
-    */
 }

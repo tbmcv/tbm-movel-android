@@ -1,16 +1,21 @@
 package net.tbmcv.tbmmovel;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.net.Uri;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.linphone.LinphoneManager;
+import org.linphone.LinphonePreferences;
 import org.linphone.R;
+import org.linphone.core.LinphoneAddress;
+import org.linphone.core.LinphoneAuthInfo;
+import org.linphone.core.LinphoneCore;
+import org.linphone.core.LinphoneCoreException;
+import org.linphone.core.LinphoneCoreFactory;
+import org.linphone.core.LinphoneProxyConfig;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
@@ -18,6 +23,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.linphone.core.LinphoneAddress.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,11 +31,6 @@ import static org.mockito.Mockito.when;
 
 public class AcctDataServiceTest
         extends BaseIntentServiceUnitTest<AcctDataServiceTest.TestingAcctDataService> {
-    private static final String LINE_DISPLAY_NAME = "TBM Móvel (auto)";
-
-    /* Can't be static in Android 2.3 */
-    private final String[] WRONG_LINE_NAMES = {"TBM", "line1", ""};
-
     public static class TestingAcctDataService extends AcctDataService {
         @Override
         protected void onHandleIntent(Intent intent) {
@@ -44,36 +45,30 @@ public class AcctDataServiceTest
 
     private MockJrcRequestBuilder.Fetcher fetcher;
     private ArgumentCaptor<Map<String, ?>> paramsCaptor;
-    private TestingContentProvider contentProvider;
 
     protected void setUp() throws Exception {
         fetcher = MockJrcRequestBuilder.mockDefaultClient();
         paramsCaptor = ArgumentCaptor.forClass((Class) Map.class);
+        if (!LinphoneManager.isInstanciated()) {
+            LinphoneManager.createAndStart(getContext());
+        }
         super.setUp();
-        /*
-        contentProvider = new TestingContentProvider(SipProfile.ACCOUNT_URI.getAuthority())
-                .addTable(SipProfile.ACCOUNTS_TABLE_NAME, SipProfile.FIELD_ID,
-                        SipProfile.FIELD_DISPLAY_NAME,
-                        SipProfile.FIELD_ACTIVE,
-                        SipProfile.FIELD_ACC_ID,
-                        SipProfile.FIELD_REG_URI,
-                        SipProfile.FIELD_REALM,
-                        SipProfile.FIELD_SCHEME,
-                        SipProfile.FIELD_USERNAME,
-                        SipProfile.FIELD_DATATYPE,
-                        SipProfile.FIELD_DATA)
-                .addTable(SipProfile.ACCOUNTS_STATUS_TABLE_NAME, SipProfileState.ACCOUNT_ID,
-                        SipProfileState.FULL_PROJECTION);
-        contentProvider.attachInfo(getContext(), null);
-        contentProvider.onCreate();
-        getContentResolver().addProvider(SipProfile.ACCOUNT_URI.getAuthority(), contentProvider);
-        */
+        clearVoipLines();
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
         AnswerPromise.cleanup();
+        clearVoipLines();
+    }
+
+    protected void clearVoipLines() {
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        if (lc != null) {
+            lc.clearAuthInfos();
+            lc.clearProxyConfigs();
+        }
     }
 
     protected void setStoredAcct(String acctName, String pw) {
@@ -228,42 +223,46 @@ public class AcctDataServiceTest
         assertEquals(linePassword, resultIntent.getStringExtra(AcctDataService.EXTRA_PASSWORD));
     }
 
-    void checkVoipLine(String lineName, String password) {
+    private <T> T getFromArrayOfOne(T... array) {
+        assertEquals(1, array.length);
+        return array[0];
+    }
+
+    void checkVoipLine(String lineName, String password) throws LinphoneCoreException {
         final String realm = getContext().getString(R.string.tbm_sip_realm);
-        final String displayName = getContext().getString(R.string.tbm_csipsimple_display_name);
-        /*
-        Cursor cursor = contentProvider.query(
-                SipProfile.ACCOUNT_URI,
-                new String[]{
-                        SipProfile.FIELD_ACTIVE,
-                        SipProfile.FIELD_ACC_ID,
-                        SipProfile.FIELD_REG_URI,
-                        SipProfile.FIELD_REALM,
-                        SipProfile.FIELD_SCHEME,
-                        SipProfile.FIELD_USERNAME,
-                        SipProfile.FIELD_DATATYPE,
-                        SipProfile.FIELD_DATA,
-                },
-                SipProfile.FIELD_DISPLAY_NAME + " = ?", new String[]{displayName},
-                null);
-        try {
-            assertTrue("No CSipSimple line with display name", cursor.moveToFirst());
-            int i = 0;
-            assertEquals(1, cursor.getInt(i++));
-            assertEquals("sip:" + lineName + "@" + realm, cursor.getString(i++));
-            assertEquals("sip:" + realm, cursor.getString(i++));
-            assertEquals(realm, cursor.getString(i++));
-            assertEquals(SipProfile.CRED_SCHEME_DIGEST, cursor.getString(i++));
-            assertEquals(lineName, cursor.getString(i++));
-            assertEquals(SipProfile.CRED_DATA_PLAIN_PASSWD, cursor.getInt(i++));
-            assertEquals(password, cursor.getString(i++));
-            assertFalse("More than one CSipSimple line with display name", cursor.moveToNext());
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+        LinphoneCore lc = LinphoneManager.getLc();
+
+        LinphoneAuthInfo auth = getFromArrayOfOne(lc.getAuthInfosList());
+        assertEquals(lineName, auth.getUsername());
+        String userId = auth.getUserId();
+        if (userId != null) {
+            assertEquals(lineName, userId);
         }
-        */
+        assertEquals(password, auth.getPassword());
+        assertEquals(realm, auth.getDomain());
+        String realmValue = auth.getRealm();
+        if (realmValue != null) {
+            assertEquals(realm, realmValue);
+        }
+
+        LinphoneProxyConfig cfg = getFromArrayOfOne(lc.getProxyConfigList());
+        assertEquals(realm, cfg.getDomain());
+        LinphoneAddress proxyAddr = LinphoneCoreFactory.instance().createLinphoneAddress(cfg.getProxy());
+        assertEquals(realm, proxyAddr.getDomain());
+        assertEquals(TransportType.LinphoneTransportTcp, proxyAddr.getTransport());
+        assertTrue(cfg.registerEnabled());
+    }
+
+    void addVoipLine(String lineName, String password, String domain) throws LinphoneCoreException {
+        LinphoneCore lc = LinphoneManager.getLc();
+        new LinphonePreferences.AccountBuilder(lc)
+                .setUsername(lineName)
+                .setPassword(password)
+                .setDomain(domain)
+                .setRealm(domain)
+                .setProxy(domain)
+                .setEnabled(true)
+                .saveNewAccount();
     }
 
     public void testConfigureNewVoipLine() throws Exception {
@@ -278,59 +277,11 @@ public class AcctDataServiceTest
     public void testReconfigureVoipLine() throws Exception {
         String lineName = "tbm5555";
         String password = "*****";
-        /*
-        ContentValues oldValues = new ContentValues();
-        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, LINE_DISPLAY_NAME);
-        contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
-        */
+        addVoipLine("old", "values", "a.b.c");
         sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
                 .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
         checkVoipLine(lineName, password);
-    }
-
-    void checkOtherVoipLinesLeft(String lineName, String password) throws InterruptedException {
-        String otherDisplayName = "leave me alone!";
-        String otherAccId = "sip:leave@me.alone.net";
-        /*
-        ContentValues oldValues = new ContentValues();
-        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, otherDisplayName);
-        oldValues.put(SipProfile.FIELD_ACC_ID, otherAccId);
-        Uri otherUri = contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
-        */
-        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
-                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
-                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
-        /*
-        Cursor cursor = contentProvider.query(otherUri,
-                new String[]{
-                        SipProfile.FIELD_DISPLAY_NAME,
-                        SipProfile.FIELD_ACC_ID,
-                }, null, null, null);
-        try {
-            assertTrue("Other CSipSimple line gone", cursor.moveToFirst());
-            int i = 0;
-            assertEquals(otherDisplayName, cursor.getString(i++));
-            assertEquals(otherAccId, cursor.getString(i++));
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        */
-    }
-
-    public void testNewLineLeavesOtherVoipLines() throws Exception {
-        checkOtherVoipLinesLeft("tbm5432", "lalala");
-    }
-
-    public void testReconfigureLeavesOtherVoipLines() throws Exception {
-        ContentValues oldValues = new ContentValues();
-        /*
-        oldValues.put(SipProfile.FIELD_DISPLAY_NAME, LINE_DISPLAY_NAME);
-        contentProvider.insert(SipProfile.ACCOUNT_URI, oldValues);
-        */
-        checkOtherVoipLinesLeft("tbm1111", "abcdefg");
     }
 
     private static void assertUriEquals(URI expected, Object actual) {
@@ -345,59 +296,17 @@ public class AcctDataServiceTest
         checkEnsureLineTriggersConfigure();
     }
 
-    public void testEnsureLineExistingDifferentName() throws Exception {
-        for (String name : WRONG_LINE_NAMES) {
-            int i = name.hashCode();
-            //insertProfileAndStatus(i, name, "tbm" + i, name, true, 3600);
-            checkEnsureLineTriggersConfigure();
-        }
-    }
-
     private Intent checkEnsureLineTriggersConfigure() throws InterruptedException {
         return startServiceAndWaitForBroadcast(
                 new Intent(AcctDataService.ACTION_ENSURE_LINE),
                 AcctDataService.ACTION_CONFIGURE_LINE);
     }
 
-    /*
-    private void insertProfileAndStatus(int id, String displayName, String lineName,
-                                        String password, boolean active, int expires) {
-        ContentValues values = new ContentValues();
-        values.put(SipProfile.FIELD_ID, id);
-        values.put(SipProfile.FIELD_DISPLAY_NAME, displayName);
-        values.put(SipProfile.FIELD_USERNAME, lineName);
-        values.put(SipProfile.FIELD_DATATYPE, SipProfile.CRED_DATA_PLAIN_PASSWD);
-        values.put(SipProfile.FIELD_DATA, password);
-        values.put(SipProfile.FIELD_ACTIVE, active);
-        contentProvider.insert(SipProfile.ACCOUNT_URI, values);
-        ContentValues statusValues = new ContentValues();
-        statusValues.put(SipProfileState.ACCOUNT_ID, id);
-        statusValues.put(SipProfileState.ACTIVE, active);
-        statusValues.put(SipProfileState.DISPLAY_NAME, displayName);
-        statusValues.put(SipProfileState.EXPIRES, expires);
-        contentProvider.insert(SipProfile.ACCOUNT_STATUS_URI, statusValues);
-    }
-    */
-
-    public void testEnsureLineExistsDisabled() throws Exception {
-        //insertProfileAndStatus(123, LINE_DISPLAY_NAME, "tbm0101", "blah", false, 0);
-        assertNull("Ran CONFIGURE_LINE even though exists and disabled",
-                startServiceAndGetBroadcast(new Intent(AcctDataService.ACTION_ENSURE_LINE),
-                        AcctDataService.ACTION_CONFIGURE_LINE));
-    }
-
-    public void testEnsureLineExistsUp() throws Exception {
-        //insertProfileAndStatus(321, LINE_DISPLAY_NAME, "tbm1010", "i'mup", true, 3600);
-        assertNull("Ran CONFIGURE_LINE even though exists and up",
-                startServiceAndGetBroadcast(new Intent(AcctDataService.ACTION_ENSURE_LINE),
-                        AcctDataService.ACTION_CONFIGURE_LINE));
-    }
-
     private Intent callEnsureLineAndCheckApiCalls(String acctName, String acctPw, String lineName,
                                                   String storedLinePw, String apiLinePw)
-            throws InterruptedException, JSONException, IOException {
+            throws InterruptedException, JSONException, IOException, LinphoneCoreException {
         setStoredAcct(acctName, acctPw);
-        //insertProfileAndStatus(6, LINE_DISPLAY_NAME, lineName, storedLinePw, true, 0);
+        addVoipLine(lineName, storedLinePw, "sip.tbmcv.com");
         when(fetcher.fetch(any(Map.class)))
                 .thenReturn(new JSONObject().put("pw", apiLinePw));
 
