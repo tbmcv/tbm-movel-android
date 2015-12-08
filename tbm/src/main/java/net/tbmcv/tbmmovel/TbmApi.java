@@ -40,6 +40,7 @@ public abstract class TbmApi {
             sslContext = SSLContext.getInstance("TLS");
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, null);
             InputStream certStream = context.getResources().openRawResource(R.raw.tbmds_cert);
             try {
                 keyStore.setCertificateEntry("tbmds",
