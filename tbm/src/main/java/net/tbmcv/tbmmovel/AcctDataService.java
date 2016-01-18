@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Base64;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -18,6 +19,7 @@ import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
 import static org.linphone.core.LinphoneAddress.*;
 
@@ -116,21 +118,24 @@ public class AcctDataService extends IntentService {
     }
 
     private void onCommandResetPassword(String acctName, String password) {
+        byte[] newPwBinary = new byte[12];
+        new SecureRandom().nextBytes(newPwBinary);
+        String newPw = Base64.encodeToString(newPwBinary,
+                Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
         try {
-            JSONObject result = getRestClient().buildRequest()
-                    .auth(acctName, password)
-                    .toUri("idens/")
-                    .toUri(acctName + "/")
-                    .toUri("pw")
-                    .method("POST")
-                    .body(new JSONObject().put("reset", "base64").put("size", 4))
-                    .fetch();
-            String newPw = result.getString("pw");
             getSharedPreferences(getString(R.string.tbm_settings_key), Context.MODE_PRIVATE)
                     .edit()
                     .putString(getString(R.string.tbm_setting_acctname), acctName)
                     .putString(getString(R.string.tbm_setting_password), newPw)
                     .commit();
+            getRestClient().buildRequest()
+                    .auth(acctName, password)
+                    .toUri("idens/")
+                    .toUri(acctName + "/")
+                    .toUri("pw")
+                    .method("PUT")
+                    .body(new JSONObject().put("value", newPw))
+                    .fetch();
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_PASSWORD_RESET));
         } catch (JSONException|IOException e) {

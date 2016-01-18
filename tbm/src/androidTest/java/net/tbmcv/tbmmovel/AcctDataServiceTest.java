@@ -108,9 +108,14 @@ public class AcctDataServiceTest
         assertActivityStarted(InitConfigActivity.class, 2, TimeUnit.SECONDS);
     }
 
-    public void testPwResetRequestSent() throws Exception {
+    public void testPwReset() throws Exception {
         String username = "c/9123456";
         String password = "123454321";
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences(
+                context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
+        prefs.edit().clear().commit();
+
         AnswerPromise<?> fetchPromise = new AnswerPromise<>();
         when(fetcher.fetch(any(Map.class))).then(fetchPromise);
         startService(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
@@ -122,16 +127,22 @@ public class AcctDataServiceTest
         Map<String, ?> params = paramsCaptor.getValue();
         assertEquals(username, params.get("username"));
         assertEquals(password, params.get("password"));
-        assertEquals("POST", params.get("method"));
+        assertEquals("PUT", params.get("method"));
         assertUriEquals("/idens/" + username + "/pw", params.get("uri"));
         JSONObject body = (JSONObject) params.get("body");
-        assertEquals("base64", body.get("reset"));
-        int size = body.getInt("size");
-        assertTrue(size >= 4);
-        assertTrue(size < 30);
+
+        String newPw = body.getString("value");
+        assertTrue(newPw.length() >= 4);
+        assertTrue(newPw.length() < 30);
+        assertEquals(username,
+                prefs.getString(context.getString(R.string.tbm_setting_acctname),
+                        "(NOTHING STORED)"));
+        assertEquals(newPw,
+                prefs.getString(context.getString(R.string.tbm_setting_password),
+                        "(NOTHING STORED)"));
     }
 
-    public void testLoginResetSuccessSavesCreds() throws Exception {
+    public void testPwResetChanges() throws Exception {
         String phoneNumber = "9999999";
         String newPw = "gg";
         Context context = getContext();
@@ -139,15 +150,17 @@ public class AcctDataServiceTest
                 context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
 
-        when(fetcher.fetch(any(Map.class))).thenReturn(new JSONObject().put("pw", newPw));
+        when(fetcher.fetch(any(Map.class))).thenReturn(null);
         sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                 .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"));
 
         assertEquals("c/" + phoneNumber,
-                prefs.getString(context.getString(R.string.tbm_setting_acctname), "(NOTHING STORED)"));
-        assertEquals(newPw,
-                prefs.getString(context.getString(R.string.tbm_setting_password), "(NOTHING STORED)"));
+                prefs.getString(context.getString(R.string.tbm_setting_acctname),
+                        "(NOTHING STORED)"));
+        String storedPw = prefs.getString(context.getString(R.string.tbm_setting_password), null);
+        assertNotNull(storedPw);
+        assertNotSame(newPw, storedPw);
     }
 
     public void testNewVoipLineRequest() throws Exception {
