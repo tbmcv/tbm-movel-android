@@ -58,6 +58,7 @@ public class SaldoFragment extends Fragment {
     public void onResume() {
         super.onResume();
         loadCredit();
+        ensureLine();
     }
 
     protected void setCredit(int credit) {
@@ -68,5 +69,11 @@ public class SaldoFragment extends Fragment {
         Activity activity = getActivity();
         activity.startService(new Intent(activity, AcctDataService.class)
                 .setAction(AcctDataService.ACTION_GET_CREDIT));
+    }
+
+    protected void ensureLine() {
+        Activity activity = getActivity();
+        activity.startService(new Intent(activity, AcctDataService.class)
+                .setAction(AcctDataService.ACTION_ENSURE_LINE));
     }
 }

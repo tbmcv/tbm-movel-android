@@ -17,6 +17,11 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
         assertServiceStarted(AcctDataService.class, AcctDataService.ACTION_GET_CREDIT);
     }
 
+    public void testEnsureLineRequestSent() {
+        startAndResumeAll();
+        assertServiceStarted(AcctDataService.class, AcctDataService.ACTION_ENSURE_LINE);
+    }
+
     protected void checkSaldoResponseDisplayed(int saldo, String formattedSaldo) {
         startAndResumeAll();
         LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(

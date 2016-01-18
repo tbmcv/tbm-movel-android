@@ -9,9 +9,12 @@ import android.content.Intent;
 import android.test.ActivityUnitTestCase;
 import android.widget.EditText;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityUnitTestCase<A> {
     private final Class<A> activityClass;
-    private volatile Intent lastServiceIntent = null;
+    private final List<Intent> serviceIntents = new ArrayList<>();
 
     public BaseActivityUnitTest(Class<A> activityClass) {
         super(activityClass);
@@ -21,26 +24,41 @@ public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityU
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        serviceIntents.clear();
         setActivityContext(new ContextWrapper(getInstrumentation().getTargetContext()) {
             @Override
             public ComponentName startService(Intent service) {
-                lastServiceIntent = service;
+                serviceIntents.add(service);
                 return service.getComponent();
             }
         });
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+        serviceIntents.clear();
+        super.tearDown();
+    }
+
     protected Intent assertServiceStarted(Class<? extends Service> cls) {
-        Intent intent = lastServiceIntent;
-        assertNotNull("No service started", intent);
-        assertEquals(cls.getCanonicalName(), intent.getComponent().getClassName());
-        return intent;
+        return assertServiceStarted(cls, null);
     }
 
     protected Intent assertServiceStarted(Class<? extends Service> cls, String action) {
-        Intent intent = assertServiceStarted(cls);
-        assertEquals(action, intent.getAction());
-        return intent;
+        synchronized (serviceIntents) {
+            for (Intent intent : serviceIntents) {
+                if (cls.getCanonicalName().equals(intent.getComponent().getClassName())
+                        && (action == null || action.equals(intent.getAction()))) {
+                    return intent;
+                }
+            }
+        }
+        String msg = "No service started for " + cls.getCanonicalName();
+        if (action != null) {
+            msg += " with action " + action;
+        }
+        fail(msg);
+        return null;
     }
 
     protected void launch() {
