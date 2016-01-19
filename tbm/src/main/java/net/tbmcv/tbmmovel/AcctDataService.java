@@ -49,6 +49,7 @@ public class AcctDataService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        Log.d(LOG_TAG, "Received Intent: " + intent.getAction());
         switch (intent.getAction()) {
             case ACTION_GET_CREDIT:
                 onCommandGetCredit();
@@ -166,8 +167,10 @@ public class AcctDataService extends IntentService {
                     .toUri(name + "/")
                     .toUri("pw")
                     .fetch();
+            Log.d(LOG_TAG, "Resetting voip line " + name);
             return new AuthPair(name, result.getString("pw"));
         } else {
+            Log.d(LOG_TAG, "Requesting new voip line");
             result = requestBuilder.fetch();
             return new AuthPair(result.getString("name"), result.getString("pw"));
         }
@@ -176,14 +179,14 @@ public class AcctDataService extends IntentService {
     private void onCommandConfigureLine() {
         AuthPair acct = getAcctAuth();
         if (acct == null) {
+            Log.w(LOG_TAG, "Can't configure line because no account saved");
             return;
         }
         try {
             AuthPair lineAuth = resetLinePassword(acct);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(
-                    new Intent(ACTION_CONFIGURE_LINE)
-                            .putExtra(EXTRA_LINE_NAME, lineAuth.name)
-                            .putExtra(EXTRA_PASSWORD, lineAuth.password));
+            startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE)
+                    .putExtra(EXTRA_LINE_NAME, lineAuth.name)
+                    .putExtra(EXTRA_PASSWORD, lineAuth.password));
         } catch (JSONException|IOException e) {
             Log.e(LOG_TAG, "Error reconfiguring line", e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(
@@ -213,16 +216,19 @@ public class AcctDataService extends IntentService {
     private boolean shouldReconfigure() {
         AuthPair acct = getAcctAuth();
         if (acct == null) {
+            Log.d(LOG_TAG, "Can't reconfigure line, because there's no saved account");
             return false;
         }
         LinphonePreferences prefs = LinphonePreferences.instance();
         if (prefs.getAccountCount() != 1) {
+            Log.d(LOG_TAG, "Should reconfigure because of local voip line count");
             return true;
         }
         String lineName = prefs.getAccountUsername(0);
         String linePw = prefs.getAccountPassword(0);
         Log.d(LOG_TAG, "Line name: " + lineName + " line pw: " + linePw);
         if (linePw == null || lineName == null) {
+            Log.d(LOG_TAG, "Should reconfigure because local voip line misconfigured");
             return true;
         }
         try {
@@ -245,8 +251,7 @@ public class AcctDataService extends IntentService {
 
     private void onCommandEnsureLine() {
         if (shouldReconfigure()) {
-            LocalBroadcastManager.getInstance(this).sendBroadcast(
-                    new Intent(ACTION_CONFIGURE_LINE));
+            startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE));
         }
     }
 }

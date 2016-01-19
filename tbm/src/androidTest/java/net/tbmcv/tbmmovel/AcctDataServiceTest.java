@@ -144,11 +144,27 @@ public class AcctDataServiceTest
 
     public void testPwResetChanges() throws Exception {
         String phoneNumber = "9999999";
-        String newPw = "gg";
+        String oldPw = "gg";
         Context context = getContext();
         SharedPreferences prefs = context.getSharedPreferences(
                 context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
+
+        when(fetcher.fetch(any(Map.class))).thenReturn(null);
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
+                .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, oldPw));
+
+        assertEquals("c/" + phoneNumber,
+                prefs.getString(context.getString(R.string.tbm_setting_acctname),
+                        "(NOTHING STORED)"));
+        String storedPw = prefs.getString(context.getString(R.string.tbm_setting_password), null);
+        assertNotNull(storedPw);
+        assertNotSame(oldPw, storedPw);
+    }
+
+    public void testPwResetSendsBroadcast() throws Exception {
+        String phoneNumber = "9999999";
 
         when(fetcher.fetch(any(Map.class))).thenReturn(null);
         sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
@@ -173,9 +189,9 @@ public class AcctDataServiceTest
                 .thenReturn(new JSONObject().put("lines", new JSONArray()))
                 .thenReturn(new JSONObject().put("name", lineName).put("pw", linePassword));
 
-        Intent resultIntent = startServiceAndWaitForBroadcast(
-                new Intent(AcctDataService.ACTION_CONFIGURE_LINE),
-                AcctDataService.ACTION_CONFIGURE_LINE);
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        Intent resultIntent = getStartServiceTrap().getServiceStarted(
+                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
 
         verify(fetcher, times(2)).fetch(paramsCaptor.capture());
 
@@ -212,9 +228,9 @@ public class AcctDataServiceTest
                                         .put("display", null))))
                 .thenReturn(new JSONObject().put("pw", linePassword));
 
-        Intent resultIntent = startServiceAndWaitForBroadcast(
-                new Intent(AcctDataService.ACTION_CONFIGURE_LINE),
-                AcctDataService.ACTION_CONFIGURE_LINE);
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        Intent resultIntent = getStartServiceTrap().getServiceStarted(
+                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
 
         verify(fetcher, times(2)).fetch(paramsCaptor.capture());
 
@@ -310,9 +326,11 @@ public class AcctDataServiceTest
     }
 
     private Intent checkEnsureLineTriggersConfigure() throws InterruptedException {
-        return startServiceAndWaitForBroadcast(
-                new Intent(AcctDataService.ACTION_ENSURE_LINE),
-                AcctDataService.ACTION_CONFIGURE_LINE);
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_ENSURE_LINE));
+        Intent resultIntent = getStartServiceTrap().getServiceStarted(
+                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
+        assertNotNull("CONFIGURE_LINE not triggered", resultIntent);
+        return resultIntent;
     }
 
     private Intent callEnsureLineAndCheckApiCalls(String acctName, String acctPw, String lineName,
@@ -323,9 +341,9 @@ public class AcctDataServiceTest
         when(fetcher.fetch(any(Map.class)))
                 .thenReturn(new JSONObject().put("pw", apiLinePw));
 
-        Intent resultIntent = startServiceAndGetBroadcast(
-                new Intent(AcctDataService.ACTION_ENSURE_LINE),
-                AcctDataService.ACTION_CONFIGURE_LINE);
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_ENSURE_LINE));
+        Intent resultIntent = getStartServiceTrap().getServiceStarted(
+                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
 
         verify(fetcher).fetch(paramsCaptor.capture());
 

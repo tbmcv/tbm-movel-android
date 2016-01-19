@@ -5,7 +5,6 @@ import android.app.IntentService;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
@@ -40,7 +39,7 @@ public class BaseIntentServiceUnitTest<S extends IntentService> extends ServiceT
         setContext(new TestingContext(getContext()));
     }
 
-    private class TestingContext extends ContextWrapper {
+    private class TestingContext extends StartServiceTrapContextWrapper {
         TestingContext(Context base) {
             super(base);
         }
@@ -58,6 +57,10 @@ public class BaseIntentServiceUnitTest<S extends IntentService> extends ServiceT
         BaseIntentServiceUnitTest<S> getCurrentTest() {
             return BaseIntentServiceUnitTest.this;
         }
+    }
+
+    protected StartServiceTrapContextWrapper getStartServiceTrap() {
+        return (StartServiceTrapContextWrapper) getContext();
     }
 
     protected void setIntentHandled(Intent intent) {
