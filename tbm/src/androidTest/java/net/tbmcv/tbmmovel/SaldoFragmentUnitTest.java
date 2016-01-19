@@ -14,12 +14,16 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
 
     public void testSaldoRequestSent() {
         startAndResumeAll();
-        assertServiceStarted(AcctDataService.class, AcctDataService.ACTION_GET_CREDIT);
+        assertNotNull("Service not started with GET_CREDIT",
+                getStartServiceTrap().getServiceStarted(
+                        AcctDataService.class, AcctDataService.ACTION_GET_CREDIT));
     }
 
     public void testEnsureLineRequestSent() {
         startAndResumeAll();
-        assertServiceStarted(AcctDataService.class, AcctDataService.ACTION_ENSURE_LINE);
+        assertNotNull("Service not started with ENSURE_LINE",
+                getStartServiceTrap().getServiceStarted(
+                        AcctDataService.class, AcctDataService.ACTION_ENSURE_LINE));
     }
 
     protected void checkSaldoResponseDisplayed(int saldo, String formattedSaldo) {

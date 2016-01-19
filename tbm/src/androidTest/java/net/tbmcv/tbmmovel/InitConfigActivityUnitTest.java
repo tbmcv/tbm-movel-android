@@ -52,7 +52,7 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         String password = "123454321";
         performLogin(username, password);
 
-        Intent intent = assertServiceStarted(
+        Intent intent = getStartServiceTrap().getServiceStarted(
                 AcctDataService.class, AcctDataService.ACTION_RESET_PASSWORD);
         assertEquals("c/" + username, intent.getStringExtra(AcctDataService.EXTRA_ACCT_NAME));
         assertEquals(password, intent.getStringExtra(AcctDataService.EXTRA_PASSWORD));

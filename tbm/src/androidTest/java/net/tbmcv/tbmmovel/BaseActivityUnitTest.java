@@ -14,7 +14,7 @@ import java.util.List;
 
 public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityUnitTestCase<A> {
     private final Class<A> activityClass;
-    private final List<Intent> serviceIntents = new ArrayList<>();
+    private StartServiceTrapContextWrapper contextWrapper;
 
     public BaseActivityUnitTest(Class<A> activityClass) {
         super(activityClass);
@@ -24,41 +24,17 @@ public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityU
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        serviceIntents.clear();
-        setActivityContext(new ContextWrapper(getInstrumentation().getTargetContext()) {
-            @Override
-            public ComponentName startService(Intent service) {
-                serviceIntents.add(service);
-                return service.getComponent();
-            }
-        });
+        contextWrapper = new StartServiceTrapContextWrapper(getInstrumentation().getTargetContext());
+        setActivityContext(contextWrapper);
     }
 
     @Override
     protected void tearDown() throws Exception {
-        serviceIntents.clear();
         super.tearDown();
     }
 
-    protected Intent assertServiceStarted(Class<? extends Service> cls) {
-        return assertServiceStarted(cls, null);
-    }
-
-    protected Intent assertServiceStarted(Class<? extends Service> cls, String action) {
-        synchronized (serviceIntents) {
-            for (Intent intent : serviceIntents) {
-                if (cls.getCanonicalName().equals(intent.getComponent().getClassName())
-                        && (action == null || action.equals(intent.getAction()))) {
-                    return intent;
-                }
-            }
-        }
-        String msg = "No service started for " + cls.getCanonicalName();
-        if (action != null) {
-            msg += " with action " + action;
-        }
-        fail(msg);
-        return null;
+    protected StartServiceTrapContextWrapper getStartServiceTrap() {
+        return contextWrapper;
     }
 
     protected void launch() {
