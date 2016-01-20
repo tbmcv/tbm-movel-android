@@ -21,7 +21,10 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 
 public class SaldoFragment extends Fragment {
+    private static final int UNKNOWN_CREDIT = Integer.MIN_VALUE;
+
     private NumberFormat creditFormat;
+    private int currentCredit = UNKNOWN_CREDIT;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -42,8 +45,8 @@ public class SaldoFragment extends Fragment {
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                int credit = intent.getIntExtra(AcctDataService.EXTRA_CREDIT, Integer.MIN_VALUE);
-                if (credit != Integer.MIN_VALUE) {
+                int credit = intent.getIntExtra(AcctDataService.EXTRA_CREDIT, UNKNOWN_CREDIT);
+                if (credit != UNKNOWN_CREDIT) {
                     setCredit(credit);
                 }
                 if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
@@ -59,10 +62,20 @@ public class SaldoFragment extends Fragment {
         super.onResume();
         loadCredit();
         ensureLine();
+        onCreditUpdate();
     }
 
     protected void setCredit(int credit) {
-        ((TextView) getView().findViewById(R.id.creditValue)).setText(creditFormat.format(credit));
+        currentCredit = credit;
+        onCreditUpdate();
+    }
+
+    protected void onCreditUpdate() {
+        View view = getView();
+        if (view != null) {
+            ((TextView) view.findViewById(R.id.creditValue)).setText(
+                    currentCredit == UNKNOWN_CREDIT ? "" : creditFormat.format(currentCredit));
+        }
     }
 
     protected void loadCredit() {
