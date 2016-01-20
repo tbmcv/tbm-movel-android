@@ -50,8 +50,11 @@ public class SaldoFragment extends Fragment {
                     setCredit(credit);
                 }
                 if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
-                    Toast.makeText(getActivity(),
-                            R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
+                    Activity activity = getActivity();
+                    if (activity != null) {
+                        Toast.makeText(activity,
+                                R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         }, new IntentFilter(AcctDataService.ACTION_STATUS));
