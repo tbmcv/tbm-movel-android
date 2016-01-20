@@ -13,13 +13,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.linphone.LinphoneManager;
-import org.linphone.LinphonePreferences;
 import org.linphone.R;
+import org.linphone.core.LinphoneAddress;
+import org.linphone.core.LinphoneAuthInfo;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
+import org.linphone.core.LinphoneCoreFactory;
+import org.linphone.core.LinphoneProxyConfig;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Locale;
 
 import static org.linphone.core.LinphoneAddress.*;
 
@@ -200,17 +208,38 @@ public class AcctDataService extends IntentService {
             LinphoneCore lc = LinphoneManager.getLc();
             lc.clearAuthInfos();
             lc.clearProxyConfigs();
-            new LinphonePreferences.AccountBuilder(LinphoneManager.getLc())
-                    .setUsername(username)
-                    .setPassword(password)
-                    .setDomain(realm)
-                    .setRealm(realm)
-                    .setProxy(realm)
-                    .setTransport(TransportType.LinphoneTransportTcp)
-                    .saveNewAccount();
+            LinphoneAddress proxyAddr = LinphoneCoreFactory.instance().createLinphoneAddress(
+                    "sip:" + realm);
+            proxyAddr.setTransport(TransportType.LinphoneTransportTcp);
+            LinphoneProxyConfig proxyConfig = lc.createProxyConfig(
+                    "sip:" + username + "@" + realm, proxyAddr.asStringUriOnly(), null, true);
+            proxyConfig.setExpires(300);  // TODO configure somewhere
+            LinphoneAuthInfo authInfo = LinphoneCoreFactory.instance().createAuthInfo(
+                    username, null, null, createHa1(username, password, realm), null, realm);
+            lc.addProxyConfig(proxyConfig);
+            lc.addAuthInfo(authInfo);
+            lc.setDefaultProxyConfig(proxyConfig);
         } catch (LinphoneCoreException e) {
             Log.e(LOG_TAG, "Error saving line configuration", e);
         }
+    }
+
+    public static String createHa1(String username, String password, String realm) {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(username.getBytes("UTF-8"));
+            md5.update((byte) ':');
+            md5.update(realm.getBytes("UTF-8"));
+            md5.update((byte) ':');
+            md5.update(password.getBytes("UTF-8"));
+            return String.format(Locale.US, "%032x", new BigInteger(1, md5.digest()));
+        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+            throw new Error(e);
+        }
+    }
+
+    private String createHa1(String username, String password) {
+        return createHa1(username, password, getString(R.string.tbm_sip_realm));
     }
 
     private boolean shouldReconfigure() {
@@ -219,15 +248,16 @@ public class AcctDataService extends IntentService {
             Log.d(LOG_TAG, "Can't reconfigure line, because there's no saved account");
             return false;
         }
-        LinphonePreferences prefs = LinphonePreferences.instance();
-        if (prefs.getAccountCount() != 1) {
+        LinphoneCore lc = LinphoneManager.getLc();
+        LinphoneAuthInfo[] authInfos = lc.getAuthInfosList();
+        if (authInfos.length != 1) {
             Log.d(LOG_TAG, "Should reconfigure because of local voip line count");
             return true;
         }
-        String lineName = prefs.getAccountUsername(0);
-        String linePw = prefs.getAccountPassword(0);
-        Log.d(LOG_TAG, "Line name: " + lineName + " line pw: " + linePw);
-        if (linePw == null || lineName == null) {
+        String lineName = authInfos[0].getUsername();
+        String lineHa1 = authInfos[0].getHa1();
+        Log.d(LOG_TAG, "Line name: " + lineName + " line HA1: " + lineHa1);
+        if (lineHa1 == null || lineName == null) {
             Log.d(LOG_TAG, "Should reconfigure because local voip line misconfigured");
             return true;
         }
@@ -240,7 +270,7 @@ public class AcctDataService extends IntentService {
                     .toUri(lineName + "/")
                     .toUri("pw")
                     .fetch();
-            return !linePw.equals(result.getString("pw"));
+            return !lineHa1.equals(createHa1(lineName, result.getString("pw")));
         } catch (JSONException|IOException e) {
             Log.e(LOG_TAG, "Error retrieving line password", e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(

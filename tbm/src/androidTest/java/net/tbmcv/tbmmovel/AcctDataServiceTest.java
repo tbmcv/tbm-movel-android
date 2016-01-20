@@ -20,7 +20,10 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.linphone.core.LinphoneAddress.*;
@@ -260,7 +263,7 @@ public class AcctDataServiceTest
         if (userId != null) {
             assertEquals(lineName, userId);
         }
-        assertEquals(password, auth.getPassword());
+        assertEquals(AcctDataService.createHa1(lineName, password, realm), auth.getHa1());
         assertEquals(realm, auth.getDomain());
         String realmValue = auth.getRealm();
         if (realmValue != null) {
@@ -277,6 +280,8 @@ public class AcctDataServiceTest
 
     void addVoipLine(String lineName, String password, String domain) throws LinphoneCoreException {
         LinphoneCore lc = LinphoneManager.getLc();
+        Set<LinphoneAuthInfo> oldAuthInfos = new HashSet<>();
+        Collections.addAll(oldAuthInfos, lc.getAuthInfosList());
         new LinphonePreferences.AccountBuilder(lc)
                 .setUsername(lineName)
                 .setPassword(password)
@@ -285,6 +290,13 @@ public class AcctDataServiceTest
                 .setProxy(domain)
                 .setEnabled(true)
                 .saveNewAccount();
+        Set<LinphoneAuthInfo> authInfos = new HashSet<>();
+        Collections.addAll(authInfos, lc.getAuthInfosList());
+        authInfos.removeAll(oldAuthInfos);
+        assertEquals(1, authInfos.size());
+        LinphoneAuthInfo authInfo = authInfos.iterator().next();
+        authInfo.setPassword(null);
+        authInfo.setHa1(AcctDataService.createHa1(lineName, password, domain));
     }
 
     public void testConfigureNewVoipLine() throws Exception {
@@ -360,5 +372,10 @@ public class AcctDataServiceTest
                 callEnsureLineAndCheckApiCalls(
                         "c/9881889", "duvinha", "tbm8324",
                         "jk324h", "23kj4h"));
+    }
+
+    public void testCreateHa1() {
+        assertEquals("9bc3f707a46d0bf0403b5dc2270d29b2",
+                AcctDataService.createHa1("thisguy", "bruteforcethis", "here"));
     }
 }
