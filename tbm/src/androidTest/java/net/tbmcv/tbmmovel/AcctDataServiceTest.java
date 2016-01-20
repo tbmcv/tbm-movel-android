@@ -164,19 +164,12 @@ public class AcctDataServiceTest
     }
 
     public void testPwResetSendsBroadcast() throws Exception {
-        String phoneNumber = "9999999";
-
         when(fetcher.fetch(any(Map.class))).thenReturn(null);
-        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
-                .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/" + phoneNumber)
-                .putExtra(AcctDataService.EXTRA_PASSWORD, "g2g"));
-
-        assertEquals("c/" + phoneNumber,
-                prefs.getString(context.getString(R.string.tbm_setting_acctname),
-                        "(NOTHING STORED)"));
-        String storedPw = prefs.getString(context.getString(R.string.tbm_setting_password), null);
-        assertNotNull(storedPw);
-        assertNotSame(newPw, storedPw);
+        startServiceAndWaitForBroadcast(
+                new Intent(AcctDataService.ACTION_RESET_PASSWORD)
+                    .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/abcd")
+                    .putExtra(AcctDataService.EXTRA_PASSWORD, "EFG"),
+                AcctDataService.ACTION_PASSWORD_RESET);
     }
 
     public void testNewVoipLineRequest() throws Exception {
