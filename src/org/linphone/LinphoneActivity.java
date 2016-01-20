@@ -43,8 +43,6 @@ import org.linphone.core.LinphoneCoreListenerBase;
 import org.linphone.core.LinphoneProxyConfig;
 import org.linphone.core.Reason;
 import org.linphone.mediastream.Log;
-import org.linphone.setup.RemoteProvisioningLoginActivity;
-import org.linphone.setup.SetupActivity;
 import org.linphone.ui.AddressText;
 
 import android.annotation.SuppressLint;
@@ -129,20 +127,6 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 			finish();
 			startActivity(getIntent().setClass(this, LinphoneLauncherActivity.class));
 			return;
-		}
-
-		boolean useFirstLoginActivity = getResources().getBoolean(R.bool.display_account_wizard_at_first_start);
-		if (LinphonePreferences.instance().isProvisioningLoginViewEnabled()) {
-			Intent wizard = new Intent();
-			wizard.setClass(this, RemoteProvisioningLoginActivity.class);
-			wizard.putExtra("Domain", LinphoneManager.getInstance().wizardLoginViewDomain);
-			startActivityForResult(wizard, REMOTE_PROVISIONING_LOGIN_ACTIVITY);
-		} else if (useFirstLoginActivity && LinphonePreferences.instance().isFirstLaunch()) {
-			if (LinphonePreferences.instance().getAccountCount() > 0) {
-				LinphonePreferences.instance().firstLaunchSuccessful();
-			} else {
-				startActivityForResult(new Intent().setClass(this, SetupActivity.class), FIRST_LOGIN_ACTIVITY);
-			}
 		}
 
 		if (getResources().getBoolean(R.bool.use_linphone_tag)) {

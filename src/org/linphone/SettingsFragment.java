@@ -31,7 +31,6 @@ import org.linphone.core.LinphoneCoreListenerBase;
 import org.linphone.core.LinphoneProxyConfig;
 import org.linphone.core.PayloadType;
 import org.linphone.mediastream.Log;
-import org.linphone.setup.SetupActivity;
 import org.linphone.ui.LedPreference;
 import org.linphone.ui.PreferencesListFragment;
 
@@ -46,6 +45,8 @@ import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
+
+import net.tbmcv.tbmmovel.InitConfigActivity;
 
 /**
  * @author Sylvain Berfini
@@ -119,7 +120,7 @@ public class SettingsFragment extends PreferencesListFragment {
 		findPreference(getString(R.string.setup_key)).setOnPreferenceClickListener(new OnPreferenceClickListener() {
 			@Override
 			public boolean onPreferenceClick(Preference preference) {
-				Intent intent = new Intent(LinphoneService.instance(), SetupActivity.class);
+				Intent intent = new Intent(LinphoneService.instance(), InitConfigActivity.class);
 				startActivityForResult(intent, WIZARD_INTENT);
 				return true;
 			}
