@@ -34,7 +34,7 @@ import android.widget.TextView;
  * @author Sylvain Berfini
  */
 public class AboutFragment extends Fragment implements OnClickListener {
-	private FragmentsAvailable about = FragmentsAvailable.ABOUT;
+	private FragmentsAvailable about = FragmentsAvailable.ABOUT;  // modified 2015 Daniel Getz
 	View exitButton = null;
 	View sendLogButton = null;
 	View resetLogButton = null;
