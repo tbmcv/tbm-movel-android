@@ -2,6 +2,7 @@ package org.linphone;
 /*
 FragmentsAvailable.java
 Copyright (C) 2012  Belledonne Communications, Grenoble, France
+Modified 2015  Daniel Getz
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
