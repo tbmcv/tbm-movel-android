@@ -55,7 +55,14 @@ public abstract class TbmApi {
 
         @Override
         public JsonRestClient getRestClient() {
-            return new HttpsJsonRestClient(getBaseUrl(), sslContext);
+            return new HttpsJsonRestClient(getBaseUrl(), sslContext) {
+                @Override
+                public JsonRestClient.RequestBuilder buildRequest() {
+                    return super.buildRequest()
+                            .connectTimeout(4000)
+                            .readTimeout(8000);
+                }
+            };
         }
 
         @Override
