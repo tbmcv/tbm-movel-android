@@ -90,4 +90,16 @@ public class MockJrcRequestBuilder implements JsonRestClient.RequestBuilder {
     public MockJrcRequestBuilder toUri(String uri) {
         return toUri(URI.create(uri));
     }
+
+    @Override
+    public JsonRestClient.RequestBuilder connectTimeout(int timeout) {
+        params.put("connectTimeout", timeout);
+        return this;
+    }
+
+    @Override
+    public JsonRestClient.RequestBuilder readTimeout(int timeout) {
+        params.put("readTimeout", timeout);
+        return this;
+    }
 }

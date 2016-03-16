@@ -51,6 +51,8 @@ public class HttpJsonRestClient implements JsonRestClient {
         private String mMethod;
         private String mBody;
         private URI mUri = URI.create("");
+        private int mConnectTimeout;
+        private int mReadTimeout;
 
         @Override
         public RequestBuilder auth(String username, String password) {
@@ -88,6 +90,18 @@ public class HttpJsonRestClient implements JsonRestClient {
         }
 
         @Override
+        public RequestBuilder connectTimeout(int timeout) {
+            mConnectTimeout = timeout;
+            return this;
+        }
+
+        @Override
+        public RequestBuilder readTimeout(int timeout) {
+            mReadTimeout = timeout;
+            return this;
+        }
+
+        @Override
         public JSONObject fetch() throws IOException, JSONException {
             HttpURLConnection connection = openConnection(mUri);
             if (mBody != null) {
@@ -99,6 +113,11 @@ public class HttpJsonRestClient implements JsonRestClient {
             if (mMethod != null) {
                 connection.setRequestMethod(mMethod);
             }
+
+            // timeouts default to 0, both here and in URLConnection
+            connection.setConnectTimeout(mConnectTimeout);
+            connection.setReadTimeout(mReadTimeout);
+
             connection.connect();
             try {
                 if (mBody != null) {
@@ -106,6 +125,12 @@ public class HttpJsonRestClient implements JsonRestClient {
                     outputStream.write(mBody.getBytes("UTF-8"));
                     outputStream.flush();
                 }
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode >= 400) {
+                    throw new HttpError(responseCode);
+                }
+
                 String response = readInputStreamToString(
                         connection.getInputStream(), "UTF-8").trim();
                 if (response.length() == 0) {

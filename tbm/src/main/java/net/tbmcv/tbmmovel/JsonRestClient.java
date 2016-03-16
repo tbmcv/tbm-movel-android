@@ -21,5 +21,9 @@ public interface JsonRestClient {
         RequestBuilder toUri(URI uri);
 
         RequestBuilder toUri(String uri);
+
+        RequestBuilder connectTimeout(int timeout);
+
+        RequestBuilder readTimeout(int timeout);
     }
 }

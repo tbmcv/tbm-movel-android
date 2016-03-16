@@ -151,4 +151,39 @@ public class HttpJsonRestClientTest extends TestCase {
         inOrder.verify(mockConnection).disconnect();
         assertEquals(getDefaultBaseUrl() + "abc/def/123", connectionUrl.toString());
     }
+
+    public void testSetConnectTimeout() throws Exception {
+        final int timeout = 12345;
+        setResponse("");
+        createClient().buildRequest().connectTimeout(timeout).fetch();
+        HttpURLConnection mockConnection = getMockConnection();
+        InOrder inOrder = inOrder(mockConnection);
+        inOrder.verify(mockConnection).setConnectTimeout(timeout);
+        inOrder.verify(mockConnection).connect();
+        inOrder.verify(mockConnection).disconnect();
+    }
+
+    public void testSetReadTimeout() throws Exception {
+        final int timeout = 54321;
+        setResponse("");
+        createClient().buildRequest().readTimeout(timeout).fetch();
+        HttpURLConnection mockConnection = getMockConnection();
+        InOrder inOrder = inOrder(mockConnection);
+        inOrder.verify(mockConnection).setReadTimeout(timeout);
+        inOrder.verify(mockConnection).connect();
+        inOrder.verify(mockConnection).disconnect();
+    }
+
+    public final void testHttpError() throws Exception {
+        int[] codes = {401, 400, 500, 600, 404};
+        for (int code : codes) {
+            when(getMockConnection().getResponseCode()).thenReturn(code);
+            try {
+                createClient().buildRequest().fetch();
+                fail("Didn't return HTTP error " + code);
+            } catch (HttpError e) {
+                assertEquals(code, e.getResponseCode());
+            }
+        }
+    }
 }
