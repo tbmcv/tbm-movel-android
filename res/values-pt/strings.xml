@@ -57,7 +57,7 @@
   <string name="out_conf">Está fora</string>
   <string name="out_conf_enter">Entrar</string>
   <string name="error_while_accepting_pending_call">Erro na aceitar chamada pendente</string>
-  <string name="incoming_call_dialog_title">%s lhe está a chamar</string>
+  <string name="incoming_call_dialog_title">%s está a chamar você</string>
   <string name="accept">Aceitar</string>
   <string name="decline">Recusar</string>
   <string name="unknown_incoming_call_name">Desconhecido</string>
@@ -176,5 +176,25 @@
   <string name="menu_settings">Opções</string>
   <string name="menu_clear_history">Eliminar tudo</string>
   <string name="pref_ipv6_title">Usar ipv6 em vez de ipv4</string>
-  <string name="pref_autostart">Iniciar quando o telefone abre</string>
+  <string name="pref_autostart">Iniciar quando o aparelho abre</string>
+  <string name="wrong_domain">Domínio errado</string>
+  <string name="wrong_passwd">Senha errada</string>
+  <string name="wrong_settings">Configurações erradas</string>
+  <string name="wrong_username">Utilizador errado</string>
+  <string name="pref_bandwidth_limit">Banda máxima em kbit/s</string>
+  <string name="notification_started">iniciado</string>
+  <string name="no_echo">Sem eco</string>
+  <string name="incoming">A receber uma chamada</string>
+  <string name="error_network_unreachable">Sem rede</string>
+  <string name="error_unauthorized">Não autorizado</string>
+  <string name="error_unknown">Erro desconhecido</string>
+  <string name="error_user_not_found">Utilizador não encontrado</string>
+  <string name="error_bad_credentials">Utilizador ou senha errado.</string>
+  <string name="ec_calibrated">Calibrado [%s ms]</string>
+  <string name="ec_calibrating">A calibrar…</string>
+  <string name="ec_calibration_launch_message">Começando calibração da cancelação de eco</string>
+  <string name="default_account_flag">Conta padrão</string>
+  <string name="dismiss">Despedir</string>
+  <string name="call_state_incoming">Recibida</string>
+  <string name="call_state_outgoing">De saída</string>
 </resources>
