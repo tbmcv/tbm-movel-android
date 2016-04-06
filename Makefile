@@ -90,8 +90,10 @@ endif
 
 ifeq ($(ANT_SILENT), 1)
 	ANT=ant -e -S
+	GRADLE=$(TOPDIR)/gradlew -q
 else
 	ANT=ant -e
+	GRADLE=$(TOPDIR)/gradlew -q
 endif
 
 # Temporary check: in case of MediastreamActivity.java file existing while it should not anymore, print an error message
@@ -481,7 +483,7 @@ javah:
 
 generate-apk: java-clean generate-libs
 	echo "version.name=$(LINPHONE_ANDROID_DEBUG_VERSION)" > default.properties
-	$(ANT) debug
+	$(GRADLE) assembleDebug
 
 generate-mediastreamer2-apk: java-clean generate-mediastreamer2-libs
 	@cd $(TOPDIR)/submodules/linphone/mediastreamer2/java && \
@@ -499,7 +501,7 @@ release: update-project
 	patch -p1 < release.patch
 	cat ant.properties | grep version.name > default.properties
 	$(MAKE) generate-libs
-	$(ANT) release
+	$(GRADLE) assembleRelease
 	patch -Rp1 < release.patch
 
 run-linphone:
@@ -527,7 +529,7 @@ clean-ndk-build:
 
 
 java-clean:
-	$(ANT) clean
+	$(GRADLE) clean
 
 clean:	clean-native java-clean
 	patch -Rp1 -f < release.patch || echo "patch already cleaned"

@@ -42,3 +42,5 @@ liblinphone_tester/liblinphonetester_*
 liblinphone_tester/tests.output
 tests/linphonetester_*
 tests/tests.output
+/gradle.properties
+/*.keystore
