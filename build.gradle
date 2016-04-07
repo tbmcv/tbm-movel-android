@@ -76,4 +76,88 @@ android {
             }
         }
     }
+
+    task generateDebugJniHeaders { }
+
+    task generateReleaseJniHeaders { }
+
+    def coreJniClasses = [
+        'org.linphone.core.LinphoneAddressImpl',
+        'org.linphone.core.LinphoneAuthInfoImpl',
+        'org.linphone.core.LinphoneCallImpl',
+        'org.linphone.core.LinphoneCallLogImpl',
+        'org.linphone.core.LinphoneCallParamsImpl',
+        'org.linphone.core.LinphoneCallStatsImpl',
+        'org.linphone.core.LinphoneChatMessageImpl',
+        'org.linphone.core.LinphoneChatRoomImpl',
+        'org.linphone.core.LinphoneCoreFactoryImpl',
+        'org.linphone.core.LinphoneCoreImpl',
+        'org.linphone.core.LinphoneFriendImpl',
+        'org.linphone.core.LinphoneProxyConfigImpl',
+        'org.linphone.core.PayloadTypeImpl',
+        'org.linphone.core.LpConfigImpl',
+        'org.linphone.core.LinphoneInfoMessageImpl',
+        'org.linphone.core.LinphoneEventImpl',
+        'org.linphone.core.PresenceActivityImpl',
+        'org.linphone.core.PresenceModelImpl',
+        'org.linphone.core.PresenceNoteImpl',
+        'org.linphone.core.PresencePersonImpl',
+        'org.linphone.core.PresenceServiceImpl',
+        'org.linphone.core.ErrorInfoImpl',
+    ]
+
+    task generateDebugCoreJniHeaders(type: JavahTask) {
+        variant = 'debug'
+        outputFile = file('gen/linphonecore_jni.h')
+        args coreJniClasses
+    }
+    generateDebugJniHeaders.dependsOn generateDebugCoreJniHeaders
+
+    task generateReleaseCoreJniHeaders(type: JavahTask) {
+        variant = 'release'
+        outputFile = file('gen/linphonecore_jni.h')
+        args coreJniClasses
+    }
+    generateReleaseJniHeaders.dependsOn generateReleaseCoreJniHeaders
+
+    task generateDebugXml2LpcJniHeaders(type: JavahTask) {
+        variant = 'debug'
+        outputFile = file('gen/xml2lpc_jni.h')
+        args 'org.linphone.tools.Xml2Lpc'
+    }
+    generateDebugJniHeaders.dependsOn generateDebugXml2LpcJniHeaders
+
+    task generateReleaseXml2LpcJniHeaders(type: JavahTask) {
+        variant = 'release'
+        outputFile = file('gen/xml2lpc_jni.h')
+        args 'org.linphone.tools.Xml2Lpc'
+    }
+    generateReleaseJniHeaders.dependsOn generateReleaseXml2LpcJniHeaders
+
+    task generateDebugLpc2XmlJniHeaders(type: JavahTask) {
+        variant = 'debug'
+        outputFile = file('gen/lpc2xml_jni.h')
+        args 'org.linphone.tools.Lpc2Xml'
+    }
+    generateDebugJniHeaders.dependsOn generateDebugLpc2XmlJniHeaders
+
+    task generateReleaseLpc2XmlJniHeaders(type: JavahTask) {
+        variant = 'release'
+        outputFile = file('gen/lpc2xml_jni.h')
+        args 'org.linphone.tools.Lpc2Xml'
+    }
+    generateReleaseJniHeaders.dependsOn generateReleaseLpc2XmlJniHeaders
+}
+
+class JavahTask extends Exec {
+    def setVariant(String variant) {
+        def compileTaskName = "compile${variant.capitalize()}JavaWithJavac"
+        executable 'javah'
+        args '-classpath', "${->project[compileTaskName].destinationDir}"
+        dependsOn compileTaskName
+    }
+
+    def setOutputFile(File outputFile) {
+        args '-o', outputFile
+    }
 }
