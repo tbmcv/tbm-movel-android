@@ -90,8 +90,10 @@ endif
 
 ifeq ($(ANT_SILENT), 1)
 	ANT=ant -e -S
+	GRADLE=$(TOPDIR)/gradlew -q
 else
 	ANT=ant -e
+	GRADLE=$(TOPDIR)/gradlew -q
 endif
 
 # Temporary check: in case of MediastreamActivity.java file existing while it should not anymore, print an error message
@@ -455,7 +457,11 @@ LIBLINPHONE_OPTIONS = $(GENERATE_OPTIONS) \
 MEDIASTREAMER2_OPTIONS = $(GENERATE_OPTIONS) BUILD_MEDIASTREAMER2_SDK=1
 
 
-generate-libs: prepare-sources javah
+generate-libs-debug: prepare-sources javah-debug
+	$(NDK_PATH)/ndk-build $(LIBLINPHONE_OPTIONS) -j$(NUMCPUS) TARGET_PLATFORM=$(NDKBUILD_TARGET)
+	./bsed.sh # Fix path to libffmpeg library in linphone.so because of Android M Preview issue: https://code.google.com/p/android-developer-preview/issues/detail?id=2239
+
+generate-libs-release: prepare-sources javah-release
 	$(NDK_PATH)/ndk-build $(LIBLINPHONE_OPTIONS) -j$(NUMCPUS) TARGET_PLATFORM=$(NDKBUILD_TARGET)
 	./bsed.sh # Fix path to libffmpeg library in linphone.so because of Android M Preview issue: https://code.google.com/p/android-developer-preview/issues/detail?id=2239
 
@@ -472,16 +478,19 @@ update-mediastreamer2-project:
 	@cd $(TOPDIR)/submodules/linphone/mediastreamer2/java && \
 	$(SDK_PATH)/android update project --path . --target $(ANDROID_MOST_RECENT_TARGET)
 
-liblinphone_tester: update-project prepare-sources prepare-cunit prepare-liblinphone_tester javah
+liblinphone_tester: update-project prepare-sources prepare-cunit prepare-liblinphone_tester javah-debug
 	$(NDK_PATH)/ndk-build -C liblinphone_tester $(LIBLINPHONE_OPTIONS) -j$(NUMCPUS) TARGET_PLATFORM=$(NDKBUILD_TARGET)
 	$(MAKE) -C liblinphone_tester
 
-javah:
-	$(ANT) javah
+javah-debug:
+	$(GRADLE) generateDebugJniHeaders
 
-generate-apk: java-clean generate-libs
+javah-release:
+	$(GRADLE) generateReleaseJniHeaders
+
+generate-apk: java-clean generate-libs-debug
 	echo "version.name=$(LINPHONE_ANDROID_DEBUG_VERSION)" > default.properties
-	$(ANT) debug
+	$(GRADLE) assembleDebug
 
 generate-mediastreamer2-apk: java-clean generate-mediastreamer2-libs
 	@cd $(TOPDIR)/submodules/linphone/mediastreamer2/java && \
@@ -498,8 +507,8 @@ release: update-project
 	$(MAKE) java-clean
 	patch -p1 < release.patch
 	cat ant.properties | grep version.name > default.properties
-	$(MAKE) generate-libs
-	$(ANT) release
+	$(MAKE) generate-libs-release
+	$(GRADLE) assembleRelease
 	patch -Rp1 < release.patch
 
 run-linphone:
@@ -527,7 +536,7 @@ clean-ndk-build:
 
 
 java-clean:
-	$(ANT) clean
+	$(GRADLE) clean
 
 clean:	clean-native java-clean
 	patch -Rp1 -f < release.patch || echo "patch already cleaned"
