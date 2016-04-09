@@ -399,7 +399,7 @@ public class ApiFivePlus {
 
 	public static Notification createSimpleNotification(Context context, String title, String text, PendingIntent intent) {
 		NotificationCompat.Builder notifBuilder = new NotificationCompat.Builder(context)
-		.setSmallIcon(R.drawable.logo_linphone_57x57)
+		.setSmallIcon(R.drawable.ic_launcher)
 		.setContentTitle(title)
 		.setContentText(text)
 		.setContentIntent(intent);
