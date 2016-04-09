@@ -1,0 +1,22 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg viewBox="-400 -400 800 800" version="1.1">
+  <defs>
+    <filter id="shadow">
+      <feOffset result="offOut" in="SourceAlpha" dx="0" dy="0" />
+      <feGaussianBlur result="blurOut" in="offOut" stdDeviation="36" />
+      <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+    </filter>
+  </defs>
+  <g fill="white" filter="url(#shadow)">
+    <rect x="-360" y="-360" width="720" height="720" rx="80" ry="80" />
+    <image x="-360" y="-240" width="720" height="360" xlink:href="tbm-logo-large.jpg" />
+    <text x="40" y="240" text-anchor="middle"
+          font-family="Verdana" font-size="160"
+          fill="navy" stroke="navy"
+          stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+      Móvel
+    </text>
+  </g>
+</svg>
