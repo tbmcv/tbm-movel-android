@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.linphone.Contact;
-import org.linphone.R;
 import org.linphone.core.LinphoneAddress;
 
 import android.annotation.TargetApi;
@@ -37,6 +36,8 @@ import android.text.ClipboardManager;
 import android.text.TextUtils;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+
+import net.tbmcv.tbmmovel.R;
 
 /*
 ApiFivePlus.java

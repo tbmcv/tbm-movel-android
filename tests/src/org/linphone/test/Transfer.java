@@ -17,18 +17,18 @@ public class Transfer extends SampleTest {
 	@MediumTest
 	@LargeTest
 	public void testACallTransfer() {
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		
 		assertCallIsCorrectlyRunning();
 
-		solo.clickOnView(solo.getView(org.linphone.R.id.options));
-		solo.clickOnView(solo.getView(org.linphone.R.id.transfer));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.options));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.transfer));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.conference_account_login) + "@" + iContext.getString(org.linphone.test.R.string.conference_account_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call)); // Transfer button as the same id, only the image changes
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call)); // Transfer button as the same id, only the image changes
 		
 		solo.sleep(2000);
 		Assert.assertTrue(LinphoneTestManager.getLc(1).getCallsNb() > 0);

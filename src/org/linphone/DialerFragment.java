@@ -34,6 +34,8 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * @author Sylvain Berfini
  */

@@ -23,7 +23,6 @@ import static android.content.Intent.ACTION_MAIN;
 import org.linphone.LinphoneManager;
 import org.linphone.LinphonePreferences;
 import org.linphone.LinphoneService;
-import org.linphone.R;
 import org.linphone.UIThreadDispatcher;
 import org.linphone.mediastream.Log;
 
@@ -31,6 +30,8 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.google.android.gcm.GCMBaseIntentService;
+
+import net.tbmcv.tbmmovel.R;
 
 /**
  * @author Sylvain Berfini

@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.linphone.Contact;
 import org.linphone.LinphoneUtils;
-import org.linphone.R;
 import org.linphone.core.LinphoneAddress;
 
 import android.annotation.TargetApi;
@@ -20,6 +19,8 @@ import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
 import android.provider.ContactsContract.Data;
 import android.text.TextUtils;
+
+import net.tbmcv.tbmmovel.R;
 
 /*
 ApiNinePlus.java

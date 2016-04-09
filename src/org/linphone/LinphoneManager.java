@@ -101,6 +101,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  *
  * Manager of the low level LibLinphone stuff.<br />

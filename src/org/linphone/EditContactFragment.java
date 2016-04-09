@@ -28,6 +28,8 @@ import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
+import net.tbmcv.tbmmovel.R;
+
 public class EditContactFragment extends Fragment {
 	private View view;
 	private TextView ok;

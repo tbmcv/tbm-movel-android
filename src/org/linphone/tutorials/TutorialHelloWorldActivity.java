@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 package org.linphone.tutorials;
 
-import org.linphone.R;
 import org.linphone.core.LinphoneCoreException;
 import org.linphone.core.tutorials.TutorialHelloWorld;
 import org.linphone.core.tutorials.TutorialNotifier;
@@ -29,6 +28,8 @@ import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
+import net.tbmcv.tbmmovel.R;
 
 /**
  * Activity for displaying and starting the HelloWorld example on Android phone.

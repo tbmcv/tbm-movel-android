@@ -21,8 +21,8 @@ public class History extends SampleTest {
 	public void testACheckForTestCallInHistory() {		
 		goToHistory();
 
-		Assert.assertTrue(solo.searchText(aContext.getString(org.linphone.R.string.today)));
-		Assert.assertTrue(solo.searchText(iContext.getString(org.linphone.test.R.string.account_test_calls_login)));
+		Assert.assertTrue(solo.searchText(aContext.getString(net.tbmcv.tbmmovel.R.string.today)));
+		Assert.assertTrue(solo.searchText(iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login)));
 	}
 	
 	@MediumTest
@@ -30,14 +30,14 @@ public class History extends SampleTest {
 	public void testBFilterMissedCalls() {		
 		goToHistory();
 		
-		solo.clickOnText(aContext.getString(org.linphone.R.string.button_missed_call));
-		Assert.assertTrue(solo.searchText(aContext.getString(org.linphone.R.string.no_missed_call_history)));
+		solo.clickOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.button_missed_call));
+		Assert.assertTrue(solo.searchText(aContext.getString(net.tbmcv.tbmmovel.R.string.no_missed_call_history)));
 	}
 	
 	public void testCCallBackFromHistory() {
 		goToHistory();
 		
-		solo.clickOnText(iContext.getString(org.linphone.test.R.string.account_test_calls_login));
+		solo.clickOnText(iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login));
 		
 		solo.waitForActivity("InCallActivity", 5000);
 		solo.assertCurrentActivity("Expected InCall Activity", InCallActivity.class);
@@ -46,7 +46,7 @@ public class History extends SampleTest {
 		Assert.assertEquals(1, LinphoneTestManager.getLc().getCallsNb());
 		waitForCallState(LinphoneTestManager.getLc().getCalls()[0],LinphoneCall.State.StreamsRunning);
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 	}
@@ -56,10 +56,10 @@ public class History extends SampleTest {
 	public void testDDeleteOne() {		
 		goToHistory();
 		
-		solo.clickOnText(aContext.getString(org.linphone.R.string.button_edit));
+		solo.clickOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.button_edit));
 		solo.sleep(500);
-		solo.clickOnView(solo.getView(org.linphone.R.id.delete));
-		solo.clickOnText(aContext.getString(org.linphone.R.string.button_ok));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.delete));
+		solo.clickOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.button_ok));
 	}
 
 	@SmallTest
@@ -68,16 +68,16 @@ public class History extends SampleTest {
 	public void testEDeleteAll() {		
 		goToHistory();
 
-		solo.clickOnText(aContext.getString(org.linphone.R.string.button_edit));	
-		solo.clickOnView(solo.getView(org.linphone.R.id.deleteAll));
-		solo.clickOnText(aContext.getString(org.linphone.R.string.button_ok));
-		Assert.assertTrue(solo.searchText(aContext.getString(org.linphone.R.string.no_call_history)));
+		solo.clickOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.button_edit));	
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.deleteAll));
+		solo.clickOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.button_ok));
+		Assert.assertTrue(solo.searchText(aContext.getString(net.tbmcv.tbmmovel.R.string.no_call_history)));
 	}
 	
 	private void goToHistory() {
 		solo.waitForActivity("LinphoneActivity", 2000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.history));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.history));
 	}
 }

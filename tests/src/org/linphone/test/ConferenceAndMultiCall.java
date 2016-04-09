@@ -38,7 +38,7 @@ public class ConferenceAndMultiCall extends SampleTest {
 		LinphoneTestManager.getInstance().declineCall = false; // Just in case
 		startConference();
 
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 	}
@@ -47,16 +47,16 @@ public class ConferenceAndMultiCall extends SampleTest {
 	public void testCRemoveOneFromConference() {
 		startConference();
 
-		solo.clickOnView(solo.getView(org.linphone.R.id.callStatus));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.callStatus));
 
 		Assert.assertEquals(1, LinphoneTestManager.getLc(1).getCallsNb());
 		Assert.assertEquals(1, LinphoneTestManager.getLc(2).getCallsNb());
 		solo.sleep(1000);
 		Assert.assertFalse(LinphoneManager.getLc().isInConference());
 
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.sleep(1000);
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 	}
@@ -71,14 +71,14 @@ public class ConferenceAndMultiCall extends SampleTest {
 		waitForCallState(call2,LinphoneCall.State.StreamsRunning);
 		waitForCallState(call1,LinphoneCall.State.PausedByRemote);
 
-		solo.clickOnView(solo.getView(org.linphone.R.id.callStatus));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.callStatus));
 		solo.sleep(2000);
 		waitForCallState(call1,LinphoneCall.State.StreamsRunning);
 		waitForCallState(call2,LinphoneCall.State.PausedByRemote);
 
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.sleep(1000);
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 	}
@@ -100,35 +100,35 @@ public class ConferenceAndMultiCall extends SampleTest {
 		waitForCallState(call1,LinphoneCall.State.PausedByRemote);
 		
 		// All calls are paused, one click on hangUp terminates them all
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 	}
 
 	@LargeTest
 	public void testFAddNewCallAndCancelIt() {
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		
 		assertCallIsCorrectlyRunning(1);
 		LinphoneTestManager.getInstance().autoAnswer = false;
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.options));
-		solo.clickOnView(solo.getView(org.linphone.R.id.addCall));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.options));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.addCall));
 		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.conference_account_login) + "@" + iContext.getString(org.linphone.test.R.string.conference_account_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		
 		solo.sleep(2000);
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 
 		waitForCallState(LinphoneTestManager.getLc(1).getCalls()[0],LinphoneCall.State.PausedByRemote);
-		solo.clickOnView(solo.getView(org.linphone.R.id.pause));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.pause));
 		solo.sleep(1000);
 		waitForCallState(LinphoneTestManager.getLc(1).getCalls()[0],LinphoneCall.State.StreamsRunning);
 		
 		solo.sleep(1000);
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 		
@@ -139,23 +139,23 @@ public class ConferenceAndMultiCall extends SampleTest {
 	public void testGAddNewCallDeclined() {
 		LinphoneTestManager.getInstance().autoAnswer = true; // Just in case
 		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		
 		assertCallIsCorrectlyRunning(1);
 		LinphoneTestManager.getInstance().declineCall = true;
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.options));
-		solo.clickOnView(solo.getView(org.linphone.R.id.addCall));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.options));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.addCall));
 		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.conference_account_login) + "@" + iContext.getString(org.linphone.test.R.string.conference_account_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		
 		solo.sleep(2000);
 		waitForCallState(LinphoneTestManager.getLc(1).getCalls()[0],LinphoneCall.State.PausedByRemote);
 		
 		solo.sleep(1000);
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 		
@@ -166,14 +166,14 @@ public class ConferenceAndMultiCall extends SampleTest {
 	public void testHIncomingCallWhileInCallAndDecline() {
 		LinphoneTestManager.getInstance().declineCall = false; //Just in case
 		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		
 		assertCallIsCorrectlyRunning(1);
 		
 		solo.sleep(2000);
 		try {
-			LinphoneTestManager.getLc(2).invite("sip:" + iContext.getString(org.linphone.test.R.string.account_linphone_login) + "@" + iContext.getString(org.linphone.test.R.string.account_linphone_domain));
+			LinphoneTestManager.getLc(2).invite("sip:" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_linphone_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_linphone_domain));
 		} catch (LinphoneCoreException e) {
 			e.printStackTrace();
 		}
@@ -182,7 +182,7 @@ public class ConferenceAndMultiCall extends SampleTest {
 		solo.assertCurrentActivity("Expected Incoming Call Activity", IncomingCallActivity.class);
 
 		solo.sleep(1000);
-		View topLayout = solo.getView(org.linphone.R.id.topLayout);
+		View topLayout = solo.getView(net.tbmcv.tbmmovel.R.id.topLayout);
 		int topLayoutHeigh = topLayout.getMeasuredHeight();
 		DisplayMetrics dm = new DisplayMetrics();
 		getActivity().getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -193,21 +193,21 @@ public class ConferenceAndMultiCall extends SampleTest {
 		assertCallIsCorrectlyRunning(1);
 		
 		solo.sleep(2000);
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 	}
 
 	@LargeTest
 	public void testIIncomingCallWhileInCallAndAccept() {		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		
 		assertCallIsCorrectlyRunning(1);
 		
 		solo.sleep(2000);
 		try {
-			LinphoneTestManager.getLc(2).invite("sip:" + iContext.getString(org.linphone.test.R.string.account_linphone_login) + "@" + iContext.getString(org.linphone.test.R.string.account_linphone_domain));
+			LinphoneTestManager.getLc(2).invite("sip:" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_linphone_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_linphone_domain));
 		} catch (LinphoneCoreException e) {
 			e.printStackTrace();
 		}
@@ -216,7 +216,7 @@ public class ConferenceAndMultiCall extends SampleTest {
 		solo.assertCurrentActivity("Expected Incoming Call Activity", IncomingCallActivity.class);
 
 		solo.sleep(1000);
-		View topLayout = solo.getView(org.linphone.R.id.topLayout);
+		View topLayout = solo.getView(net.tbmcv.tbmmovel.R.id.topLayout);
 		int topLayoutHeigh = topLayout.getMeasuredHeight();
 		DisplayMetrics dm = new DisplayMetrics();
 		getActivity().getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -229,9 +229,9 @@ public class ConferenceAndMultiCall extends SampleTest {
 		waitForCallState(call1,LinphoneCall.State.PausedByRemote);
 		assertCallIsCorrectlyRunning(2);
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.sleep(1000);
-		solo.clickOnView(solo.getView(org.linphone.R.id.hangUp));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.hangUp));
 		solo.waitForActivity("LinphoneActivity", 5000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 	}
@@ -240,26 +240,26 @@ public class ConferenceAndMultiCall extends SampleTest {
 		solo.waitForActivity("LinphoneActivity", 2000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.settings));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.settings));
 	}
 	
 	private void startTwoCalls() {
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.account_test_calls_login) + "@" + iContext.getString(org.linphone.test.R.string.account_test_calls_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		assertCallIsCorrectlyRunning(1);
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.options));
-		solo.clickOnView(solo.getView(org.linphone.R.id.addCall));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.options));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.addCall));
 		
-		solo.enterText(0, iContext.getString(org.linphone.test.R.string.conference_account_login) + "@" + iContext.getString(org.linphone.test.R.string.conference_account_domain));
-		solo.clickOnView(solo.getView(org.linphone.R.id.Call));
+		solo.enterText(0, iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_login) + "@" + iContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_domain));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.Call));
 		assertCallIsCorrectlyRunning(2);
 	}
 	
 	private void startConference() {
 		startTwoCalls();
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.conference));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.conference));
 		solo.sleep(1000);
 		
 		assertCallIsCorrectlyRunning(1);

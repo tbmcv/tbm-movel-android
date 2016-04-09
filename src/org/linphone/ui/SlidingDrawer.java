@@ -18,8 +18,6 @@ package org.linphone.ui;
  * Modifications by: Sylvain Berfini
  */
 
-import org.linphone.R;
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -35,6 +33,8 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
+
+import net.tbmcv.tbmmovel.R;
 
 public class SlidingDrawer extends ViewGroup {
 

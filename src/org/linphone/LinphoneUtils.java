@@ -66,6 +66,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * Helpers.
  * @author Guillaume Beraudo

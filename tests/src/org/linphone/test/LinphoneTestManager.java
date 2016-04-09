@@ -159,13 +159,13 @@ public class LinphoneTestManager implements LinphoneCoreListener{
 
 		String username, password, domain;
 		if (mLc.equals(mLc1)) {
-			username = mIContext.getString(org.linphone.test.R.string.account_test_calls_login);
-			password = mIContext.getString(org.linphone.test.R.string.account_test_calls_pwd);
-			domain = mIContext.getString(org.linphone.test.R.string.account_test_calls_domain);
+			username = mIContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_login);
+			password = mIContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_pwd);
+			domain = mIContext.getString(net.tbmcv.tbmmovel.test.R.string.account_test_calls_domain);
 		} else {
-			username = mIContext.getString(org.linphone.test.R.string.conference_account_login);
-			password = mIContext.getString(org.linphone.test.R.string.conference_account_password);
-			domain = mIContext.getString(org.linphone.test.R.string.conference_account_domain);
+			username = mIContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_login);
+			password = mIContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_password);
+			domain = mIContext.getString(net.tbmcv.tbmmovel.test.R.string.conference_account_domain);
 		}
 
 		LinphoneAuthInfo lAuthInfo =  LinphoneCoreFactory.instance().createAuthInfo(username, password, null, domain);

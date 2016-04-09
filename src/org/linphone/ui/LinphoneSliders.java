@@ -1,7 +1,5 @@
 package org.linphone.ui;
 
-import org.linphone.R;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
@@ -10,6 +8,8 @@ import android.view.GestureDetector;
 import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
 import android.view.View;
+
+import net.tbmcv.tbmmovel.R;
 
 /*
 LinphoneSliders.java

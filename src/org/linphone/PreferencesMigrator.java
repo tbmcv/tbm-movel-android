@@ -31,6 +31,8 @@ import android.content.res.Resources;
 
 import android.preference.PreferenceManager;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * @author Sylvain Berfini
  */

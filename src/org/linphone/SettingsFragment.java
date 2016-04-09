@@ -49,6 +49,8 @@ import android.preference.PreferenceScreen;
 
 import net.tbmcv.tbmmovel.InitConfigActivity;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * @author Sylvain Berfini
  */

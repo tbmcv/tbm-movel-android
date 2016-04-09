@@ -52,6 +52,7 @@ android {
         // Move the tests to tests/java, tests/res, etc...
         androidTest.setRoot('tests')
         androidTest {
+            manifest.srcFile 'tests/AndroidManifest.xml'
             java.srcDirs = ['tests/src', 'tbm/src/androidTest/java']
             res.srcDirs = ['tests/res', 'tbm/src/androidTest/res']
         }

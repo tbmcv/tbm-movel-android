@@ -36,6 +36,8 @@ import org.linphone.mediastream.Log;
 
 import android.content.Context;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * @author Sylvain Berfini
  */

@@ -1,6 +1,5 @@
 package org.linphone.compatibility;
 
-import org.linphone.R;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -9,6 +8,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+
+import net.tbmcv.tbmmovel.R;
 /*
 ApiSixteenPlus.java
 Copyright (C) 2012  Belledonne Communications, Grenoble, France

@@ -39,6 +39,8 @@ import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * Activity displayed when a call comes in.
  * It should bypass the screen lock mechanism.

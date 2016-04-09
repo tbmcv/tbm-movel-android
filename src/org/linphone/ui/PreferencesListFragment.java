@@ -20,8 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-import org.linphone.R;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -40,6 +38,8 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+
+import net.tbmcv.tbmmovel.R;
 
 @SuppressLint("ValidFragment")
 public class PreferencesListFragment extends ListFragment {

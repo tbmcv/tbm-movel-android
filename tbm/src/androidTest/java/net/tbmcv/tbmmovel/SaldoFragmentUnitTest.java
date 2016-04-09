@@ -4,8 +4,6 @@ import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.TextView;
 
-import org.linphone.R;
-
 public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
     @Override
     protected SaldoFragment createFragment() {

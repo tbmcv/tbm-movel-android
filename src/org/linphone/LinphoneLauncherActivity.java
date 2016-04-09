@@ -31,6 +31,8 @@ import android.os.Handler;
 
 import net.tbmcv.tbmmovel.AcctDataService;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * 
  * Launch Linphone main activity when Service is ready.

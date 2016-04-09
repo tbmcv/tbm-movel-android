@@ -2,7 +2,6 @@ package org.linphone.compatibility;
 
 import java.util.ArrayList;
 
-import org.linphone.R;
 import org.linphone.mediastream.Log;
 
 import android.annotation.TargetApi;
@@ -21,6 +20,8 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds.SipAddress;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents.Insert;
+
+import net.tbmcv.tbmmovel.R;
 
 /*
 ApiElevenPlus.java

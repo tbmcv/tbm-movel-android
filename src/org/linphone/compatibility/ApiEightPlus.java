@@ -1,12 +1,13 @@
 package org.linphone.compatibility;
 
 import org.linphone.LinphonePreferences;
-import org.linphone.R;
 import org.linphone.mediastream.Log;
 
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioManager;
+
+import net.tbmcv.tbmmovel.R;
 
 /*
 ApiEightPlus.java

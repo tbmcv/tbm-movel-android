@@ -19,8 +19,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 import android.content.Context;
 
-import org.linphone.R;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;

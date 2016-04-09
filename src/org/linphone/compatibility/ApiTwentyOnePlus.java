@@ -1,6 +1,5 @@
 package org.linphone.compatibility;
 
-import org.linphone.R;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
@@ -10,6 +9,8 @@ import android.graphics.Bitmap;
 import android.support.v4.app.NotificationCompat;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+
+import net.tbmcv.tbmmovel.R;
 /*
 ApiTwentyOnePlus.java
 Copyright (C) 2012  Belledonne Communications, Grenoble, France

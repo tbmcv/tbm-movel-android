@@ -48,6 +48,8 @@ import android.widget.ListView;
 import android.widget.SectionIndexer;
 import android.widget.TextView;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * @author Sylvain Berfini
  */

@@ -6,7 +6,6 @@ import android.view.View;
 import android.widget.EditText;
 
 import org.linphone.LinphoneActivity;
-import org.linphone.R;
 
 public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigActivity> {
     public InitConfigActivityUnitTest() {

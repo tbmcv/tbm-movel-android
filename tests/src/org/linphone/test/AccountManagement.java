@@ -9,6 +9,8 @@ import org.linphone.LinphonePreferences;
 import org.linphone.core.LinphoneProxyConfig;
 
 import android.test.suitebuilder.annotation.LargeTest;
+
+import net.tbmcv.tbmmovel.test.R;
 /**
  * @author Sylvain Berfini
  */
@@ -18,7 +20,7 @@ public class AccountManagement extends SampleTest {
 	public void testAEditAccount() {
 		goToSettings();
 		solo.clickOnText(iContext.getString(R.string.account_generic_login) + "@" + iContext.getString(R.string.account_generic_domain));
-		solo.clickOnText(aContext.getString(org.linphone.R.string.pref_username));
+		solo.clickOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.pref_username));
 		solo.enterText(0, "new");
 		
 		solo.clickOnView(solo.getView(android.R.id.button1));
@@ -41,7 +43,7 @@ public class AccountManagement extends SampleTest {
 		goToSettings();
 		solo.clickOnText(iContext.getString(R.string.account_generic_login) + "new");
 		selectItemInListOnUIThread(16);
-		solo.clickLongOnText(aContext.getString(org.linphone.R.string.pref_delete_account));
+		solo.clickLongOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.pref_delete_account));
 		
 		solo.goBack();
 		solo.goBack();
@@ -55,7 +57,7 @@ public class AccountManagement extends SampleTest {
 		goToSettings();
 		solo.clickOnText(iContext.getString(R.string.account_linphone_login));
 		selectItemInListOnUIThread(14);
-		solo.clickLongOnText(aContext.getString(org.linphone.R.string.pref_disable_account));
+		solo.clickLongOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.pref_disable_account));
 		
 		solo.goBack();
 		solo.goBack();
@@ -68,7 +70,7 @@ public class AccountManagement extends SampleTest {
 		goToSettings();
 		solo.clickOnText(iContext.getString(R.string.account_linphone_login));
 		selectItemInListOnUIThread(14);
-		solo.clickLongOnText(aContext.getString(org.linphone.R.string.pref_disable_account));
+		solo.clickLongOnText(aContext.getString(net.tbmcv.tbmmovel.R.string.pref_disable_account));
 		
 		solo.goBack();
 		solo.goBack();
@@ -80,6 +82,6 @@ public class AccountManagement extends SampleTest {
 		solo.waitForActivity("LinphoneActivity", 2000);
 		solo.assertCurrentActivity("Expected Linphone Activity", LinphoneActivity.class);
 		
-		solo.clickOnView(solo.getView(org.linphone.R.id.settings));
+		solo.clickOnView(solo.getView(net.tbmcv.tbmmovel.R.id.settings));
 	}
 }

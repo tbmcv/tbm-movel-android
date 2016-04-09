@@ -57,6 +57,8 @@ import android.os.SystemClock;
 import android.provider.ContactsContract;
 import android.provider.MediaStore;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * 
  * Linphone service, reacting to Incoming calls, ...<br />

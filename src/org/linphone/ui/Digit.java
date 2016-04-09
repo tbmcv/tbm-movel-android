@@ -22,7 +22,6 @@ import org.linphone.InCallActivity;
 import org.linphone.LinphoneManager;
 import org.linphone.LinphonePreferences;
 import org.linphone.LinphoneService;
-import org.linphone.R;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreFactory;
 import org.linphone.mediastream.Log;
@@ -35,6 +34,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
+import net.tbmcv.tbmmovel.R;
 
 public class Digit extends Button implements AddressAware {
 

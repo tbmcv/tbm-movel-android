@@ -30,7 +30,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.linphone.LinphoneActivity;
-import org.linphone.R;
 
 public class InitConfigActivity extends Activity {
     @Override

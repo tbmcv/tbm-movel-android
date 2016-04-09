@@ -20,7 +20,6 @@ package org.linphone.ui;
 
 import org.linphone.DialerFragment;
 import org.linphone.LinphoneManager.AddressType;
-import org.linphone.R;
 
 import android.content.Context;
 import android.graphics.Paint;
@@ -28,6 +27,8 @@ import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.widget.EditText;
+
+import net.tbmcv.tbmmovel.R;
 
 /**
  * @author Guillaume Beraudo

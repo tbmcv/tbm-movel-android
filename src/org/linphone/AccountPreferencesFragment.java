@@ -37,6 +37,8 @@ import android.preference.PreferenceScreen;
 import android.text.InputType;
 import android.view.WindowManager;
 
+import net.tbmcv.tbmmovel.R;
+
 /**
  * @author Sylvain Berfini
  */
