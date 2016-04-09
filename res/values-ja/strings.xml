@@ -257,7 +257,7 @@
   <string name="content_description_validate">有効化ボタン</string>
   <string name="content_description_search">検索</string>
   <string name="content_description_all_contacts">すべての連絡先</string>
-  <string name="content_description_linphone_contacts">Linphoneの連絡先</string>
+  <string name="content_description_linphone_contacts">SIPの連絡先</string>
   <string name="content_description_call_direction">宛先を指定</string>
   <string name="content_description_all_calls">すべての呼出</string>
   <string name="content_description_missed_calls">失敗した呼出</string>

@@ -258,7 +258,7 @@
   <string name="content_description_validate">Bouton valider</string>
   <string name="content_description_search">Rechercher</string>
   <string name="content_description_all_contacts">Tous les contacts</string>
-  <string name="content_description_linphone_contacts">Contacts Linphone</string>
+  <string name="content_description_linphone_contacts">Contacts SIP</string>
   <string name="content_description_call_direction">Direction d\'appel</string>
   <string name="content_description_all_calls">Tous les appels</string>
   <string name="content_description_missed_calls">Appels manqués </string>

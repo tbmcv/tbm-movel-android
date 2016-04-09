@@ -142,7 +142,7 @@
   <string name="content_description_new_discussion">Yeni tartışma</string>
   <string name="content_description_search">Arama</string>
   <string name="content_description_all_contacts">Tüm bağlantılar</string>
-  <string name="content_description_linphone_contacts">Linphone bağlantıları</string>
+  <string name="content_description_linphone_contacts">SIP bağlantıları</string>
   <string name="content_description_call_direction">Çağrı yönlendirme</string>
   <string name="content_description_all_calls">Tüm çağrılar</string>
   <string name="content_description_missed_calls">Yanıtsız çağrılar</string>

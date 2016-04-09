@@ -257,7 +257,7 @@
   <string name="content_description_validate">التحقق من الزر</string>
   <string name="content_description_search">بحث</string>
   <string name="content_description_all_contacts">كل جهات الاتصال</string>
-  <string name="content_description_linphone_contacts">جهات اتصال Linphone</string>
+  <string name="content_description_linphone_contacts">جهات اتصال SIP</string>
   <string name="content_description_call_direction">اتجاه الاتصال</string>
   <string name="content_description_all_calls">كل الاتصالات</string>
   <string name="content_description_missed_calls">الاتصالات الفائتة</string>

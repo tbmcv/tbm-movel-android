@@ -6,18 +6,18 @@
 	<string name="today_date_format">HH:mm</string>
 	<string name="picture_name_format">linphone-mms-%s.jpg</string>
 
-	<string name="app_name">Linphone</string>
-	<string name="service_name">Linphone Service</string>
-	<string name="addressbook_label">Linphone</string>
+	<string name="app_name">TBM Móvel</string>
+	<string name="service_name">TBM Móvel Service</string>
+	<string name="addressbook_label">TBM Móvel</string>
 	<string name="sync_account_type">org.linphone</string>
 	<string name="sync_account_name">linphone contacts</string>
 	<string name="sync_mimetype">vnd.android.cursor.item/org.linphone.profile</string>
-	<string name="notification_title">Linphone</string>
+	<string name="notification_title">TBM Móvel</string>
 	<string name="wait_dialog_text">Starting up</string>
 	<string name="notification_registered">Registered to %s </string>
 	<string name="notification_register_failure">Fails to register to %s</string>
-	<string name="about_text">Linphone %s SIP (rfc 3261) compatible phone under GNU Public License V2</string>
-	<string name="about_link">http://www.linphone.org\n\nInstructions\nhttp://www.linphone.org/user-guide.html\n\n© 2015 Belledonne Communications\n\nTrimmed down by Daniel Getz</string>
+	<string name="about_text">TBM Móvel %s SIP (rfc 3261) compatible phone under GNU Public License V2</string>
+	<string name="about_link">http://www.tbmcv.com/en/movel\n\nBased on Linphone © 2015 Belledonne Communications</string>
 
 	<string name="setup_welcome">This assistant will help you to use a SIP account for your calls.</string>
 	<string name="setup_create_account">Create an account on linphone.org</string>

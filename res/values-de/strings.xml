@@ -252,7 +252,7 @@
   <string name="content_description_validate">Schaltfläche Bestätigen</string>
   <string name="content_description_search">Suchen</string>
   <string name="content_description_all_contacts">Alle Kontakte</string>
-  <string name="content_description_linphone_contacts">Linphone-Kontakte</string>
+  <string name="content_description_linphone_contacts">SIP-Kontakte</string>
   <string name="content_description_call_direction">Anrufrichtung</string>
   <string name="content_description_all_calls">Alle Anrufe</string>
   <string name="content_description_missed_calls">Verpasste Anrufe</string>
