@@ -8,7 +8,7 @@ PNG_FILE="${NAME}.png"
 create_png () {
     OUTFILE=$1
     DP=$2
-    convert -background none "$SVG_FILE" -geometry "${DP}x${DP}" "$OUTFILE"
+    rsvg-convert -w "$DP" -h "$DP" "$SVG_FILE" > "$OUTFILE"
     optipng -quiet -o2 "$OUTFILE"
 }
 
