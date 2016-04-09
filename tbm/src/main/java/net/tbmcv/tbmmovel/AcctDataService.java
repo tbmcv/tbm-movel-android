@@ -121,6 +121,19 @@ public class AcctDataService extends IntentService {
         return new AuthPair(acctName, password);
     }
 
+    private void resetAuthConfig() {
+        getSharedPreferences(getString(R.string.tbm_settings_key), Context.MODE_PRIVATE)
+                .edit()
+                .remove(getString(R.string.tbm_setting_acctname))
+                .remove(getString(R.string.tbm_setting_password))
+                .commit();
+        LinphoneCore lc = LinphoneManager.getLc();
+        lc.clearAuthInfos();
+        lc.clearProxyConfigs();
+        startActivity(new Intent(this, InitConfigActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+    }
+
     private void onCommandGetCredit() {
         AuthPair acct = getAcctAuth();
         if (acct == null) {
@@ -136,8 +149,12 @@ public class AcctDataService extends IntentService {
                     .fetch();
             status.putExtra(EXTRA_CREDIT, result.getInt("saldo"));
         } catch (JSONException|IOException e) {
-            Log.e(LOG_TAG, "Error fetching saldo", e);
-            status.putExtra(EXTRA_CONNECTION_OK, false);
+            if (e instanceof HttpError && ((HttpError) e).getResponseCode() == 401) {
+                resetAuthConfig();
+            } else {
+                Log.e(LOG_TAG, "Error fetching saldo", e);
+                status.putExtra(EXTRA_CONNECTION_OK, false);
+            }
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(status);
     }
@@ -211,6 +228,8 @@ public class AcctDataService extends IntentService {
             startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE)
                     .putExtra(EXTRA_LINE_NAME, lineAuth.name)
                     .putExtra(EXTRA_PASSWORD, lineAuth.password));
+        } catch (HttpError e) {
+            resetAuthConfig();
         } catch (JSONException|IOException e) {
             Log.e(LOG_TAG, "Error reconfiguring line", e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(
@@ -288,9 +307,13 @@ public class AcctDataService extends IntentService {
                     .fetch();
             return !lineHa1.equals(createHa1(lineName, result.getString("pw")));
         } catch (JSONException|IOException e) {
-            Log.e(LOG_TAG, "Error retrieving line password", e);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(
-                    new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+            if (e instanceof HttpError && ((HttpError) e).getResponseCode() == 401) {
+                resetAuthConfig();
+            } else {
+                Log.e(LOG_TAG, "Error retrieving line password", e);
+                LocalBroadcastManager.getInstance(this).sendBroadcast(
+                        new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+            }
             return false;
         }
     }

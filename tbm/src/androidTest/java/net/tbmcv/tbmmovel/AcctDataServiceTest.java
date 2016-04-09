@@ -83,6 +83,14 @@ public class AcctDataServiceTest
                 .commit();
     }
 
+    protected SharedPreferences clearPrefs() {
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences(
+                context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
+        prefs.edit().clear().commit();
+        return prefs;
+    }
+
     public void testGetCredit() throws Exception {
         String acctName = "c/5050505";
         String pw = "anything";
@@ -102,21 +110,25 @@ public class AcctDataServiceTest
     }
 
     public void testGetCreditUnconfiguredActivitySwitch() throws Exception {
-        Context context = getContext();
-        SharedPreferences prefs = context.getSharedPreferences(
-                context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
-        prefs.edit().clear().commit();
-        startService(new Intent(AcctDataService.ACTION_GET_CREDIT));
+        clearPrefs();
+        checkInitConfigActivitySwitch(new Intent(AcctDataService.ACTION_GET_CREDIT));
+    }
+
+    protected void checkInitConfigActivitySwitch(Intent intent) throws InterruptedException {
+        startService(intent);
         assertActivityStarted(InitConfigActivity.class, 2, TimeUnit.SECONDS);
+    }
+
+    public void testGetCreditMisconfiguredActivitySwitch() throws Exception {
+        setStoredAcct("c/9050509", "dafala");
+        when(fetcher.fetch(any(Map.class))).thenThrow(new HttpError(401));
+        checkInitConfigActivitySwitch(new Intent(AcctDataService.ACTION_GET_CREDIT));
     }
 
     public void testPwReset() throws Exception {
         String username = "c/9123456";
         String password = "123454321";
-        Context context = getContext();
-        SharedPreferences prefs = context.getSharedPreferences(
-                context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
-        prefs.edit().clear().commit();
+        SharedPreferences prefs = clearPrefs();
 
         AnswerPromise<?> fetchPromise = new AnswerPromise<>();
         when(fetcher.fetch(any(Map.class))).then(fetchPromise);
@@ -136,6 +148,7 @@ public class AcctDataServiceTest
         String newPw = body.getString("value");
         assertTrue(newPw.length() >= 4);
         assertTrue(newPw.length() < 30);
+        Context context = getContext();
         assertEquals(username,
                 prefs.getString(context.getString(R.string.tbm_setting_acctname),
                         "(NOTHING STORED)"));
@@ -148,9 +161,7 @@ public class AcctDataServiceTest
         String phoneNumber = "9999999";
         String oldPw = "gg";
         Context context = getContext();
-        SharedPreferences prefs = context.getSharedPreferences(
-                context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
-        prefs.edit().clear().commit();
+        SharedPreferences prefs = clearPrefs();
 
         when(fetcher.fetch(any(Map.class))).thenReturn(null);
         sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
@@ -169,8 +180,8 @@ public class AcctDataServiceTest
         when(fetcher.fetch(any(Map.class))).thenReturn(null);
         startServiceAndWaitForBroadcast(
                 new Intent(AcctDataService.ACTION_RESET_PASSWORD)
-                    .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/abcd")
-                    .putExtra(AcctDataService.EXTRA_PASSWORD, "EFG"),
+                        .putExtra(AcctDataService.EXTRA_ACCT_NAME, "c/abcd")
+                        .putExtra(AcctDataService.EXTRA_PASSWORD, "EFG"),
                 AcctDataService.ACTION_PASSWORD_RESET);
     }
 
@@ -317,6 +328,17 @@ public class AcctDataServiceTest
         checkVoipLine(lineName, password);
     }
 
+    public void testConfigureLineUnconfiguredActivitySwitch() throws Exception {
+        clearPrefs();
+        checkInitConfigActivitySwitch(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+    }
+
+    public void testConfigureLineMisconfiguredActivitySwitch() throws Exception {
+        setStoredAcct("c/9152519", "dzemla");
+        when(fetcher.fetch(any(Map.class))).thenThrow(new HttpError(401));
+        checkInitConfigActivitySwitch(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+    }
+
     private static void assertUriEquals(URI expected, Object actual) {
         assertEquals(expected, URI.create("/").resolve((URI) actual));
     }
@@ -371,6 +393,11 @@ public class AcctDataServiceTest
                 callEnsureLineAndCheckApiCalls(
                         "c/9881889", "duvinha", "tbm8324",
                         "jk324h", "23kj4h"));
+    }
+
+    public void testEnsureLineUnconfiguredActivitySwitch() throws Exception {
+        clearPrefs();
+        checkInitConfigActivitySwitch(new Intent(AcctDataService.ACTION_ENSURE_LINE));
     }
 
     public void testCreateHa1() {
