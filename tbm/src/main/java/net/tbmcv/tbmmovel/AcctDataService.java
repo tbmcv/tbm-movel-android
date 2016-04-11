@@ -127,7 +127,7 @@ public class AcctDataService extends IntentService {
                 .remove(getString(R.string.tbm_setting_acctname))
                 .remove(getString(R.string.tbm_setting_password))
                 .commit();
-        LinphoneCore lc = LinphoneManager.getLc();
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
         lc.clearAuthInfos();
         lc.clearProxyConfigs();
         startActivity(new Intent(this, InitConfigActivity.class)
@@ -240,7 +240,7 @@ public class AcctDataService extends IntentService {
     private void onCommandConfigureLine(String username, String password) {
         final String realm = getString(R.string.tbm_sip_realm);
         try {
-            LinphoneCore lc = LinphoneManager.getLc();
+            LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
             lc.clearAuthInfos();
             lc.clearProxyConfigs();
             LinphoneAddress proxyAddr = LinphoneCoreFactory.instance().createLinphoneAddress(
@@ -283,7 +283,7 @@ public class AcctDataService extends IntentService {
             Log.d(LOG_TAG, "Can't reconfigure line, because there's no saved account");
             return false;
         }
-        LinphoneCore lc = LinphoneManager.getLc();
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
         LinphoneAuthInfo[] authInfos = lc.getAuthInfosList();
         if (authInfos.length != 1) {
             Log.d(LOG_TAG, "Should reconfigure because of local voip line count");
