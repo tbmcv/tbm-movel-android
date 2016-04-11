@@ -4,13 +4,11 @@
     <bool name="show_tutorials_instead_of_app">false</bool> <!-- Be careful ! Setting this to true prevent the app from working ! It will only display tutorial activities -->
 
 	<!-- Push notification settings -->
-	<bool name="enable_push_id">true</bool>
-	<string name="push_sender_id">622464153529</string>
+	<bool name="enable_push_id">false</bool>
+	<string name="push_sender_id"></string>
 
-	<string name="default_domain">sip.linphone.org</string>
-	<string name="default_stun">stun.linphone.org</string>
+	<string name="default_domain">sip.tbmcv.com</string>
 	<bool name="override_domain_using_default_one">false</bool> <!-- Replace the domain for outgoing calls by the one above -->
-	<string name="wizard_url">https://www.linphone.org/wizard.php</string>
 
 	<!-- Interface settings -->
     <bool name="use_simple_history">true</bool>
@@ -61,9 +59,7 @@
 	<bool name="disable_all_security_features_for_markets">false</bool> <!-- Disable TLS/SRTP/ZRTP -->
 	<bool name="disable_all_patented_codecs_for_markets">false</bool> <!-- Disable MPEG4/H264 -->
 
-	<string name="about_bugreport_email">linphone-android@belledonne-communications.com</string>
-	<string name="temp_photo_name">linphone-android-photo-temp.jpg</string>
-	<string name="temp_photo_name_with_date">linphone-android-photo-%s.jpg</string>
+	<string name="about_bugreport_email">info@tbmcv.net</string>
 
 	<bool name="enable_call_notification">true</bool>
 	<bool name="kill_service_with_task_manager">true</bool>
