@@ -250,7 +250,7 @@ public class AcctDataService extends IntentService {
                     "sip:" + username + "@" + realm, proxyAddr.asStringUriOnly(), null, true);
             proxyConfig.setExpires(300);  // TODO configure somewhere
             LinphoneAuthInfo authInfo = LinphoneCoreFactory.instance().createAuthInfo(
-                    username, null, null, createHa1(username, password, realm), null, realm);
+                    username, null, null, createHa1(username, password, realm), realm, realm);
             lc.addProxyConfig(proxyConfig);
             lc.addAuthInfo(authInfo);
             lc.setDefaultProxyConfig(proxyConfig);
