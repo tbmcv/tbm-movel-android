@@ -6,6 +6,8 @@ import android.view.View;
 import android.widget.EditText;
 
 import org.linphone.LinphoneActivity;
+import org.linphone.LinphoneManager;
+import org.linphone.core.LinphoneCore;
 
 public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigActivity> {
     public InitConfigActivityUnitTest() {
@@ -71,5 +73,17 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         assertTrue(getActivity().findViewById(R.id.okButton).isEnabled());
         assertTrue(getActivity().findViewById(R.id.usernameEntry).isEnabled());
         assertTrue(getActivity().findViewById(R.id.helpButton).isEnabled());
+    }
+
+    public void testGSMEnabled() {
+        launch();
+        LinphoneCore lc = LinphoneManager.getLc();
+        assertTrue(lc.isPayloadTypeEnabled(lc.findPayloadType("GSM", 8000)));
+    }
+
+    public void testNoAdaptiveRateControl() {
+        launch();
+        LinphoneCore lc = LinphoneManager.getLc();
+        assertFalse(lc.isAdaptiveRateControlEnabled());
     }
 }

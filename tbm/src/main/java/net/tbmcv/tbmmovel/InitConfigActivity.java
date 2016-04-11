@@ -24,14 +24,18 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.linphone.LinphoneActivity;
+import org.linphone.core.LinphoneCoreException;
 
 public class InitConfigActivity extends Activity {
+    static final String LOG_TAG = "InitConfigActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,6 +67,12 @@ public class InitConfigActivity extends Activity {
                 }
             }
         }, new IntentFilter(AcctDataService.ACTION_STATUS));
+
+        try {
+            TbmLinphoneSettings.setDefaultSettings();
+        } catch (LinphoneCoreException e) {
+            Log.e(LOG_TAG, "Error setting default settings", e);
+        }
     }
 
     @Override
