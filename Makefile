@@ -505,11 +505,9 @@ install-apk:
 
 release: update-project
 	$(MAKE) java-clean
-	patch -p1 < release.patch
 	cat ant.properties | grep version.name > default.properties
 	$(MAKE) generate-libs-release
 	$(GRADLE) assembleRelease
-	patch -Rp1 < release.patch
 
 run-linphone:
 	ant run
@@ -539,9 +537,6 @@ java-clean:
 	$(GRADLE) clean
 
 clean:	clean-native java-clean
-	patch -Rp1 -f < release.patch || echo "patch already cleaned"
-	rm -f AndroidManifest.xml.rej
-	rm -f AndroidManifest.xml.orig
 
 
 .PHONY: clean install-apk run-linphone
