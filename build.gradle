@@ -62,6 +62,14 @@ android {
         release.setRoot('build-types/release')
     }
 
+    buildTypes {
+        release {
+            lintOptions {
+                disable 'MissingTranslation'
+            }
+        }
+    }
+
     if (project.hasProperty("RELEASE_STORE_FILE")) {
         signingConfigs {
             release {
