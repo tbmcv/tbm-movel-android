@@ -29,7 +29,7 @@ def allSrcDirs = ['submodules/linphone/mediastreamer2/java/src',
 
 android {
     compileSdkVersion 22
-    buildToolsVersion "20.0.0"
+    buildToolsVersion "23.0.3"
 
     sourceSets {
         main {
