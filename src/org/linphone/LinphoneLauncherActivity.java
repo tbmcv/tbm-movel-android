@@ -22,7 +22,6 @@ import static android.content.Intent.ACTION_MAIN;
 
 import org.linphone.mediastream.Log;
 import org.linphone.setup.RemoteProvisioningActivity;
-import org.linphone.tutorials.TutorialLauncherActivity;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -71,9 +70,7 @@ public class LinphoneLauncherActivity extends Activity {
 
 	protected void onServiceReady() {
 		final Class<? extends Activity> classToStart;
-		if (getResources().getBoolean(R.bool.show_tutorials_instead_of_app)) {
-			classToStart = TutorialLauncherActivity.class;
-		} else if (getResources().getBoolean(R.bool.display_sms_remote_provisioning_activity) && LinphonePreferences.instance().isFirstRemoteProvisioning()) {
+		if (getResources().getBoolean(R.bool.display_sms_remote_provisioning_activity) && LinphonePreferences.instance().isFirstRemoteProvisioning()) {
 			classToStart = RemoteProvisioningActivity.class;
 		} else {
 			classToStart = LinphoneActivity.class;
