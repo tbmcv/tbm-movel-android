@@ -21,7 +21,6 @@ package org.linphone;
 import static android.content.Intent.ACTION_MAIN;
 
 import org.linphone.mediastream.Log;
-import org.linphone.setup.RemoteProvisioningActivity;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -69,18 +68,11 @@ public class LinphoneLauncherActivity extends Activity {
 	}
 
 	protected void onServiceReady() {
-		final Class<? extends Activity> classToStart;
-		if (getResources().getBoolean(R.bool.display_sms_remote_provisioning_activity) && LinphonePreferences.instance().isFirstRemoteProvisioning()) {
-			classToStart = RemoteProvisioningActivity.class;
-		} else {
-			classToStart = LinphoneActivity.class;
-		}
-		
-		LinphoneService.instance().setActivityToLaunchOnIncomingReceived(classToStart);
+		LinphoneService.instance().setActivityToLaunchOnIncomingReceived(LinphoneActivity.class);
 		mHandler.postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				startActivity(new Intent().setClass(LinphoneLauncherActivity.this, classToStart).setData(getIntent().getData()));
+				startActivity(new Intent().setClass(LinphoneLauncherActivity.this, LinphoneActivity.class).setData(getIntent().getData()));
 				finish();
 			}
 		}, 1000);

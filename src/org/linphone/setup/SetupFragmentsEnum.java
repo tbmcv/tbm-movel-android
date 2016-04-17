@@ -22,11 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 public enum SetupFragmentsEnum {
 	WELCOME,
-	MENU,
-	WIZARD,
-	WIZARD_CONFIRM,
-	LINPHONE_LOGIN,
 	GENERIC_LOGIN,
-	REMOTE_PROVISIONING,
 	ECHO_CANCELLER_CALIBRATION;
 }
