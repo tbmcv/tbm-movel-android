@@ -6,7 +6,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:2.0.0'
     }
 }
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 repositories {
     jcenter()
@@ -62,10 +62,28 @@ android {
         release.setRoot('build-types/release')
     }
 
+    def gitDescribe = 'git describe --always'.execute().text.trim()
+
+    defaultConfig {
+        versionName ""
+    }
+
     buildTypes {
+        debug {
+            versionNameSuffix gitDescribe
+        }
+
         release {
             lintOptions {
                 disable 'MissingTranslation'
+            }
+        }
+    }
+
+    if (project.hasProperty("RELEASE_VERSION_NAME")) {
+        buildTypes {
+            release {
+                versionNameSuffix RELEASE_VERSION_NAME
             }
         }
     }

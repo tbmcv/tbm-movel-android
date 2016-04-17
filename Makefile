@@ -489,7 +489,6 @@ javah-release:
 	$(GRADLE) generateReleaseJniHeaders
 
 generate-apk: java-clean generate-libs-debug
-	echo "version.name=$(LINPHONE_ANDROID_DEBUG_VERSION)" > default.properties
 	$(GRADLE) assembleDebug
 
 generate-mediastreamer2-apk: java-clean generate-mediastreamer2-libs
@@ -505,7 +504,6 @@ install-apk:
 
 release: update-project
 	$(MAKE) java-clean
-	cat ant.properties | grep version.name > default.properties
 	$(MAKE) generate-libs-release
 	$(GRADLE) assembleRelease
 
