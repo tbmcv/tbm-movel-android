@@ -3,16 +3,23 @@
  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg viewBox="-48 -48 96 96" version="1.1">
   <defs>
-    <filter id="black2color">
-      <feColorMatrix in="SourceGraphic" type="matrix"
-                     values=".25 0 0 0 0
-                             0 .25 0 0 .75
-                             0 0 .25 0 0
-                             -.25 -.25 -.25 1 0" />
+    <filter id="trace">
+      <feColorMatrix in="SourceGraphic" type="matrix" out="whiteMask"
+                     values="0 0 0 0 1
+                             0 0 0 0 1
+                             0 0 0 0 1
+                             0 0 0 1 0" />
+      <feMorphology operator="dilate" radius="4" in="whiteMask" out="trace" />
+      <feMerge>
+        <feMergeNode in="trace" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
     </filter>
   </defs>
-  <g filter="url(#black2color)" stroke="black">
-    <circle cx="0" cy="0" r="44" fill="none" stroke-width="4" />
-    <image x="-24" y="-36" width="48" height="72" xlink:href="tbm-phone-icon-large.png" />
-  </g>
+  <text x="0" y="35" text-anchor="middle"
+        font-family="Verdana" font-size="96"
+        fill="green" stroke="green"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        filter="url(#trace)"
+        >M</text>
 </svg>
