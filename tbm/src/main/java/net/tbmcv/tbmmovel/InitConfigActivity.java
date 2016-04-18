@@ -17,12 +17,17 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -34,7 +39,7 @@ import android.widget.Toast;
 import org.linphone.LinphoneActivity;
 import org.linphone.core.LinphoneCoreException;
 
-public class InitConfigActivity extends Activity {
+public class InitConfigActivity extends FragmentActivity {
     static final String LOG_TAG = "InitConfigActivity";
 
     @Override
@@ -107,5 +112,23 @@ public class InitConfigActivity extends Activity {
                 .setAction(AcctDataService.ACTION_RESET_PASSWORD)
                 .putExtra(AcctDataService.EXTRA_ACCT_NAME, acctName)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, tmpPw));
+    }
+
+    public void onHelpButtonClick(View view) {
+        new HelpDialogFragment().show(getSupportFragmentManager(), "help");
+    }
+
+    public static class HelpDialogFragment extends DialogFragment {
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder(getActivity())
+                    .setMessage(R.string.tbm_init_config_help_explanation)
+                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) { }
+                    })
+                    .create();
+        }
     }
 }

@@ -65,7 +65,8 @@
         android:layout_height="wrap_content"
         android:text="@string/tbm_help_what_is_this"
         android:id="@+id/helpButton"
-        android:layout_gravity="center_horizontal" />
+        android:layout_gravity="center_horizontal"
+        android:onClick="onHelpButtonClick" />
 
     <android.support.v4.widget.Space
         android:layout_width="match_parent"

@@ -10,5 +10,5 @@
     <string name="tbm_help_what_is_this">O que é?</string>
     <string name="tbm_set_up">Configurar</string>
     <string name="tbm_credit">Saldo</string>
-
+    <string name="tbm_init_config_help_explanation">Um vendedor de saldo TBM Móvel pode registar o seu telemóvel, e lhe diz qual é o código para preencher aqui.</string>
 </resources>
