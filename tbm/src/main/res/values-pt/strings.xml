@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tbm_app_name">TBM Móvel</string>
+    <string name="tbm_login_error_net">Erro na ligação à Internet</string>
+    <string name="tbm_login_error_auth">Número ou senha inválido</string>
+    <string name="tbm_login_error">Erro na comunicação</string>
+    <string name="tbm_title_initial_configuration">Configuração Inicial</string>
+    <string name="tbm_telephone_number">Número telefónico</string>
+    <string name="tbm_initial_password">Senha inicial</string>
+    <string name="tbm_help_what_is_this">O que é?</string>
+    <string name="tbm_set_up">Configurar</string>
+    <string name="tbm_credit">Saldo</string>
+
+</resources>
