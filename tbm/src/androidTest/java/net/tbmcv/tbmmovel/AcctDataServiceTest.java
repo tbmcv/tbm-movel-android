@@ -23,10 +23,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.linphone.core.LinphoneAddress.*;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,10 +51,13 @@ public class AcctDataServiceTest
 
     private MockJrcRequestBuilder.Fetcher fetcher;
     private ArgumentCaptor<Map<String, ?>> paramsCaptor;
+    private AcctDataService.Pauser pauser;
 
     protected void setUp() throws Exception {
         fetcher = MockJrcRequestBuilder.mockDefaultClient();
         paramsCaptor = ArgumentCaptor.forClass((Class) Map.class);
+        pauser = mock(AcctDataService.Pauser.class);
+        AcctDataService.pauser = pauser;
         if (!LinphoneManager.isInstanciated()) {
             LinphoneManager.createAndStart(getContext());
         }
@@ -263,7 +270,24 @@ public class AcctDataServiceTest
         return array[0];
     }
 
-    void checkVoipLine(String lineName, String password) throws LinphoneCoreException {
+    void checkVoipLine(String lineName, String password) throws LinphoneCoreException, InterruptedException {
+        AnswerPromise<?> pausePromise = new AnswerPromise<>();
+        doAnswer(pausePromise).when(pauser).pause(anyInt(), any(TimeUnit.class));
+        CountDownLatch finished = sendServiceIntent(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
+        pausePromise.getCallLatch().await(2, TimeUnit.SECONDS);
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<TimeUnit> unit = ArgumentCaptor.forClass(TimeUnit.class);
+        verify(pauser).pause(duration.capture(), unit.capture());
+        assertTrue(unit.getValue().toMillis(duration.getValue()) >= 1000);
+        assertNoRegistration();
+        pausePromise.setResult(null);
+        finished.await(2, TimeUnit.SECONDS);
+        assertVoipLine(lineName, password);
+    }
+
+    void assertVoipLine(String lineName, String password) throws LinphoneCoreException {
         final String realm = getContext().getString(R.string.tbm_sip_realm);
         LinphoneCore lc = LinphoneManager.getLc();
 
@@ -288,6 +312,12 @@ public class AcctDataServiceTest
         assertTrue(cfg.registerEnabled());
     }
 
+    void assertNoRegistration() {
+        for (LinphoneProxyConfig cfg : LinphoneManager.getLc().getProxyConfigList()) {
+            assertFalse(cfg.registerEnabled());
+        }
+    }
+
     void addVoipLine(String lineName, String password, String domain) throws LinphoneCoreException {
         LinphoneCore lc = LinphoneManager.getLc();
         Set<LinphoneAuthInfo> oldAuthInfos = new HashSet<>();
@@ -310,22 +340,12 @@ public class AcctDataServiceTest
     }
 
     public void testConfigureNewVoipLine() throws Exception {
-        String lineName = "tbm9999";
-        String password = "pass";
-        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
-                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
-                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
-        checkVoipLine(lineName, password);
+        checkVoipLine("tbm9999", "pass");
     }
 
     public void testReconfigureVoipLine() throws Exception {
-        String lineName = "tbm5555";
-        String password = "*****";
         addVoipLine("old", "values", "a.b.c");
-        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
-                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
-                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
-        checkVoipLine(lineName, password);
+        checkVoipLine("tbm5555", "*****");
     }
 
     public void testConfigureLineUnconfiguredActivitySwitch() throws Exception {

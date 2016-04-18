@@ -44,6 +44,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import static org.linphone.core.LinphoneAddress.*;
 
@@ -251,10 +252,13 @@ public class AcctDataService extends IntentService {
             proxyConfig.setExpires(300);  // TODO configure somewhere
             LinphoneAuthInfo authInfo = LinphoneCoreFactory.instance().createAuthInfo(
                     username, null, null, createHa1(username, password, realm), realm, realm);
+            proxyConfig.enableRegister(false);
             lc.addProxyConfig(proxyConfig);
             lc.addAuthInfo(authInfo);
             lc.setDefaultProxyConfig(proxyConfig);
-        } catch (LinphoneCoreException e) {
+            pauser.pause(3, TimeUnit.SECONDS);  // TODO configure somewhere
+            proxyConfig.enableRegister(true);
+        } catch (LinphoneCoreException|InterruptedException e) {
             Log.e(LOG_TAG, "Error saving line configuration", e);
         }
     }
@@ -321,6 +325,20 @@ public class AcctDataService extends IntentService {
     private void onCommandEnsureLine() {
         if (shouldReconfigure()) {
             startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE));
+        }
+    }
+
+    interface Pauser {
+        void pause(long timeout, TimeUnit unit) throws InterruptedException;
+    }
+
+    static Pauser pauser = new RealPauser();
+
+    static class RealPauser implements Pauser {
+        @Override
+        public void pause(long duration, TimeUnit unit) throws InterruptedException {
+            long nanos = unit.toNanos(duration);
+            Thread.sleep(nanos / 1_000_000, (int) (nanos % 1_000_000));
         }
     }
 }
