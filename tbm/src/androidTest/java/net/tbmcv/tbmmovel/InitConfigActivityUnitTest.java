@@ -1,13 +1,19 @@
 package net.tbmcv.tbmmovel;
 
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
+import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.EditText;
 
 import org.linphone.LinphoneActivity;
 import org.linphone.LinphoneManager;
 import org.linphone.core.LinphoneCore;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigActivity> {
     public InitConfigActivityUnitTest() {
@@ -85,5 +91,43 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         launch();
         LinphoneCore lc = LinphoneManager.getLc();
         assertFalse(lc.isAdaptiveRateControlEnabled());
+    }
+
+    private TelephonyManager mockTelephonyManager(String line1Number) {
+        final TelephonyManager telephonyManager = mock(TelephonyManager.class);
+        setActivityContext(new ContextWrapper(getStartServiceTrap()) {
+            @Override
+            public Object getSystemService(String name) {
+                if (Context.TELEPHONY_SERVICE.equals(name)) {
+                    return telephonyManager;
+                } else {
+                    return super.getSystemService(name);
+                }
+            }
+        });
+        when(telephonyManager.getLine1Number()).thenReturn(line1Number);
+        return telephonyManager;
+    }
+
+    public void testInitialPhoneNumberCV() {
+        String number = "9334456";
+        mockTelephonyManager("238" + number);
+        launch();
+        assertEquals(number,
+                ((EditText) getActivity().findViewById(R.id.usernameEntry)).getText().toString());
+    }
+
+    public void testInitialPhoneNumberUnknown() {
+        mockTelephonyManager(null);
+        launch();
+        assertEquals("",
+                ((EditText) getActivity().findViewById(R.id.usernameEntry)).getText().toString());
+    }
+
+    public void testInitialPhoneNumberUSA() {
+        mockTelephonyManager("15555555555");
+        launch();
+        assertEquals("",
+                ((EditText) getActivity().findViewById(R.id.usernameEntry)).getText().toString());
     }
 }

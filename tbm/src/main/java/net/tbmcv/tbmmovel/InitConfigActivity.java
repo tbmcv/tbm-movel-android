@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
@@ -40,6 +41,13 @@ public class InitConfigActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tbm_activity_init_config);
+
+        TelephonyManager telephonyManager =
+                (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        String number = telephonyManager.getLine1Number();
+        if (number != null && number.length() == 10 && number.startsWith("238")) {
+            ((TextView) findViewById(R.id.usernameEntry)).setText(number.substring(3));
+        }
 
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
 
