@@ -21,7 +21,6 @@ package org.linphone;
 import static android.content.Intent.ACTION_MAIN;
 
 import org.linphone.mediastream.Log;
-import org.linphone.tutorials.TutorialLauncherActivity;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -30,7 +29,6 @@ import android.os.Bundle;
 import android.os.Handler;
 
 import net.tbmcv.tbmmovel.AcctDataService;
-
 import net.tbmcv.tbmmovel.R;
 
 /**
@@ -73,21 +71,14 @@ public class LinphoneLauncherActivity extends Activity {
 	}
 
 	protected void onServiceReady() {
-		final Class<? extends Activity> classToStart;
-		if (getResources().getBoolean(R.bool.show_tutorials_instead_of_app)) {
-			classToStart = TutorialLauncherActivity.class;
-		} else {
-			classToStart = LinphoneActivity.class;
-		}
-
 		startService(new Intent(this, AcctDataService.class)
 				.setAction(AcctDataService.ACTION_ENSURE_LINE));
 
-		LinphoneService.instance().setActivityToLaunchOnIncomingReceived(classToStart);
+		LinphoneService.instance().setActivityToLaunchOnIncomingReceived(LinphoneActivity.class);
 		mHandler.postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				startActivity(new Intent().setClass(LinphoneLauncherActivity.this, classToStart).setData(getIntent().getData()));
+				startActivity(new Intent().setClass(LinphoneLauncherActivity.this, LinphoneActivity.class).setData(getIntent().getData()));
 				finish();
 			}
 		}, 1000);

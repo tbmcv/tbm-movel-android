@@ -136,8 +136,6 @@ public class LinphoneManager implements LinphoneCoreListener {
 	private Handler mHandler = new Handler();
 	private WakeLock mIncallWakeLock;
 
-	public String wizardLoginViewDomain = null;
-
 	protected LinphoneManager(final Context c) {
 		sExited = false;
 		mServiceContext = c;
@@ -440,7 +438,6 @@ public class LinphoneManager implements LinphoneCoreListener {
 		LinphoneCoreFactory.instance().enableLogCollection(isDebugLogEnabled);
 
 		PreferencesMigrator prefMigrator = new PreferencesMigrator(mServiceContext);
-		prefMigrator.migrateRemoteProvisioningUriIfNeeded();
 
 		if (prefMigrator.isMigrationNeeded()) {
 			prefMigrator.doMigration();
@@ -505,7 +502,7 @@ public class LinphoneManager implements LinphoneCoreListener {
 		copyIfNotExist(R.raw.linphonerc_default, mLinphoneConfigFile);
 		copyFromPackage(R.raw.linphonerc_factory, new File(mLinphoneFactoryConfigFile).getName());
 		copyIfNotExist(R.raw.lpconfig, mLPConfigXsd);
-		//copyIfNotExist(R.raw.rootca, mLinphoneRootCaFile);
+		copyIfNotExist(R.raw.rootca, mLinphoneRootCaFile);
 	}
 
 	public void copyIfNotExist(int ressourceId, String target) throws IOException {
@@ -1149,18 +1146,6 @@ public class LinphoneManager implements LinphoneCoreListener {
 	public void configuringStatus(LinphoneCore lc,
 			RemoteProvisioningState state, String message) {
 		Log.d("Remote provisioning status = " + state.toString() + " (" + message + ")");
-
-		if (state == RemoteProvisioningState.ConfiguringSuccessful) {
-			if (LinphonePreferences.instance().isProvisioningLoginViewEnabled()) {
-				LinphoneProxyConfig proxyConfig = lc.createProxyConfig();
-				try {
-					LinphoneAddress addr = LinphoneCoreFactory.instance().createLinphoneAddress(proxyConfig.getIdentity());
-					wizardLoginViewDomain = addr.getDomain();
-				} catch (LinphoneCoreException e) {
-					wizardLoginViewDomain = null;
-				}
-			}
-		}
 	}
 	@Override
 	public void fileTransferProgressIndication(LinphoneCore lc,

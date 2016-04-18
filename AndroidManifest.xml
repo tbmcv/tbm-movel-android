@@ -21,13 +21,8 @@
 	<uses-feature 	 android:name="android.hardware.telephony" android:required="false" /> 
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 	<uses-permission android:name="android.permission.VIBRATE"/>
-	<uses-permission android:name="android.permission.CAMERA" />
-	<!-- Needed to allow Linphone to install on tablets, since android.permission.CAMERA implies android.hardware.camera and android.hardware.camera.autofocus are required -->
-	<uses-feature 	 android:name="android.hardware.camera" android:required="false" />
 	<uses-permission android:name="android.permission.READ_LOGS" />
 	<uses-permission android:name="android.permission.READ_PHONE_STATE" />
-	<!-- Needed to store received images if the user wants to -->
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 	<!-- Needed to use our own Contact editor -->
 	<uses-permission android:name="android.permission.WRITE_CONTACTS"/>
 	<!-- Needed to route the audio to the bluetooth headset if available -->
@@ -115,16 +110,6 @@
             </intent-filter>-->
         </activity>
 
-        <activity android:name="org.linphone.ChatActivity"
-            android:theme="@style/NoTitle"
-            android:configChanges="orientation|screenSize|keyboardHidden" 
-            android:windowSoftInputMode="adjustPan|adjustResize"
-            android:launchMode="singleTask">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-         
         <activity android:name="org.linphone.setup.SetupActivity"
 		    android:theme="@style/NoTitle"
             android:screenOrientation="nosensor">
@@ -132,29 +117,6 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
          </activity>
-         
-        <activity android:name="org.linphone.setup.RemoteProvisioningLoginActivity"
-		    android:theme="@style/NoTitle"
-            android:screenOrientation="nosensor">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-         </activity>
-         
-        <activity android:name="org.linphone.setup.RemoteProvisioningActivity"
-            android:theme="@style/NoTitle"
-            android:screenOrientation="nosensor">
-            <intent-filter>
-	     		<action android:name="android.intent.action.MAIN" />
-		  	</intent-filter>
-			 
-            <intent-filter>
-		        <data android:scheme="linphone-config" /> <!-- Change if needed -->
-		        <action android:name="android.intent.action.VIEW" />
-		        <category android:name="android.intent.category.BROWSABLE" />
-		        <category android:name="android.intent.category.DEFAULT" />
-     		</intent-filter>
-        </activity>
 
 	    <service android:name="org.linphone.LinphoneService"
 	        android:label="@string/service_name"
@@ -209,50 +171,15 @@
 		
 		<service android:name="org.linphone.gcm.GCMService" />
 
-        <activity android:name="org.linphone.tutorials.TutorialLauncherActivity"
-		    android:theme="@style/NoTitle">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-		
-		<activity android:name="org.linphone.tutorials.TutorialBuddyStatusActivity"
-		    android:theme="@style/NoTitle">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-        
-		<activity android:name="org.linphone.tutorials.TutorialChatRoomActivity"
-		    android:theme="@style/NoTitle">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-        
-		<activity android:name="org.linphone.tutorials.TutorialHelloWorldActivity"
-		    android:theme="@style/NoTitle">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-        
-		<activity android:name="org.linphone.tutorials.TutorialRegistrationActivity"
-		    android:theme="@style/NoTitle">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
+		<service android:name="net.tbmcv.tbmmovel.AcctDataService" />
 
-        <service android:name="net.tbmcv.tbmmovel.AcctDataService" />
+		<activity android:name="net.tbmcv.tbmmovel.InitConfigActivity"
+			android:launchMode="singleTop">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+			</intent-filter>
+		</activity>
 
-        <activity android:name="net.tbmcv.tbmmovel.InitConfigActivity"
-            android:launchMode="singleTop">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-	
 	</application>
 
 </manifest> 

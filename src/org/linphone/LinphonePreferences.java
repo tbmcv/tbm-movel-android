@@ -942,20 +942,6 @@ public class LinphonePreferences {
 		getConfig().setBool("app", "auto_start", autoStartEnabled);
 	}
 
-	public void setRemoteProvisioningUrl(String url) {
-		if (url != null && url.length() == 0) {
-			url = null;
-		}
-
-		LpConfig config = getConfig();
-		config.setString("misc", "config-uri", url);
-		config.sync();
-	}
-
-	public String getRemoteProvisioningUrl() {
-		return getConfig().getString("misc", "config-uri", null);
-	}
-
 	public void setDefaultDisplayName(String displayName) {
 		getLc().setPrimaryContact(displayName, getDefaultUsername());
 	}
@@ -1036,26 +1022,6 @@ public class LinphonePreferences {
 		LinphoneManager.getInstance().initTunnelFromConf();
 	}
 	// End of tunnel settings
-
-	public boolean isProvisioningLoginViewEnabled() {
-		return getConfig().getBool("app", "show_login_view", false);
-	}
-
-	public void disableProvisioningLoginView() {
-		if (isProvisioningLoginViewEnabled()) { // Only do it if it was previously enabled
-			getConfig().setBool("app", "show_login_view", false);
-		} else {
-			Log.w("Remote provisioning login view wasn't enabled, ignoring");
-		}
-	}
-
-	public void firstRemoteProvisioningSuccessful() {
-		getConfig().setBool("app", "first_remote_provisioning", false);
-	}
-
-	public boolean isFirstRemoteProvisioning() {
-		return getConfig().getBool("app", "first_remote_provisioning", true);
-	}
 
 	public boolean isAdaptiveRateControlEnabled() {
 		return getLc().isAdaptiveRateControlEnabled();

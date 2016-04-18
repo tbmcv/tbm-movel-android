@@ -88,20 +88,9 @@ public class PreferencesMigrator {
 		mNewPrefs.setBackgroundModeEnabled(getPrefBoolean(R.string.pref_background_mode_key, true));
 		mNewPrefs.setAnimationsEnabled(getPrefBoolean(R.string.pref_animation_enable_key, false));
 		mNewPrefs.setAutoStart(getPrefBoolean(R.string.pref_autostart_key, false));
-		mNewPrefs.setRemoteProvisioningUrl(getPrefString(R.string.pref_remote_provisioning_key, null));
-		
+
 		doAccountsMigration();
 		deleteAllOldPreferences();
-	}
-
-	public void migrateRemoteProvisioningUriIfNeeded() {
-		String oldUri = mNewPrefs.getConfig().getString("app", "remote_provisioning", null);
-		String currentUri = mNewPrefs.getRemoteProvisioningUrl();
-		if (oldUri != null && oldUri.length() > 0 && currentUri == null) {
-			mNewPrefs.setRemoteProvisioningUrl(oldUri);
-			mNewPrefs.getConfig().setString("app", "remote_provisioning", null);
-			mNewPrefs.getConfig().sync();
-		}
 	}
 
 	private void doAccountsMigration() {

@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tutorial settings -->
-    <bool name="show_tutorials_instead_of_app">false</bool> <!-- Be careful ! Setting this to true prevent the app from working ! It will only display tutorial activities -->
-
 	<!-- Push notification settings -->
 	<bool name="enable_push_id">false</bool>
 	<string name="push_sender_id"></string>
@@ -41,7 +38,6 @@
 	<bool name="disable_options_in_call">false</bool>
 
 	<!-- Behavior Settings -->
-	<bool name="pre_fill_email_in_wizard">true</bool> <!-- Set the email field of the wizard with one of the gmail account registered on the device -->
 	<bool name="call_last_log_if_adress_is_empty">true</bool>
 	<bool name="allow_ringing_while_early_media">true</bool>
 	<bool name="allow_transfers">true</bool>

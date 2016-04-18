@@ -82,10 +82,8 @@ import net.tbmcv.tbmmovel.R;
  * @author Sylvain Berfini
  */
 public class LinphoneActivity extends FragmentActivity implements OnClickListener, ContactPicked {
-	public static final String PREF_FIRST_LAUNCH = "pref_first_launch";
 	private static final int SETTINGS_ACTIVITY = 123;
 	private static final int FIRST_LOGIN_ACTIVITY = 101;
-	private static final int REMOTE_PROVISIONING_LOGIN_ACTIVITY = 102;
 	private static final int CALL_ACTIVITY = 19;
 
 	private static LinphoneActivity instance;
