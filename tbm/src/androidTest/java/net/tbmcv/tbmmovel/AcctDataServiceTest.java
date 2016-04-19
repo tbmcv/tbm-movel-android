@@ -120,8 +120,16 @@ public class AcctDataServiceTest
     }
 
     protected long verifyPauseMillis(AnswerPromise<?> pausePromise) throws InterruptedException {
-        pausePromise.getCallLatch().await(2, TimeUnit.SECONDS);
+        await(pausePromise);
         return verifyPauseMillis();
+    }
+
+    private static void await(CountDownLatch latch) throws InterruptedException {
+        latch.await(2, TimeUnit.SECONDS);
+    }
+
+    private static void await(AnswerPromise<?> promise) throws InterruptedException {
+        await(promise.getCallLatch());
     }
 
     public void testGetCredit() throws Exception {
@@ -131,7 +139,7 @@ public class AcctDataServiceTest
         AnswerPromise<?> fetchPromise = new AnswerPromise<>();
         when(fetcher.fetch(any(Map.class))).then(fetchPromise);
         startService(new Intent(AcctDataService.ACTION_GET_CREDIT));
-        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
+        await(fetchPromise);
 
         verify(fetcher).fetch(paramsCaptor.capture());
         Map<String, ?> params = paramsCaptor.getValue();
@@ -168,7 +176,7 @@ public class AcctDataServiceTest
         startService(new Intent(AcctDataService.ACTION_RESET_PASSWORD)
                 .putExtra(AcctDataService.EXTRA_ACCT_NAME, username)
                 .putExtra(AcctDataService.EXTRA_PASSWORD, password));
-        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
+        await(fetchPromise);
 
         verify(fetcher).fetch(paramsCaptor.capture());
         Map<String, ?> params = paramsCaptor.getValue();
@@ -227,7 +235,7 @@ public class AcctDataServiceTest
                 .thenReturn(new JSONObject().put("lines", new JSONArray()))
                 .then(fetchPromise);
         startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
-        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
+        await(fetchPromise);
         verify(fetcher, times(2)).fetch(paramsCaptor.capture());
 
         Map<String, ?> params = paramsCaptor.getAllValues().get(0);
@@ -259,7 +267,7 @@ public class AcctDataServiceTest
         assertTrue(verifyPauseMillis(pausePromise) >= 1000);
 
         pausePromise.setResult(null);
-        finished.await(2, TimeUnit.SECONDS);
+        await(finished);
         Intent resultIntent = getStartServiceTrap().getServiceStarted(
                 AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
 
@@ -283,7 +291,7 @@ public class AcctDataServiceTest
                                         .put("display", null))))
                 .then(fetchPromise);
         startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
-        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
+        await(fetchPromise);
         verify(fetcher, times(2)).fetch(paramsCaptor.capture());
 
         Map<String, ?> params = paramsCaptor.getAllValues().get(0);
@@ -320,7 +328,7 @@ public class AcctDataServiceTest
         assertTrue(verifyPauseMillis(pausePromise) >= 1000);
 
         pausePromise.setResult(null);
-        finished.await(2, TimeUnit.SECONDS);
+        await(finished);
         Intent resultIntent = getStartServiceTrap().getServiceStarted(
                 AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
 
@@ -334,22 +342,23 @@ public class AcctDataServiceTest
         return array[0];
     }
 
+    private void assertEqualsOrNull(Object expected, Object actual) {
+        if (actual != null) {
+            assertEquals(expected, actual);
+        }
+    }
+
     void assertVoipLine(String lineName, String password) throws LinphoneCoreException {
         final String realm = getContext().getString(R.string.tbm_sip_realm);
         LinphoneCore lc = LinphoneManager.getLc();
 
         LinphoneAuthInfo auth = getFromArrayOfOne(lc.getAuthInfosList());
         assertEquals(lineName, auth.getUsername());
-        String userId = auth.getUserId();
-        if (userId != null) {
-            assertEquals(lineName, userId);
-        }
+        assertEqualsOrNull(lineName, auth.getUserId());
         assertEquals(AcctDataService.createHa1(lineName, password, realm), auth.getHa1());
+        assertEqualsOrNull(password, auth.getPassword());
         assertEquals(realm, auth.getDomain());
-        String realmValue = auth.getRealm();
-        if (realmValue != null) {
-            assertEquals(realm, realmValue);
-        }
+        assertEqualsOrNull(realm, auth.getRealm());
 
         LinphoneProxyConfig cfg = getFromArrayOfOne(lc.getProxyConfigList());
         assertEquals(realm, cfg.getDomain());

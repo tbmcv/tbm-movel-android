@@ -254,10 +254,11 @@ public class AcctDataService extends IntentService {
                     "sip:" + username + "@" + realm, proxyAddr.asStringUriOnly(), null, true);
             proxyConfig.setExpires(300);  // TODO configure somewhere
             LinphoneAuthInfo authInfo = LinphoneCoreFactory.instance().createAuthInfo(
-                    username, null, null, createHa1(username, password, realm), realm, realm);
+                    username, password, realm, realm);
             lc.addProxyConfig(proxyConfig);
             lc.addAuthInfo(authInfo);
             lc.setDefaultProxyConfig(proxyConfig);
+            lc.refreshRegisters();
         } catch (LinphoneCoreException e) {
             Log.e(LOG_TAG, "Error saving line configuration", e);
         }
