@@ -56,7 +56,7 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
     public void testLoginPwResetRequestSent() {
         launch();
         String username = "9123456";
-        String password = "123454321";
+        String password = "123321";
         performLogin(username, password);
 
         Intent intent = getStartServiceTrap().getServiceStarted(
@@ -67,7 +67,7 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
 
     public void testFailedLogin() {
         launch();
-        performLogin("9090909", "1984");
+        performLogin("9090909", "019840");
         LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
                 new Intent(AcctDataService.ACTION_STATUS)
                         .putExtra(AcctDataService.EXTRA_PASSWORD_OK, false));
@@ -76,9 +76,9 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         EditText passwordEntry = (EditText) getActivity().findViewById(R.id.passwordEntry);
         assertEquals("", passwordEntry.getText().toString());
         assertTrue(passwordEntry.isEnabled());
-        assertTrue(getActivity().findViewById(R.id.okButton).isEnabled());
         assertTrue(getActivity().findViewById(R.id.usernameEntry).isEnabled());
         assertTrue(getActivity().findViewById(R.id.helpButton).isEnabled());
+        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
     }
 
     public void testGSMEnabled() {
@@ -129,5 +129,34 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         launch();
         assertEquals("",
                 ((EditText) getActivity().findViewById(R.id.usernameEntry)).getText().toString());
+    }
+
+    public void testOkButtonInitiallyDisabled() {
+        launch();
+        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
+    }
+
+    public void testOkButtonDisabledNoPassword() {
+        launch();
+        enterText(R.id.usernameEntry, "9101019");
+        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
+    }
+
+    public void testOkButtonDisabledNoPhoneNumber() {
+        launch();
+        enterText(R.id.passwordEntry, "888222");
+        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
+    }
+
+    public void testOkButtonDisabledWrongPhoneNumberLength() {
+        launch();
+        enterText(R.id.usernameEntry, "18001234567");
+        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
+    }
+
+    public void testOkButtonDisabledShortPasswordLength() {
+        launch();
+        enterText(R.id.passwordEntry, "1357");
+        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
     }
 }

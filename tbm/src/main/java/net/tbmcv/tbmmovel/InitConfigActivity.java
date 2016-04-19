@@ -30,10 +30,12 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.TelephonyManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
-import android.widget.TextView;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import org.linphone.LinphoneActivity;
@@ -51,7 +53,7 @@ public class InitConfigActivity extends FragmentActivity {
                 (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         String number = telephonyManager.getLine1Number();
         if (number != null && number.length() == 10 && number.startsWith("238")) {
-            ((TextView) findViewById(R.id.usernameEntry)).setText(number.substring(3));
+            ((EditText) findViewById(R.id.usernameEntry)).setText(number.substring(3));
         }
 
         LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
@@ -70,7 +72,7 @@ public class InitConfigActivity extends FragmentActivity {
                 int error_msg = 0;
                 if (!intent.getBooleanExtra(AcctDataService.EXTRA_PASSWORD_OK, true)) {
                     error_msg = R.string.tbm_login_error_auth;
-                    ((TextView) findViewById(R.id.passwordEntry)).setText("");
+                    ((EditText) findViewById(R.id.passwordEntry)).setText("");
                 } else if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
                     error_msg = R.string.tbm_login_error_net;
                 }
@@ -86,6 +88,22 @@ public class InitConfigActivity extends FragmentActivity {
         } catch (LinphoneCoreException e) {
             Log.e(LOG_TAG, "Error setting default settings", e);
         }
+
+        TextWatcher validator = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                setControlsEnabled(true);
+            }
+        };
+        ((EditText) findViewById(R.id.usernameEntry)).addTextChangedListener(validator);
+        ((EditText) findViewById(R.id.passwordEntry)).addTextChangedListener(validator);
+        setControlsEnabled(true);
     }
 
     @Override
@@ -96,17 +114,26 @@ public class InitConfigActivity extends FragmentActivity {
     }
 
     private void setControlsEnabled(boolean enabled) {
-        findViewById(R.id.okButton).setEnabled(enabled);
+        findViewById(R.id.okButton).setEnabled(enabled && inputValid());
         findViewById(R.id.helpButton).setEnabled(enabled);
         findViewById(R.id.passwordEntry).setEnabled(enabled);
         findViewById(R.id.usernameEntry).setEnabled(enabled);
     }
 
+    private boolean inputValid() {
+        String phoneNumber = ((EditText) findViewById(R.id.usernameEntry)).getText().toString();
+        if (phoneNumber.length() != 7) {
+            return false;
+        }
+        String tmpPw = ((EditText) findViewById(R.id.passwordEntry)).getText().toString();
+        return tmpPw.length() >= 6;
+    }
+
     public void onOkButtonClick(View view) {
         setControlsEnabled(false);
 
-        String acctName = "c/" + ((TextView) findViewById(R.id.usernameEntry)).getText();
-        String tmpPw = ((TextView) findViewById(R.id.passwordEntry)).getText().toString();
+        String acctName = "c/" + ((EditText) findViewById(R.id.usernameEntry)).getText();
+        String tmpPw = ((EditText) findViewById(R.id.passwordEntry)).getText().toString();
 
         startService(new Intent(this, AcctDataService.class)
                 .setAction(AcctDataService.ACTION_RESET_PASSWORD)
