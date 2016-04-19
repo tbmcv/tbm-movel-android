@@ -226,6 +226,7 @@ public class AcctDataService extends IntentService {
         }
         try {
             AuthPair lineAuth = resetLinePassword(acct);
+            pauser.pause(3, TimeUnit.SECONDS);  // TODO configure somewhere
             startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE)
                     .putExtra(EXTRA_LINE_NAME, lineAuth.name)
                     .putExtra(EXTRA_PASSWORD, lineAuth.password));
@@ -235,6 +236,8 @@ public class AcctDataService extends IntentService {
             Log.e(LOG_TAG, "Error reconfiguring line", e);
             LocalBroadcastManager.getInstance(this).sendBroadcast(
                     new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+        } catch (InterruptedException e) {
+            Log.e(LOG_TAG, "Interrupted while reconfiguring line", e);
         }
     }
 
@@ -252,13 +255,10 @@ public class AcctDataService extends IntentService {
             proxyConfig.setExpires(300);  // TODO configure somewhere
             LinphoneAuthInfo authInfo = LinphoneCoreFactory.instance().createAuthInfo(
                     username, null, null, createHa1(username, password, realm), realm, realm);
-            proxyConfig.enableRegister(false);
             lc.addProxyConfig(proxyConfig);
             lc.addAuthInfo(authInfo);
             lc.setDefaultProxyConfig(proxyConfig);
-            pauser.pause(3, TimeUnit.SECONDS);  // TODO configure somewhere
-            proxyConfig.enableRegister(true);
-        } catch (LinphoneCoreException|InterruptedException e) {
+        } catch (LinphoneCoreException e) {
             Log.e(LOG_TAG, "Error saving line configuration", e);
         }
     }

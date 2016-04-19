@@ -98,6 +98,32 @@ public class AcctDataServiceTest
         return prefs;
     }
 
+    protected AnswerPromise<?> preparePause() {
+        AnswerPromise<?> pausePromise = new AnswerPromise<>();
+        try {
+            doAnswer(pausePromise).when(pauser).pause(anyInt(), any(TimeUnit.class));
+        } catch (InterruptedException e) {
+            throw new Error(e);
+        }
+        return pausePromise;
+    }
+
+    protected long verifyPauseMillis() {
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<TimeUnit> unit = ArgumentCaptor.forClass(TimeUnit.class);
+        try {
+            verify(pauser).pause(duration.capture(), unit.capture());
+        } catch (InterruptedException e) {
+            throw new Error(e);
+        }
+        return unit.getValue().toMillis(duration.getValue());
+    }
+
+    protected long verifyPauseMillis(AnswerPromise<?> pausePromise) throws InterruptedException {
+        pausePromise.getCallLatch().await(2, TimeUnit.SECONDS);
+        return verifyPauseMillis();
+    }
+
     public void testGetCredit() throws Exception {
         String acctName = "c/5050505";
         String pw = "anything";
@@ -195,17 +221,13 @@ public class AcctDataServiceTest
     public void testNewVoipLineRequest() throws Exception {
         String acctName = "c/5123456";
         String password = "blah";
-        String lineName = "tbm7777";
-        String linePassword = "bleh";
         setStoredAcct(acctName, password);
+        AnswerPromise<JSONObject> fetchPromise = new AnswerPromise<>();
         when(fetcher.fetch(any(Map.class)))
                 .thenReturn(new JSONObject().put("lines", new JSONArray()))
-                .thenReturn(new JSONObject().put("name", lineName).put("pw", linePassword));
-
-        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
-        Intent resultIntent = getStartServiceTrap().getServiceStarted(
-                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
-
+                .then(fetchPromise);
+        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
         verify(fetcher, times(2)).fetch(paramsCaptor.capture());
 
         Map<String, ?> params = paramsCaptor.getAllValues().get(0);
@@ -220,6 +242,26 @@ public class AcctDataServiceTest
         assertEquals("POST", params.get("method"));
         assertUriEquals("/idens/" + acctName + "/lines/", params.get("uri"));
         assertTrue(params.get("body") instanceof JSONObject);
+    }
+
+    public void testNewVoipLineReconfigures() throws Exception {
+        String acctName = "c/5123456";
+        String password = "blah";
+        String lineName = "tbm7777";
+        String linePassword = "bleh";
+        setStoredAcct(acctName, password);
+        when(fetcher.fetch(any(Map.class)))
+                .thenReturn(new JSONObject().put("lines", new JSONArray()))
+                .thenReturn(new JSONObject().put("name", lineName).put("pw", linePassword));
+        AnswerPromise<?> pausePromise = preparePause();
+        CountDownLatch finished =
+                sendServiceIntent(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        assertTrue(verifyPauseMillis(pausePromise) >= 1000);
+
+        pausePromise.setResult(null);
+        finished.await(2, TimeUnit.SECONDS);
+        Intent resultIntent = getStartServiceTrap().getServiceStarted(
+                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
 
         assertEquals(AcctDataService.ACTION_CONFIGURE_LINE, resultIntent.getAction());
         assertEquals(lineName, resultIntent.getStringExtra(AcctDataService.EXTRA_LINE_NAME));
@@ -230,8 +272,8 @@ public class AcctDataServiceTest
         String acctName = "c/5110023";
         String password = "segredos";
         String lineName = "tbm2222";
-        String linePassword = "caten";
         setStoredAcct(acctName, password);
+        AnswerPromise<JSONObject> fetchPromise = new AnswerPromise<>();
         when(fetcher.fetch(any(Map.class)))
                 .thenReturn(new JSONObject()
                         .put("lines", new JSONArray()
@@ -239,12 +281,9 @@ public class AcctDataServiceTest
                                         .put("id", 1234)
                                         .put("name", lineName)
                                         .put("display", null))))
-                .thenReturn(new JSONObject().put("pw", linePassword));
-
-        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
-        Intent resultIntent = getStartServiceTrap().getServiceStarted(
-                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
-
+                .then(fetchPromise);
+        startService(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        fetchPromise.getCallLatch().await(2, TimeUnit.SECONDS);
         verify(fetcher, times(2)).fetch(paramsCaptor.capture());
 
         Map<String, ?> params = paramsCaptor.getAllValues().get(0);
@@ -259,6 +298,31 @@ public class AcctDataServiceTest
         assertEquals("POST", params.get("method"));
         assertUriEquals("/idens/" + acctName + "/lines/" + lineName + "/pw", params.get("uri"));
         assertTrue(params.get("body") instanceof JSONObject);
+    }
+
+    public void testReconfigureVoipLineReconfigures() throws Exception {
+        String acctName = "c/5110023";
+        String password = "segredos";
+        String lineName = "tbm2222";
+        String linePassword = "caten";
+        setStoredAcct(acctName, password);
+        when(fetcher.fetch(any(Map.class)))
+                .thenReturn(new JSONObject()
+                        .put("lines", new JSONArray()
+                                .put(new JSONObject()
+                                        .put("id", 1234)
+                                        .put("name", lineName)
+                                        .put("display", null))))
+                .thenReturn(new JSONObject().put("pw", linePassword));
+        AnswerPromise<?> pausePromise = preparePause();
+        CountDownLatch finished =
+                sendServiceIntent(new Intent(AcctDataService.ACTION_CONFIGURE_LINE));
+        assertTrue(verifyPauseMillis(pausePromise) >= 1000);
+
+        pausePromise.setResult(null);
+        finished.await(2, TimeUnit.SECONDS);
+        Intent resultIntent = getStartServiceTrap().getServiceStarted(
+                AcctDataService.class, AcctDataService.ACTION_CONFIGURE_LINE);
 
         assertEquals(AcctDataService.ACTION_CONFIGURE_LINE, resultIntent.getAction());
         assertEquals(lineName, resultIntent.getStringExtra(AcctDataService.EXTRA_LINE_NAME));
@@ -268,23 +332,6 @@ public class AcctDataServiceTest
     private <T> T getFromArrayOfOne(T... array) {
         assertEquals(1, array.length);
         return array[0];
-    }
-
-    void checkVoipLine(String lineName, String password) throws LinphoneCoreException, InterruptedException {
-        AnswerPromise<?> pausePromise = new AnswerPromise<>();
-        doAnswer(pausePromise).when(pauser).pause(anyInt(), any(TimeUnit.class));
-        CountDownLatch finished = sendServiceIntent(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
-                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
-                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
-        pausePromise.getCallLatch().await(2, TimeUnit.SECONDS);
-        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
-        ArgumentCaptor<TimeUnit> unit = ArgumentCaptor.forClass(TimeUnit.class);
-        verify(pauser).pause(duration.capture(), unit.capture());
-        assertTrue(unit.getValue().toMillis(duration.getValue()) >= 1000);
-        assertNoRegistration();
-        pausePromise.setResult(null);
-        finished.await(2, TimeUnit.SECONDS);
-        assertVoipLine(lineName, password);
     }
 
     void assertVoipLine(String lineName, String password) throws LinphoneCoreException {
@@ -312,12 +359,6 @@ public class AcctDataServiceTest
         assertTrue(cfg.registerEnabled());
     }
 
-    void assertNoRegistration() {
-        for (LinphoneProxyConfig cfg : LinphoneManager.getLc().getProxyConfigList()) {
-            assertFalse(cfg.registerEnabled());
-        }
-    }
-
     void addVoipLine(String lineName, String password, String domain) throws LinphoneCoreException {
         LinphoneCore lc = LinphoneManager.getLc();
         Set<LinphoneAuthInfo> oldAuthInfos = new HashSet<>();
@@ -340,12 +381,22 @@ public class AcctDataServiceTest
     }
 
     public void testConfigureNewVoipLine() throws Exception {
-        checkVoipLine("tbm9999", "pass");
+        String lineName = "tbm9999";
+        String password = "pass";
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
+        assertVoipLine(lineName, password);
     }
 
     public void testReconfigureVoipLine() throws Exception {
+        String lineName = "tbm5555";
+        String password = "*****";
         addVoipLine("old", "values", "a.b.c");
-        checkVoipLine("tbm5555", "*****");
+        sendServiceIntentAndWait(new Intent(AcctDataService.ACTION_CONFIGURE_LINE)
+                .putExtra(AcctDataService.EXTRA_LINE_NAME, lineName)
+                .putExtra(AcctDataService.EXTRA_PASSWORD, password));
+        assertVoipLine(lineName, password);
     }
 
     public void testConfigureLineUnconfiguredActivitySwitch() throws Exception {
