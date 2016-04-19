@@ -110,14 +110,6 @@
             </intent-filter>-->
         </activity>
 
-        <activity android:name="org.linphone.setup.SetupActivity"
-		    android:theme="@style/NoTitle"
-            android:screenOrientation="nosensor">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-         </activity>
-
 	    <service android:name="org.linphone.LinphoneService"
 	        android:label="@string/service_name"
 	        android:stopWithTask="false"/>
@@ -157,7 +149,7 @@
 			<intent-filter><action android:name="android.intent.action.PHONE_STATE" /></intent-filter>
 		</receiver>
 		
-		<receiver android:name="KeepAliveHandler" >
+		<receiver android:name="org.linphone.KeepAliveHandler" >
         </receiver>
         
 		<!-- Needed for push notification -->
