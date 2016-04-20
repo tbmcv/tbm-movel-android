@@ -102,6 +102,8 @@ public class AcctDataService extends IntentService {
                     onCommandConfigureLine();
                 }
                 break;
+            default:
+                Log.e(LOG_TAG, "Unexpected intent action: " + action);
         }
     }
 
@@ -156,12 +158,8 @@ public class AcctDataService extends IntentService {
                     .fetch();
             status.putExtra(EXTRA_CREDIT, result.getInt("saldo"));
         } catch (JSONException|IOException e) {
-            if (e instanceof HttpError && ((HttpError) e).getResponseCode() == 401) {
-                resetAuthConfig();
-            } else {
-                Log.e(LOG_TAG, "Error fetching saldo", e);
-                status.putExtra(EXTRA_CONNECTION_OK, false);
-            }
+            Log.e(LOG_TAG, "Error fetching saldo", e);
+            fillInStatusError(e, status, true);
         }
         LocalBroadcastManager.getInstance(this).sendBroadcast(status);
     }
@@ -189,8 +187,7 @@ public class AcctDataService extends IntentService {
                     new Intent(ACTION_PASSWORD_RESET));
         } catch (JSONException|IOException e) {
             Log.e(LOG_TAG, "Error resetting account password", e);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(
-                    new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+            LocalBroadcastManager.getInstance(this).sendBroadcast(fillInStatusError(e, false));
         }
     }
 
@@ -236,12 +233,9 @@ public class AcctDataService extends IntentService {
             startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE)
                     .putExtra(EXTRA_LINE_NAME, lineAuth.name)
                     .putExtra(EXTRA_PASSWORD, lineAuth.password));
-        } catch (HttpError e) {
-            resetAuthConfig();
         } catch (JSONException|IOException e) {
             Log.e(LOG_TAG, "Error reconfiguring line", e);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(
-                    new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
+            LocalBroadcastManager.getInstance(this).sendBroadcast(fillInStatusError(e, true));
         } catch (InterruptedException e) {
             Log.e(LOG_TAG, "Interrupted while reconfiguring line", e);
         }
@@ -280,7 +274,7 @@ public class AcctDataService extends IntentService {
             md5.update(password.getBytes("UTF-8"));
             return String.format(Locale.US, "%032x", new BigInteger(1, md5.digest()));
         } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-            throw new Error(e);
+            throw new RuntimeException("Can't create HA1", e);
         }
     }
 
@@ -318,13 +312,8 @@ public class AcctDataService extends IntentService {
                     .fetch();
             return !lineHa1.equals(createHa1(lineName, result.getString("pw")));
         } catch (JSONException|IOException e) {
-            if (e instanceof HttpError && ((HttpError) e).getResponseCode() == 401) {
-                resetAuthConfig();
-            } else {
-                Log.e(LOG_TAG, "Error retrieving line password", e);
-                LocalBroadcastManager.getInstance(this).sendBroadcast(
-                        new Intent(ACTION_STATUS).putExtra(EXTRA_CONNECTION_OK, false));
-            }
+            Log.e(LOG_TAG, "Error retrieving line password", e);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(fillInStatusError(e, true));
             return false;
         }
     }
@@ -333,6 +322,22 @@ public class AcctDataService extends IntentService {
         if (shouldReconfigure()) {
             startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE));
         }
+    }
+
+    private Intent fillInStatusError(Exception error, Intent statusIntent, boolean usedStoredAuth) {
+        if (error instanceof HttpError && ((HttpError) error).getResponseCode() == 401) {
+            if (usedStoredAuth) {
+                resetAuthConfig();
+            }
+            statusIntent.putExtra(EXTRA_PASSWORD_OK, false);
+        } else {
+            statusIntent.putExtra(EXTRA_CONNECTION_OK, false);
+        }
+        return statusIntent;
+    }
+
+    private Intent fillInStatusError(Exception error, boolean usedStoredAuth) {
+        return fillInStatusError(error, new Intent(ACTION_STATUS), usedStoredAuth);
     }
 
     interface Pauser {
