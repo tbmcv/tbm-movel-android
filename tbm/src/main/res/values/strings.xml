@@ -13,6 +13,8 @@
     <string name="tbm_title_activity_main">@string/tbm_app_name</string>
     <string name="tbm_credit">Credit</string>
     <string name="tbm_init_config_help_explanation">You can register your phone wherever TBM Móvel credit is sold. The seller will tell you what code to put here.</string>
+    <string name="tbm_echo_calibration_failure">Echo calibration failed</string>
+    <string name="tbm_echo_calibration_success">Echo calibration complete</string>
 
     <string name="tbm_settings_key">tbm_config</string>
     <string name="tbm_setting_acctname">acct</string>

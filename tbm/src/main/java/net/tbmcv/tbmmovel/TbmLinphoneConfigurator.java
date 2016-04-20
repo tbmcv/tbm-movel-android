@@ -1,6 +1,6 @@
 package net.tbmcv.tbmmovel;
 /*
-TbmLinphoneSettings.java
+TbmLinphoneConfigurator.java
 Copyright (C) 2016  TBM Comunicações, Lda.
 
 This program is free software; you can redistribute it and/or
@@ -20,15 +20,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import org.linphone.LinphoneManager;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
+import org.linphone.core.LinphoneCoreListener;
 import org.linphone.core.PayloadType;
 
-public class TbmLinphoneSettings {
-    public static void setDefaultSettings() throws LinphoneCoreException {
+public class TbmLinphoneConfigurator {
+    static TbmLinphoneConfigurator instance = new TbmLinphoneConfigurator();
+
+    public static TbmLinphoneConfigurator getInstance() {
+        return instance;
+    }
+
+    public void setDefaultSettings() throws LinphoneCoreException {
         setDefaultNetworkSettings();
         setDefaultCodecs();
     }
 
-    public static void setDefaultCodecs() throws LinphoneCoreException {
+    public void setDefaultCodecs() throws LinphoneCoreException {
         LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
         lc.enableAdaptiveRateControl(false);
         lc.enableKeepAlive(true);
@@ -37,16 +44,21 @@ public class TbmLinphoneSettings {
         }
     }
 
-    public static void setDefaultNetworkSettings() {
+    public void setDefaultNetworkSettings() {
         LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
         lc.enableKeepAlive(true);
         lc.enableDnsSrv(false);
         lc.setStunServer(null);
     }
 
-    public static boolean codecDefaultEnabled(PayloadType codec) {
-        return codec.getRate() == 8000 && "GSM".equals(codec.getMime());
+    public void startEchoCalibration(LinphoneCoreListener listener) throws LinphoneCoreException {
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        if (lc != null && lc.needsEchoCalibration()) {
+            lc.startEchoCalibration(listener);
+        }
     }
 
-    private TbmLinphoneSettings() { }
+    public boolean codecDefaultEnabled(PayloadType codec) {
+        return codec.getRate() == 8000 && "GSM".equals(codec.getMime());
+    }
 }

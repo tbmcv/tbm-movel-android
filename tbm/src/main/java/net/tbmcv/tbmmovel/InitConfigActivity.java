@@ -42,6 +42,7 @@ import org.linphone.LinphoneManager;
 import org.linphone.LinphoneService;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
+import org.linphone.core.LinphoneCoreListenerBase;
 
 public class InitConfigActivity extends FragmentActivity {
     static final String LOG_TAG = "InitConfigActivity";
@@ -150,7 +151,8 @@ public class InitConfigActivity extends FragmentActivity {
         String tmpPw = ((EditText) findViewById(R.id.passwordEntry)).getText().toString();
 
         try {
-            TbmLinphoneSettings.setDefaultSettings();
+            TbmLinphoneConfigurator.getInstance().setDefaultSettings();
+            startEchoCalibration();
         } catch (LinphoneCoreException e) {
             Log.e(LOG_TAG, "Error setting default settings", e);
         }
@@ -177,6 +179,33 @@ public class InitConfigActivity extends FragmentActivity {
             LinphoneManager.destroy();
         }
         finish();
+    }
+
+    protected void startEchoCalibration() throws LinphoneCoreException {
+        TbmLinphoneConfigurator.getInstance().startEchoCalibration(new LinphoneCoreListenerBase() {
+            @Override
+            public void ecCalibrationStatus(LinphoneCore lc,
+                                            LinphoneCore.EcCalibratorStatus status,
+                                            int delay_ms, Object data) {
+                onEchoCalibrationComplete(status);
+            }
+        });
+    }
+
+    protected void onEchoCalibrationComplete(LinphoneCore.EcCalibratorStatus status) {
+        int message = 0;
+        switch (status.value()) {
+            case LinphoneCore.EcCalibratorStatus.FAILED_STATUS:
+                message = R.string.tbm_echo_calibration_failure;
+                break;
+            case LinphoneCore.EcCalibratorStatus.DONE_STATUS:
+            case LinphoneCore.EcCalibratorStatus.DONE_NO_ECHO_STATUS:
+                message = R.string.tbm_echo_calibration_success;
+                break;
+        }
+        if (message != 0) {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        }
     }
 
     public static class HelpDialogFragment extends DialogFragment {

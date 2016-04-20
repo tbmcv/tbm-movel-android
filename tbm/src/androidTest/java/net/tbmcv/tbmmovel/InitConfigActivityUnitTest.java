@@ -20,6 +20,26 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         super(InitConfigActivity.class);
     }
 
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        TbmLinphoneConfigurator.instance = mock(TbmLinphoneConfigurator.class);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        TbmLinphoneConfigurator.instance = new TbmLinphoneConfigurator();
+    }
+
+    @Override
+    protected void launch() {
+        super.launch();
+        if (!LinphoneManager.isInstanciated()) {
+            LinphoneManager.createAndStart(getActivity());
+        }
+    }
+
     private void fakeSuccessfulLogin() {
         getActivity().findViewById(R.id.okButton).performClick();
         getInstrumentation().waitForIdleSync();

@@ -11,4 +11,6 @@
     <string name="tbm_set_up">Configurar</string>
     <string name="tbm_credit">Saldo</string>
     <string name="tbm_init_config_help_explanation">Um vendedor de saldo TBM Móvel pode registar o seu telemóvel, e lhe diz qual é o código para preencher aqui.</string>
+    <string name="tbm_echo_calibration_failure">Configuração do cancelamento de eco falhou</string>
+    <string name="tbm_echo_calibration_success">Configuração do cancelamento de eco concluiu</string>
 </resources>
