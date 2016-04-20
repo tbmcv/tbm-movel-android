@@ -40,8 +40,14 @@ public class AcctDataServiceTest
     public static class TestingAcctDataService extends AcctDataService {
         @Override
         protected void onHandleIntent(Intent intent) {
-            super.onHandleIntent(intent);
-            setIntentHandled(getBaseContext(), intent);
+            BaseIntentServiceUnitTest<?> test = currentTest(getBaseContext());
+            try {
+                super.onHandleIntent(intent);
+            } catch (Throwable e) {
+                test.onHandleIntentError(this, e);
+            } finally {
+                test.setIntentHandled(intent);
+            }
         }
     }
 
@@ -122,14 +128,6 @@ public class AcctDataServiceTest
     protected long verifyPauseMillis(AnswerPromise<?> pausePromise) throws InterruptedException {
         await(pausePromise);
         return verifyPauseMillis();
-    }
-
-    private static void await(CountDownLatch latch) throws InterruptedException {
-        latch.await(2, TimeUnit.SECONDS);
-    }
-
-    private static void await(AnswerPromise<?> promise) throws InterruptedException {
-        await(promise.getCallLatch());
     }
 
     public void testGetCredit() throws Exception {

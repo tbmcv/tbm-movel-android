@@ -12,6 +12,8 @@ import android.test.ServiceTestCase;
 import android.test.mock.MockContentResolver;
 import android.util.Log;
 
+import junit.framework.TestResult;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,9 +28,47 @@ public class BaseIntentServiceUnitTest<S extends IntentService> extends ServiceT
     private volatile Intent lastActivityIntent;
     private MockContentResolver contentResolver;
     private Map<Intent, CountDownLatch> processingIntents;
+    private volatile TestResult testResult;
 
     public BaseIntentServiceUnitTest(Class<S> serviceClass) {
         super(serviceClass);
+    }
+
+    @Override
+    public void run(TestResult result) {
+        testResult = result;
+        try {
+            super.run(result);
+        } finally {
+            testResult = null;
+        }
+    }
+
+    @Override
+    protected void runTest() throws Throwable {
+        try {
+            super.runTest();
+        } finally {
+            AnswerPromise.cleanup();
+            for (Map.Entry<Intent, CountDownLatch> entry : processingIntents.entrySet()) {
+                try {
+                    if (!entry.getValue().await(2, TimeUnit.SECONDS)) {
+                        testResult.addError(this, new RuntimeException(
+                                "Intent never finished processing: " + entry.getKey()));
+                    }
+                } finally {
+                    entry.getValue().countDown();
+                }
+            }
+        }
+    }
+
+    protected static void await(CountDownLatch latch) throws InterruptedException {
+        assertTrue("Timeout", latch.await(2, TimeUnit.SECONDS));
+    }
+
+    protected static void await(AnswerPromise<?> promise) throws InterruptedException {
+        await(promise.getCallLatch());
     }
 
     @Override
@@ -75,9 +115,27 @@ public class BaseIntentServiceUnitTest<S extends IntentService> extends ServiceT
         }
     }
 
-    public static void setIntentHandled(Context context, Intent intent) {
-        ((BaseIntentServiceUnitTest<?>.TestingContext) context)
-                .getCurrentTest().setIntentHandled(intent);
+    protected void addError(Throwable error) {
+        TestResult testResult = this.testResult;
+        if (testResult != null) {
+            testResult.addError(this, error);
+            testResult.stop();
+        } else {
+            Log.e(LOG_TAG, "Uncaught error after test finished", error);
+        }
+    }
+
+    protected void onHandleIntentError(IntentService service, Throwable error) {
+        if (error instanceof AnswerPromise.TestFinished) {
+            throw (AnswerPromise.TestFinished) error;
+        } else {
+            addError(error);
+            service.stopSelf();
+        }
+    }
+
+    public static BaseIntentServiceUnitTest<?> currentTest(Context context) {
+        return ((BaseIntentServiceUnitTest<?>.TestingContext) context).getCurrentTest();
     }
 
     @Override
