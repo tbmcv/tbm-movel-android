@@ -73,9 +73,15 @@ public class AcctDataService extends IntentService {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+    }
+
+    @Override
     protected void onHandleIntent(Intent intent) {
-        Log.d(LOG_TAG, "Received Intent: " + intent.getAction());
-        switch (intent.getAction()) {
+        String action = intent.getAction();
+        Log.d(LOG_TAG, "Received Intent: " + action);
+        switch (action) {
             case ACTION_GET_CREDIT:
                 onCommandGetCredit();
                 break;

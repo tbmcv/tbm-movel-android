@@ -54,7 +54,6 @@ import net.tbmcv.tbmmovel.R;
  * @author Sylvain Berfini
  */
 public class SettingsFragment extends PreferencesListFragment {
-	private static final int WIZARD_INTENT = 1;
 	private LinphonePreferences mPrefs;
 	private Handler mHandler = new Handler();
 	private LinphoneCoreListenerBase mListener;
@@ -122,8 +121,7 @@ public class SettingsFragment extends PreferencesListFragment {
 		findPreference(getString(R.string.setup_key)).setOnPreferenceClickListener(new OnPreferenceClickListener() {
 			@Override
 			public boolean onPreferenceClick(Preference preference) {
-				Intent intent = new Intent(LinphoneService.instance(), InitConfigActivity.class);
-				startActivityForResult(intent, WIZARD_INTENT);
+				startActivity(new Intent(LinphoneService.instance(), InitConfigActivity.class));
 				return true;
 			}
 		});

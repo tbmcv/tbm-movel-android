@@ -41,6 +41,23 @@ public class SaldoFragment extends Fragment {
     private NumberFormat creditFormat;
     private int currentCredit = UNKNOWN_CREDIT;
 
+    private final BroadcastReceiver statusReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int credit = intent.getIntExtra(AcctDataService.EXTRA_CREDIT, UNKNOWN_CREDIT);
+            if (credit != UNKNOWN_CREDIT) {
+                setCredit(credit);
+            }
+            if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
+                Activity activity = getActivity();
+                if (activity != null) {
+                    Toast.makeText(activity,
+                            R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+    };
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         DecimalFormatSymbols formatSymbols = new DecimalFormatSymbols();
@@ -57,22 +74,8 @@ public class SaldoFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                int credit = intent.getIntExtra(AcctDataService.EXTRA_CREDIT, UNKNOWN_CREDIT);
-                if (credit != UNKNOWN_CREDIT) {
-                    setCredit(credit);
-                }
-                if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
-                    Activity activity = getActivity();
-                    if (activity != null) {
-                        Toast.makeText(activity,
-                                R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
-                    }
-                }
-            }
-        }, new IntentFilter(AcctDataService.ACTION_STATUS));
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(
+                statusReceiver, new IntentFilter(AcctDataService.ACTION_STATUS));
     }
 
     @Override
@@ -81,6 +84,12 @@ public class SaldoFragment extends Fragment {
         loadCredit();
         ensureLine();
         onCreditUpdate();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(statusReceiver);
     }
 
     protected void setCredit(int credit) {

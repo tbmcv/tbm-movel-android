@@ -28,7 +28,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -39,10 +38,15 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import org.linphone.LinphoneActivity;
+import org.linphone.LinphoneManager;
+import org.linphone.LinphoneService;
+import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
 
 public class InitConfigActivity extends FragmentActivity {
     static final String LOG_TAG = "InitConfigActivity";
+
+    private LocalBroadcastReceiverManager localReceivers;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,17 +60,18 @@ public class InitConfigActivity extends FragmentActivity {
             ((EditText) findViewById(R.id.usernameEntry)).setText(number.substring(3));
         }
 
-        LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
+        localReceivers = new LocalBroadcastReceiverManager(this);
 
-        lbm.registerReceiver(new BroadcastReceiver() {
+        localReceivers.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                startActivity(new Intent(InitConfigActivity.this, LinphoneActivity.class));
+                startActivity(new Intent(context, LinphoneActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
                 finish();
             }
         }, new IntentFilter(AcctDataService.ACTION_PASSWORD_RESET));
 
-        lbm.registerReceiver(new BroadcastReceiver() {
+        localReceivers.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 int error_msg = 0;
@@ -77,17 +82,11 @@ public class InitConfigActivity extends FragmentActivity {
                     error_msg = R.string.tbm_login_error_net;
                 }
                 if (error_msg != 0) {
-                    Toast.makeText(InitConfigActivity.this, error_msg, Toast.LENGTH_LONG).show();
+                    Toast.makeText(context, error_msg, Toast.LENGTH_LONG).show();
                     setControlsEnabled(true);
                 }
             }
         }, new IntentFilter(AcctDataService.ACTION_STATUS));
-
-        try {
-            TbmLinphoneSettings.setDefaultSettings();
-        } catch (LinphoneCoreException e) {
-            Log.e(LOG_TAG, "Error setting default settings", e);
-        }
 
         TextWatcher validator = new TextWatcher() {
             @Override
@@ -104,6 +103,21 @@ public class InitConfigActivity extends FragmentActivity {
         ((EditText) findViewById(R.id.usernameEntry)).addTextChangedListener(validator);
         ((EditText) findViewById(R.id.passwordEntry)).addTextChangedListener(validator);
         setControlsEnabled(true);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        localReceivers.unregisterAll();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        if (lc != null) {
+            lc.terminateAllCalls();
+        }
     }
 
     @Override
@@ -135,6 +149,12 @@ public class InitConfigActivity extends FragmentActivity {
         String acctName = "c/" + ((EditText) findViewById(R.id.usernameEntry)).getText();
         String tmpPw = ((EditText) findViewById(R.id.passwordEntry)).getText().toString();
 
+        try {
+            TbmLinphoneSettings.setDefaultSettings();
+        } catch (LinphoneCoreException e) {
+            Log.e(LOG_TAG, "Error setting default settings", e);
+        }
+
         startService(new Intent(this, AcctDataService.class)
                 .setAction(AcctDataService.ACTION_RESET_PASSWORD)
                 .putExtra(AcctDataService.EXTRA_ACCT_NAME, acctName)
@@ -143,6 +163,20 @@ public class InitConfigActivity extends FragmentActivity {
 
     public void onHelpButtonClick(View view) {
         new HelpDialogFragment().show(getSupportFragmentManager(), "help");
+    }
+
+    public void onExitButtonClick(View view) {
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        if (lc != null) {
+            lc.terminateAllCalls();
+        }
+        if (LinphoneActivity.isInstanciated()) {
+            LinphoneActivity.instance().exit();
+        } else {
+            stopService(new Intent(this, LinphoneService.class));
+            LinphoneManager.destroy();
+        }
+        finish();
     }
 
     public static class HelpDialogFragment extends DialogFragment {

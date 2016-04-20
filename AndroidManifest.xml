@@ -166,7 +166,7 @@
 		<service android:name="net.tbmcv.tbmmovel.AcctDataService" />
 
 		<activity android:name="net.tbmcv.tbmmovel.InitConfigActivity"
-			android:launchMode="singleTop">
+			android:launchMode="singleTask">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 			</intent-filter>

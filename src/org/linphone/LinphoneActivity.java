@@ -102,7 +102,7 @@ public class LinphoneActivity extends FragmentActivity implements OnClickListene
 	private OrientationEventListener mOrientationHelper;
 	private LinphoneCoreListenerBase mListener;
 
-	static final boolean isInstanciated() {
+	public static final boolean isInstanciated() {
 		return instance != null;
 	}
 
