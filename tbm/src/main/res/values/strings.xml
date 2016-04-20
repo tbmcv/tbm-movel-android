@@ -16,9 +16,9 @@
     <string name="tbm_echo_calibration_failure">Echo calibration failed</string>
     <string name="tbm_echo_calibration_success">Echo calibration complete</string>
 
-    <string name="tbm_settings_key">tbm_config</string>
-    <string name="tbm_setting_acctname">acct</string>
-    <string name="tbm_setting_password">pw</string>
-    <string name="tbm_sip_realm">sip.tbmcv.com</string>
-    <string name="tbm_api_base_url">https://api.tbmcv.com:8608/</string>
+    <string name="tbm_settings_key" translatable="false">tbm_config</string>
+    <string name="tbm_setting_acctname" translatable="false">acct</string>
+    <string name="tbm_setting_password" translatable="false">pw</string>
+    <string name="tbm_sip_realm" translatable="false">sip.tbmcv.com</string>
+    <string name="tbm_api_base_url" translatable="false">https://api.tbmcv.com:8608/</string>
 </resources>
