@@ -33,7 +33,6 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         super(AcctDataService.class);
     }
 
-    private Pauser pauser;
     private TbmLinphoneConfigurator mockLinphoneConfigurator;
     private TbmApiService mockTbmApiService;
     private RestRequest.Fetcher mockFetcher;
@@ -48,15 +47,14 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 TbmApiService.class, new LocalServiceBinder<>(mockTbmApiService));
         mockFetcher = mock(RestRequest.Fetcher.class);
         MockRestRequest.mockTbmApiRequests(mockTbmApiService, mockFetcher);
-        pauser = mock(Pauser.class);
-        AcctDataService.pauser = pauser;
+        AcctDataService.pauser = mockPauser;
         requestCaptor = ArgumentCaptor.forClass(MockRestRequest.Connection.class);
     }
 
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
-        AnswerPromise.cleanup();
+        AcctDataService.pauser = new RealPauser();
         TbmLinphoneConfigurator.instance = new TbmLinphoneConfigurator();
     }
 
@@ -76,32 +74,6 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 context.getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
         prefs.edit().clear().commit();
         return prefs;
-    }
-
-    protected AnswerPromise<?> preparePause() {
-        AnswerPromise<?> pausePromise = new AnswerPromise<>();
-        try {
-            doAnswer(pausePromise).when(pauser).pause(anyInt(), any(TimeUnit.class));
-        } catch (InterruptedException e) {
-            throw new Error(e);
-        }
-        return pausePromise;
-    }
-
-    protected long verifyPauseMillis() {
-        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
-        ArgumentCaptor<TimeUnit> unit = ArgumentCaptor.forClass(TimeUnit.class);
-        try {
-            verify(pauser).pause(duration.capture(), unit.capture());
-        } catch (InterruptedException e) {
-            throw new Error(e);
-        }
-        return unit.getValue().toMillis(duration.getValue());
-    }
-
-    protected long verifyPauseMillis(AnswerPromise<?> pausePromise) throws InterruptedException {
-        await(pausePromise);
-        return verifyPauseMillis();
     }
 
     public void testGetCredit() throws Exception {
@@ -236,7 +208,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         when(mockFetcher.fetch(any(RestRequest.Connection.class)))
                 .thenReturn(new JSONObject().put("lines", new JSONArray()).toString())
                 .thenReturn(new JSONObject().put("name", lineName).put("pw", linePassword).toString());
-        doNothing().when(pauser).pause(anyLong(), any(TimeUnit.class));
+        doNothing().when(mockPauser).pause(anyLong(), any(TimeUnit.class));
         bindService();
         getService().configureLine();
 

@@ -6,13 +6,27 @@ import android.content.Context;
 import android.content.Intent;
 import android.test.ServiceTestCase;
 
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.mockito.verification.VerificationMode;
+
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
     private final Class<S> serviceClass;
     private volatile Intent lastActivityIntent;
+    protected Pauser mockPauser;
 
     public BaseServiceUnitTest(Class<S> serviceClass) {
         super(serviceClass);
@@ -27,10 +41,59 @@ public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
         await(promise.getCallLatch());
     }
 
+    protected static class SemaphoreAnswer implements Answer<Object> {
+        final Semaphore semaphore = new Semaphore(0);
+
+        @Override
+        public Object answer(InvocationOnMock invocation) throws Throwable {
+            semaphore.acquire();
+            return null;
+        }
+    }
+
+    protected Semaphore preparePause() {
+        final Semaphore semaphore = new Semaphore(1);
+        AnswerPromise<?> pausePromise = new AnswerPromise<>();
+        try {
+            doAnswer(new Answer() {
+                @Override
+                public Object answer(InvocationOnMock invocation) throws Throwable {
+                    semaphore.acquire();
+                    return null;
+                }
+            }).when(mockPauser).pause(anyInt(), any(TimeUnit.class));
+        } catch (InterruptedException e) {
+            throw new AssertionError(e);
+        }
+        return semaphore;
+    }
+
+    protected long verifyPauseMillis(VerificationMode mode) {
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<TimeUnit> unit = ArgumentCaptor.forClass(TimeUnit.class);
+        try {
+            verify(mockPauser, mode).pause(duration.capture(), unit.capture());
+        } catch (InterruptedException e) {
+            throw new AssertionError(e);
+        }
+        return unit.getValue().toMillis(duration.getValue());
+    }
+
+    protected long verifyPauseMillis() {
+        return verifyPauseMillis(times(1));
+    }
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        mockPauser = mock(Pauser.class);
         setContext(new TestingContext(getContext()));
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        AnswerPromise.cleanup();
+        super.tearDown();
     }
 
     private class TestingContext extends StartServiceTrapContextWrapper {

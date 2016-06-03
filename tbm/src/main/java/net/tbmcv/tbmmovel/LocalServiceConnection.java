@@ -23,17 +23,33 @@ import android.content.Context;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
+import java.util.Collection;
+import java.util.EventListener;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 public class LocalServiceConnection<S extends Service> implements ServiceConnection {
+    private final Collection<Listener<? super S>> listeners = new CopyOnWriteArraySet<>();
     private S service;
+
+    public interface Listener<S extends Service> extends EventListener {
+        void serviceConnected(S service);
+        void serviceDisconnected();
+    }
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         this.service = ((LocalServiceBinder<S>) service).getService();
+        for (Listener<? super S> listener : listeners) {
+            listener.serviceConnected(this.service);
+        }
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
         service = null;
+        for (Listener<? super S> listener : listeners) {
+            listener.serviceDisconnected();
+        }
     }
 
     public S getService() {
@@ -44,5 +60,13 @@ public class LocalServiceConnection<S extends Service> implements ServiceConnect
         if (service != null) {
             context.unbindService(this);
         }
+    }
+
+    public void addListener(Listener<? super S> listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(Listener<? super S> listener) {
+        listeners.remove(listener);
     }
 }
