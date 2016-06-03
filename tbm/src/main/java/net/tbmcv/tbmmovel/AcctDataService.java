@@ -42,6 +42,8 @@ import java.util.concurrent.TimeUnit;
 public class AcctDataService extends Service {
     static final String LOG_TAG = "AcctDataService";
 
+    static Pauser pauser = new RealPauser();
+
     private final LocalServiceConnection<TbmApiService> tbmApiConnection =
             new LocalServiceConnection<>();
 
@@ -234,20 +236,6 @@ public class AcctDataService extends Service {
             throws IOException, JSONException, LinphoneCoreException, InterruptedException {
         if (shouldReconfigure()) {
             configureLine();
-        }
-    }
-
-    interface Pauser {
-        void pause(long timeout, TimeUnit unit) throws InterruptedException;
-    }
-
-    static Pauser pauser = new RealPauser();
-
-    static class RealPauser implements Pauser {
-        @Override
-        public void pause(long duration, TimeUnit unit) throws InterruptedException {
-            long nanos = unit.toNanos(duration);
-            Thread.sleep(nanos / 1_000_000, (int) (nanos % 1_000_000));
         }
     }
 }

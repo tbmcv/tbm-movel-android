@@ -33,7 +33,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         super(AcctDataService.class);
     }
 
-    private AcctDataService.Pauser pauser;
+    private Pauser pauser;
     private TbmLinphoneConfigurator mockLinphoneConfigurator;
     private TbmApiService mockTbmApiService;
     private RestRequest.Fetcher mockFetcher;
@@ -48,7 +48,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 TbmApiService.class, new LocalServiceBinder<>(mockTbmApiService));
         mockFetcher = mock(RestRequest.Fetcher.class);
         MockRestRequest.mockTbmApiRequests(mockTbmApiService, mockFetcher);
-        pauser = mock(AcctDataService.Pauser.class);
+        pauser = mock(Pauser.class);
         AcctDataService.pauser = pauser;
         requestCaptor = ArgumentCaptor.forClass(MockRestRequest.Connection.class);
     }
