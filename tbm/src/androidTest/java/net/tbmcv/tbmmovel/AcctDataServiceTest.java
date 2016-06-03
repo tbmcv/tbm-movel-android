@@ -37,7 +37,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     private TbmLinphoneConfigurator mockLinphoneConfigurator;
     private TbmApiService mockTbmApiService;
     private RestRequest.Fetcher mockFetcher;
-    private ArgumentCaptor<MockRestRequest> requestCaptor;
+    private ArgumentCaptor<MockRestRequest.Connection> requestCaptor;
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -47,10 +47,10 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         getStartServiceTrap().setBoundService(
                 TbmApiService.class, new LocalServiceBinder<>(mockTbmApiService));
         mockFetcher = mock(RestRequest.Fetcher.class);
-        MockRestRequest.mockTbmApi(mockTbmApiService, mockFetcher);
+        MockRestRequest.mockTbmApiRequests(mockTbmApiService, mockFetcher);
         pauser = mock(AcctDataService.Pauser.class);
         AcctDataService.pauser = pauser;
-        requestCaptor = ArgumentCaptor.forClass(MockRestRequest.class);
+        requestCaptor = ArgumentCaptor.forClass(MockRestRequest.Connection.class);
     }
 
     @Override
@@ -110,13 +110,13 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         int saldo = 1234;
         setStoredAcct(acctName, pw);
         bindService();
-        when(mockFetcher.fetch(any(RestRequest.class))).thenReturn(
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenReturn(
                 new JSONObject().put("saldo", saldo).toString());
 
         assertEquals(saldo, getService().getCredit());
 
         verify(mockFetcher).fetch(requestCaptor.capture());
-        MockRestRequest mockRequest = requestCaptor.getValue();
+        MockRestRequest mockRequest = requestCaptor.getValue().getRequest();
         assertEquals(acctName, mockRequest.getUsername());
         assertEquals(pw, mockRequest.getPassword());
         assertEquals("GET", mockRequest.getMethod());
@@ -147,7 +147,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     public void testGetCreditMisconfiguredActivitySwitch() throws Exception {
         setStoredAcct("c/9050509", "dafala");
         bindService();
-        when(mockFetcher.fetch(any(RestRequest.class))).thenThrow(new HttpError(401));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenThrow(new HttpError(401));
         try {
             getService().getCredit();
         } catch (HttpError e) {
@@ -165,7 +165,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         getService().resetPassword(username, password);
 
         verify(mockFetcher).fetch(requestCaptor.capture());
-        MockRestRequest mockRequest = requestCaptor.getValue();
+        MockRestRequest mockRequest = requestCaptor.getValue().getRequest();
         assertEquals(username, mockRequest.getUsername());
         assertEquals(password, mockRequest.getPassword());
         assertEquals("PUT", mockRequest.getMethod());
@@ -205,20 +205,20 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         String acctName = "c/5123456";
         String password = "blah";
         setStoredAcct(acctName, password);
-        when(mockFetcher.fetch(any(RestRequest.class)))
+        when(mockFetcher.fetch(any(RestRequest.Connection.class)))
                 .thenReturn(new JSONObject().put("lines", new JSONArray()).toString())
                 .thenReturn(new JSONObject().put("name", "").put("pw", "").toString());
         bindService();
         getService().configureLine();
         verify(mockFetcher, times(2)).fetch(requestCaptor.capture());
 
-        MockRestRequest mockRequest = requestCaptor.getAllValues().get(0);
+        MockRestRequest mockRequest = requestCaptor.getAllValues().get(0).getRequest();
         assertEquals(acctName, mockRequest.getUsername());
         assertEquals(password, mockRequest.getPassword());
         assertEquals("GET", mockRequest.getMethod());
         assertUriEquals("/idens/" + acctName + "/lines/", mockRequest.getUri());
 
-        mockRequest = requestCaptor.getAllValues().get(1);
+        mockRequest = requestCaptor.getAllValues().get(1).getRequest();
         assertEquals(acctName, mockRequest.getUsername());
         assertEquals(password, mockRequest.getPassword());
         assertEquals("POST", mockRequest.getMethod());
@@ -233,7 +233,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         String lineName = "tbm7777";
         String linePassword = "bleh";
         setStoredAcct(acctName, password);
-        when(mockFetcher.fetch(any(RestRequest.class)))
+        when(mockFetcher.fetch(any(RestRequest.Connection.class)))
                 .thenReturn(new JSONObject().put("lines", new JSONArray()).toString())
                 .thenReturn(new JSONObject().put("name", lineName).put("pw", linePassword).toString());
         doNothing().when(pauser).pause(anyLong(), any(TimeUnit.class));
@@ -250,7 +250,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         String password = "segredos";
         String lineName = "tbm2222";
         setStoredAcct(acctName, password);
-        when(mockFetcher.fetch(any(RestRequest.class)))
+        when(mockFetcher.fetch(any(RestRequest.Connection.class)))
                 .thenReturn(new JSONObject()
                         .put("lines", new JSONArray()
                                 .put(new JSONObject()
@@ -262,13 +262,13 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         getService().configureLine();
         verify(mockFetcher, times(2)).fetch(requestCaptor.capture());
 
-        MockRestRequest mockRequest = requestCaptor.getAllValues().get(0);
+        MockRestRequest mockRequest = requestCaptor.getAllValues().get(0).getRequest();
         assertEquals(acctName, mockRequest.getUsername());
         assertEquals(password, mockRequest.getPassword());
         assertEquals("GET", mockRequest.getMethod());
         assertUriEquals("/idens/" + acctName + "/lines/", mockRequest.getUri());
 
-        mockRequest = requestCaptor.getAllValues().get(1);
+        mockRequest = requestCaptor.getAllValues().get(1).getRequest();
         assertEquals(acctName, mockRequest.getUsername());
         assertEquals(password, mockRequest.getPassword());
         assertEquals("POST", mockRequest.getMethod());
@@ -283,7 +283,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         String lineName = "tbm2222";
         String linePassword = "caten";
         setStoredAcct(acctName, password);
-        when(mockFetcher.fetch(any(RestRequest.class)))
+        when(mockFetcher.fetch(any(RestRequest.Connection.class)))
                 .thenReturn(new JSONObject()
                         .put("lines", new JSONArray()
                                 .put(new JSONObject()
@@ -307,7 +307,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
 
     public void testConfigureLineMisconfiguredActivitySwitch() throws Exception {
         setStoredAcct("c/9152519", "dzemla");
-        when(mockFetcher.fetch(any(RestRequest.class))).thenThrow(new HttpError(401));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenThrow(new HttpError(401));
         bindService();
         try {
             getService().configureLine();
@@ -315,14 +315,6 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
             /* fall through */
         }
         checkInitConfigActivitySwitch();
-    }
-
-    private static void assertUriEquals(URI expected, Object actual) {
-        assertEquals(expected, URI.create("/").resolve((URI) actual));
-    }
-
-    private static void assertUriEquals(String expected, Object actual) {
-        assertUriEquals(URI.create(expected), actual);
     }
 
     private void setupEnsureLine(final String acctName, String acctPw, final String lineName,
@@ -335,10 +327,11 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                     lineName, storedLinePw, getContext().getString(R.string.tbm_sip_realm)));
         }
         when(mockLinphoneConfigurator.getLineConfig()).thenReturn(storedAuth);
-        when(mockFetcher.fetch(any(RestRequest.class))).thenAnswer(new Answer<String>() {
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenAnswer(new Answer<String>() {
             @Override
             public String answer(InvocationOnMock invocation) throws Throwable {
-                MockRestRequest request = (MockRestRequest) invocation.getArguments()[0];
+                MockRestRequest request =
+                        ((MockRestRequest.Connection) invocation.getArguments()[0]).getRequest();
                 String method = request.getMethod();
                 URI uri = URI.create("/").resolve(request.getUri());
                 URI linesUri = URI.create("/idens/" + acctName + "/lines/");

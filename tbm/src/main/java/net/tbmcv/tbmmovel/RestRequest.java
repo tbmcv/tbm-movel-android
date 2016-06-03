@@ -40,13 +40,21 @@ import javax.net.ssl.SSLContext;
 public class RestRequest implements Cloneable {
 
     public interface Fetcher {
-        String fetch(RestRequest request) throws IOException;
+        String fetch(Connection connection) throws IOException;
+    }
+
+    public interface Connection {
+        String execute() throws IOException;
+
+        void cancel();
+
+        RestRequest getRequest();
     }
 
     public static final Fetcher defaultFetcher = new Fetcher() {
         @Override
-        public String fetch(RestRequest request) throws IOException {
-            return request.execute();
+        public String fetch(Connection connection) throws IOException {
+            return connection.execute();
         }
     };
 
@@ -119,30 +127,45 @@ public class RestRequest implements Cloneable {
         }
     }
 
-    public String execute() throws IOException {
-        HttpURLConnection connection = openConnection(uri);
+    public Connection createConnection() throws IOException {
+        final HttpURLConnection connection = openConnection(uri);
         prepareConnection(connection);
-        connection.connect();
-        try {
-            if (body != null) {
-                OutputStream outputStream = connection.getOutputStream();
-                outputStream.write(body.toString().getBytes("UTF-8"));
-                outputStream.flush();
+        return new Connection() {
+            @Override
+            public String execute() throws IOException {
+                connection.connect();
+                try {
+                    if (body != null) {
+                        OutputStream outputStream = connection.getOutputStream();
+                        outputStream.write(body.toString().getBytes("UTF-8"));
+                        outputStream.flush();
+                    }
+
+                    int responseCode = connection.getResponseCode();
+                    if (responseCode >= 400) {
+                        throw new HttpError(responseCode);
+                    }
+
+                    return readContent(connection);
+                } finally {
+                    connection.disconnect();
+                }
             }
 
-            int responseCode = connection.getResponseCode();
-            if (responseCode >= 400) {
-                throw new HttpError(responseCode);
+            @Override
+            public void cancel() {
+                connection.disconnect();
             }
 
-            return readContent(connection);
-        } finally {
-            connection.disconnect();
-        }
+            @Override
+            public RestRequest getRequest() {
+                return RestRequest.this;
+            }
+        };
     }
 
     public String fetch() throws IOException {
-        return fetcher.fetch(this);
+        return fetcher.fetch(createConnection());
     }
 
     public JSONObject fetchJson() throws IOException, JSONException {

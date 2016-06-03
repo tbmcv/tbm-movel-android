@@ -57,9 +57,9 @@ public class AcctDataService extends Service {
         final RestRequest.Fetcher oldFetcher = request.getFetcher();
         request.setFetcher(new RestRequest.Fetcher() {
             @Override
-            public String fetch(RestRequest request) throws IOException {
+            public String fetch(RestRequest.Connection connection) throws IOException {
                 try {
-                    return oldFetcher.fetch(request);
+                    return oldFetcher.fetch(connection);
                 } catch (HttpError e) {
                     if (e.getResponseCode() == 401) {
                         resetAuthConfig();

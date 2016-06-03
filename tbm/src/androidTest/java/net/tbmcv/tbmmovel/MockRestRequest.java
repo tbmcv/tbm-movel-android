@@ -3,8 +3,11 @@ package net.tbmcv.tbmmovel;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.io.IOException;
 import java.net.URI;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MockRestRequest extends RestRequest {
@@ -16,7 +19,7 @@ public class MockRestRequest extends RestRequest {
     private int readTimeout;
     private Object body;
 
-    public static void mockTbmApi(TbmApiService mockService, final Fetcher fetcher) {
+    public static void mockTbmApiRequests(TbmApiService mockService, final Fetcher fetcher) {
         when(mockService.createRequest()).thenAnswer(new Answer<RestRequest>() {
             @Override
             public RestRequest answer(InvocationOnMock invocation) throws Throwable {
@@ -25,6 +28,35 @@ public class MockRestRequest extends RestRequest {
                 return request;
             }
         });
+    }
+
+    public static void mockAcctDataRequests(AcctDataService mockService, final Fetcher fetcher) {
+        try {
+            when(mockService.createRequest(any(AuthPair.class))).thenAnswer(new Answer<RestRequest>() {
+                @Override
+                public RestRequest answer(InvocationOnMock invocation) throws Throwable {
+                    RestRequest request = new MockRestRequest();
+                    request.setFetcher(fetcher);
+                    AuthPair auth = (AuthPair) invocation.getArguments()[0];
+                    request.setAuth(auth.name, auth.password);
+                    return request;
+                }
+            });
+        } catch (HttpError e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    public interface Connection extends RestRequest.Connection {
+        @Override
+        MockRestRequest getRequest();
+    }
+
+    @Override
+    public Connection createConnection() throws IOException {
+        Connection mockConnection = mock(Connection.class);
+        when(mockConnection.getRequest()).thenReturn(this);
+        return mockConnection;
     }
 
     @Override

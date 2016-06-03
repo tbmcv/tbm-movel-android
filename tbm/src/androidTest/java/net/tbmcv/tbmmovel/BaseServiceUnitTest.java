@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.test.ServiceTestCase;
 
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -58,5 +59,13 @@ public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
 
     protected void bindService() {
         bindService(new Intent(getContext(), serviceClass));
+    }
+
+    protected static void assertUriEquals(URI expected, Object actual) {
+        assertEquals(expected, URI.create("/").resolve((URI) actual));
+    }
+
+    protected static void assertUriEquals(String expected, Object actual) {
+        assertUriEquals(URI.create(expected), actual);
     }
 }
