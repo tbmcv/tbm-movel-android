@@ -2,8 +2,6 @@ package net.tbmcv.tbmmovel;
 
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.Intent;
-import android.support.v4.content.LocalBroadcastManager;
 import android.telephony.TelephonyManager;
 import android.view.View;
 import android.widget.EditText;
@@ -12,10 +10,14 @@ import org.linphone.LinphoneActivity;
 import org.linphone.LinphoneManager;
 import org.linphone.core.LinphoneCore;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigActivity> {
+    AcctDataService mockService;
+
     public InitConfigActivityUnitTest() {
         super(InitConfigActivity.class);
     }
@@ -24,10 +26,15 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
     protected void setUp() throws Exception {
         super.setUp();
         TbmLinphoneConfigurator.instance = mock(TbmLinphoneConfigurator.class);
+        mockService = mock(AcctDataService.class);
+        getStartServiceTrap().setBoundService(
+                AcctDataService.class,
+                new AcctDataService.Binder(mockService));
     }
 
     @Override
     protected void tearDown() throws Exception {
+        AnswerPromise.cleanup();
         super.tearDown();
         TbmLinphoneConfigurator.instance = new TbmLinphoneConfigurator();
     }
@@ -40,14 +47,6 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         }
     }
 
-    private void fakeSuccessfulLogin() {
-        getActivity().findViewById(R.id.okButton).performClick();
-        getInstrumentation().waitForIdleSync();
-        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
-                new Intent(AcctDataService.ACTION_PASSWORD_RESET));
-        getInstrumentation().waitForIdleSync();
-    }
-
     private void performLogin(String username, String password) {
         enterText(R.id.usernameEntry, username);
         enterText(R.id.passwordEntry, password);
@@ -57,48 +56,60 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         getInstrumentation().waitForIdleSync();
     }
 
-    public void testLoginResetSuccessLaunchesMainActivity() {
+    public void testLoginResetSuccessLaunchesMainActivity() throws Exception {
         launch();
-        fakeSuccessfulLogin();
-        assertLaunched(LinphoneActivity.class);
-        assertTrue("Finish not called", isFinishCalled());
+        when(mockService.resetPassword(anyString(), anyString())).thenReturn(true);
+        performLogin("9999999", "987654");
+        new AssertWaiter() {
+            @Override
+            protected void test() throws Exception {
+                getInstrumentation().waitForIdleSync();
+                assertLaunched(LinphoneActivity.class);
+                assertTrue("Finish not called", isFinishCalled());
+            }
+        }.await();
     }
 
-    public void testControlsDisabled() {
+    public void testControlsDisabled() throws Exception {
         launch();
+        AnswerPromise<Boolean> resetPwPromise = new AnswerPromise<>();
+        when(mockService.resetPassword(anyString(), anyString())).then(resetPwPromise);
         performLogin("9111111", "012345");
         assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
         assertFalse(getActivity().findViewById(R.id.usernameEntry).isEnabled());
         assertFalse(getActivity().findViewById(R.id.passwordEntry).isEnabled());
         assertFalse(getActivity().findViewById(R.id.helpButton).isEnabled());
+        resetPwPromise.setResult(false);
     }
 
-    public void testLoginPwResetRequestSent() {
+    public void testLoginPwResetRequestSent() throws Exception {
         launch();
-        String username = "9123456";
-        String password = "123321";
+        final String username = "9123456";
+        final String password = "123321";
         performLogin(username, password);
-
-        Intent intent = getStartServiceTrap().getServiceStarted(
-                AcctDataService.class, AcctDataService.ACTION_RESET_PASSWORD);
-        assertEquals("c/" + username, intent.getStringExtra(AcctDataService.EXTRA_ACCT_NAME));
-        assertEquals(password, intent.getStringExtra(AcctDataService.EXTRA_PASSWORD));
+        new AssertWaiter() {
+            @Override
+            protected void test() throws Exception {
+                verify(mockService).resetPassword("c/" + username, password);
+            }
+        }.await();
     }
 
-    public void testFailedLogin() {
+    public void testFailedLogin() throws Exception {
         launch();
+        when(mockService.resetPassword(anyString(), anyString())).thenReturn(false);
         performLogin("9090909", "019840");
-        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
-                new Intent(AcctDataService.ACTION_STATUS)
-                        .putExtra(AcctDataService.EXTRA_PASSWORD_OK, false));
-        getInstrumentation().waitForIdleSync();
-
-        EditText passwordEntry = (EditText) getActivity().findViewById(R.id.passwordEntry);
-        assertEquals("", passwordEntry.getText().toString());
-        assertTrue(passwordEntry.isEnabled());
-        assertTrue(getActivity().findViewById(R.id.usernameEntry).isEnabled());
-        assertTrue(getActivity().findViewById(R.id.helpButton).isEnabled());
-        assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
+        final EditText passwordEntry = (EditText) getActivity().findViewById(R.id.passwordEntry);
+        new AssertWaiter() {
+            @Override
+            protected void test() throws Exception {
+                assertEquals("", passwordEntry.getText().toString());
+                assertTrue(passwordEntry.isEnabled());
+                assertTrue(getActivity().findViewById(R.id.usernameEntry).isEnabled());
+                assertTrue(getActivity().findViewById(R.id.helpButton).isEnabled());
+                assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
+            }
+        }.await();
     }
 
     public void testGSMEnabled() {

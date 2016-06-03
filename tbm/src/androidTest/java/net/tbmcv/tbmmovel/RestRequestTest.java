@@ -11,16 +11,27 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.security.KeyManagementException;
+import java.security.SecureRandom;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLContextSpi;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class HttpJsonRestClientTest extends TestCase {
+public class RestRequestTest extends TestCase {
     protected URLStreamHandler mockURLStreamHandler;
     protected URL connectionUrl;
     private HttpURLConnection mockHttpConnection;
@@ -41,22 +52,19 @@ public class HttpJsonRestClientTest extends TestCase {
         return mockHttpConnection;
     }
 
-    protected HttpJsonRestClient createClient(URL baseUrl) {
-        return new HttpJsonRestClient(baseUrl) {
-            @Override
-            protected URL createURL(URI uri) throws MalformedURLException {
-                return super.createURL(uri);
-            }
-        };
+    protected RestRequest createRequest(URL baseUrl) {
+        RestRequest request = new RestRequest();
+        request.setBaseUrl(baseUrl);
+        return request;
     }
 
-    protected HttpJsonRestClient createClient(String baseUrl) throws MalformedURLException {
-        return createClient(createBaseUrl(baseUrl));
+    protected RestRequest createRequest(String baseUrl) throws MalformedURLException {
+        return createRequest(createBaseUrl(baseUrl));
     }
 
-    protected HttpJsonRestClient createClient() {
+    protected RestRequest createRequest() {
         try {
-            return createClient(getDefaultBaseUrl());
+            return createRequest(getDefaultBaseUrl());
         } catch (MalformedURLException e) {
             throw new Error(e);
         }
@@ -77,7 +85,9 @@ public class HttpJsonRestClientTest extends TestCase {
 
     public void testSetAuth() throws Exception {
         setResponse("");
-        createClient().buildRequest().auth("hi", "mom").fetch();
+        RestRequest request = createRequest();
+        request.setAuth("hi", "mom");
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).setRequestProperty("Authorization", "Basic aGk6bW9t");
@@ -85,7 +95,7 @@ public class HttpJsonRestClientTest extends TestCase {
         inOrder.verify(mockConnection).disconnect();
     }
 
-    public void testSetBody() throws Exception {
+    public void testSetBodyJson() throws Exception {
         JSONObject body = new JSONObject()
                 .put("x", 3)
                 .put("y", new JSONArray().put("a").put("b"));
@@ -93,7 +103,9 @@ public class HttpJsonRestClientTest extends TestCase {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         HttpURLConnection mockConnection = getMockConnection();
         when(mockConnection.getOutputStream()).thenReturn(outputStream);
-        createClient().buildRequest().body(body).fetch();
+        RestRequest request = createRequest();
+        request.setBody(body);
+        request.fetch();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).setDoOutput(true);
         inOrder.verify(mockConnection).connect();
@@ -104,7 +116,9 @@ public class HttpJsonRestClientTest extends TestCase {
     public void testSetMethod() throws Exception {
         String method = "DELETE";
         setResponse("");
-        createClient().buildRequest().method(method).fetch();
+        RestRequest request = createRequest();
+        request.setMethod(method);
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).setRequestMethod(method);
@@ -114,7 +128,9 @@ public class HttpJsonRestClientTest extends TestCase {
 
     public void testToUriRelativeLeaf() throws Exception {
         setResponse("");
-        createClient().buildRequest().toUri("abc").fetch();
+        RestRequest request = createRequest();
+        request.toUri("abc");
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).connect();
@@ -124,7 +140,9 @@ public class HttpJsonRestClientTest extends TestCase {
 
     public void testToUriRelativePath() throws Exception {
         setResponse("");
-        createClient().buildRequest().toUri("abc/").fetch();
+        RestRequest request = createRequest();
+        request.toUri("abc/");
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).connect();
@@ -134,7 +152,10 @@ public class HttpJsonRestClientTest extends TestCase {
 
     public void testToUriAbsolute() throws Exception {
         setResponse("");
-        createClient().buildRequest().toUri("abc/").toUri("/def/ghi").fetch();
+        RestRequest request = createRequest();
+        request.toUri("abc/");
+        request.toUri("/def/ghi");
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).connect();
@@ -144,7 +165,11 @@ public class HttpJsonRestClientTest extends TestCase {
 
     public void testToUriMultiple() throws Exception {
         setResponse("");
-        createClient().buildRequest().toUri("abc/").toUri("def/").toUri("123").fetch();
+        RestRequest request = createRequest();
+        request.toUri("abc/");
+        request.toUri("def/");
+        request.toUri("123");
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).connect();
@@ -155,7 +180,9 @@ public class HttpJsonRestClientTest extends TestCase {
     public void testSetConnectTimeout() throws Exception {
         final int timeout = 12345;
         setResponse("");
-        createClient().buildRequest().connectTimeout(timeout).fetch();
+        RestRequest request = createRequest();
+        request.setConnectTimeout(timeout);
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).setConnectTimeout(timeout);
@@ -166,7 +193,9 @@ public class HttpJsonRestClientTest extends TestCase {
     public void testSetReadTimeout() throws Exception {
         final int timeout = 54321;
         setResponse("");
-        createClient().buildRequest().readTimeout(timeout).fetch();
+        RestRequest request = createRequest();
+        request.setReadTimeout(timeout);
+        request.fetch();
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).setReadTimeout(timeout);
@@ -179,11 +208,66 @@ public class HttpJsonRestClientTest extends TestCase {
         for (int code : codes) {
             when(getMockConnection().getResponseCode()).thenReturn(code);
             try {
-                createClient().buildRequest().fetch();
+                createRequest().fetch();
                 fail("Didn't return HTTP error " + code);
             } catch (HttpError e) {
                 assertEquals(code, e.getResponseCode());
             }
         }
+    }
+
+    protected SSLContext createMockSSLContext(final SSLSocketFactory sslSocketFactory) {
+        SSLContextSpi sslContextSpi = new SSLContextSpi() {
+            @Override
+            protected void engineInit(KeyManager[] km, TrustManager[] tm, SecureRandom sr)
+                    throws KeyManagementException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            protected SSLSocketFactory engineGetSocketFactory() {
+                return sslSocketFactory;
+            }
+
+            @Override
+            protected SSLServerSocketFactory engineGetServerSocketFactory() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            protected SSLEngine engineCreateSSLEngine(String host, int port) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            protected SSLEngine engineCreateSSLEngine() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            protected SSLSessionContext engineGetServerSessionContext() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            protected SSLSessionContext engineGetClientSessionContext() {
+                throw new UnsupportedOperationException();
+            }
+        };
+        return new SSLContext(sslContextSpi, null, null) { };
+    }
+
+    public void testContextSocketFactoryUsed() throws Exception {
+        setResponse("");
+        SSLSocketFactory mockSSLSocketFactory = mock(SSLSocketFactory.class);
+        HttpsURLConnection connection = mock(HttpsURLConnection.class);
+        mockHttpConnection = connection;
+        RestRequest request = createRequest("https://www.example.org/");
+        request.setSslContext(createMockSSLContext(mockSSLSocketFactory));
+        request.fetch();
+        InOrder inOrder = inOrder(connection);
+        inOrder.verify(connection).setSSLSocketFactory(mockSSLSocketFactory);
+        inOrder.verify(connection).connect();
+        inOrder.verify(connection).disconnect();
     }
 }

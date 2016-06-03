@@ -17,25 +17,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-import android.app.IntentService;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
-import android.support.v4.content.LocalBroadcastManager;
+import android.os.IBinder;
 import android.util.Base64;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.linphone.LinphoneManager;
-import org.linphone.core.LinphoneAddress;
-import org.linphone.core.LinphoneAuthInfo;
-import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
-import org.linphone.core.LinphoneCoreFactory;
-import org.linphone.core.LinphoneProxyConfig;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -46,77 +39,56 @@ import java.security.SecureRandom;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import static org.linphone.core.LinphoneAddress.*;
-
-public class AcctDataService extends IntentService {
-    public static final String ACTION_RESET_PASSWORD = "net.tbmcv.tbmmovel.RESET_PASSWORD";
-    public static final String ACTION_GET_CREDIT = "net.tbmcv.tbmmovel.GET_CREDIT";
-    public static final String ACTION_CONFIGURE_LINE = "net.tbmcv.tbmmovel.CONFIGURE_LINE";
-    public static final String ACTION_STATUS = "net.tbmcv.tbmmovel.STATUS";
-    public static final String ACTION_PASSWORD_RESET = "net.tbmcv.tbmmovel.PASSWORD_RESET";
-    public static final String ACTION_ENSURE_LINE = "net.tbmcv.tbmmovel.ENSURE_LINE";
-    public static final String EXTRA_ACCT_NAME = "net.tbmcv.tbmmovel.ACCT_NAME";
-    public static final String EXTRA_LINE_NAME = "net.tbmcv.tbmmovel.LINE_NAME";
-    public static final String EXTRA_PASSWORD = "net.tbmcv.tbmmovel.PASSWORD";
-    public static final String EXTRA_CONNECTION_OK = "net.tbmcv.tbmmovel.CONNECTION_OK";
-    public static final String EXTRA_PASSWORD_OK = "net.tbmcv.tbmmovel.PASSWORD_OK";
-    public static final String EXTRA_CREDIT = "net.tbmcv.tbmmovel.CREDIT";
-
+public class AcctDataService extends Service {
     static final String LOG_TAG = "AcctDataService";
 
-    public AcctDataService() {
-        super("AcctDataService");
+    private final LocalServiceConnection<TbmApiService> tbmApiConnection =
+            new LocalServiceConnection<>();
+
+    public static class Binder extends LocalServiceBinder<AcctDataService> {
+        public Binder(AcctDataService service) {
+            super(service);
+        }
     }
 
-    protected JsonRestClient getRestClient() {
-        return TbmApi.getInstance(this).getRestClient();
+    public RestRequest createRequest(AuthPair acct) throws HttpError {
+        RestRequest request = tbmApiConnection.getService().createRequest();
+        request.setAuth(acct.name, acct.password);
+        final RestRequest.Fetcher oldFetcher = request.getFetcher();
+        request.setFetcher(new RestRequest.Fetcher() {
+            @Override
+            public String fetch(RestRequest request) throws IOException {
+                try {
+                    return oldFetcher.fetch(request);
+                } catch (HttpError e) {
+                    if (e.getResponseCode() == 401) {
+                        resetAuthConfig();
+                    }
+                    throw e;
+                }
+            }
+        });
+        return request;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        bindService(new Intent(this, TbmApiService.class),
+                tbmApiConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-        String action = intent.getAction();
-        Log.d(LOG_TAG, "Received Intent: " + action);
-        switch (action) {
-            case ACTION_GET_CREDIT:
-                onCommandGetCredit();
-                break;
-            case ACTION_ENSURE_LINE:
-                onCommandEnsureLine();
-                break;
-            case ACTION_RESET_PASSWORD:
-                onCommandResetPassword(
-                        intent.getStringExtra(EXTRA_ACCT_NAME),
-                        intent.getStringExtra(EXTRA_PASSWORD));
-                break;
-            case ACTION_CONFIGURE_LINE:
-                if (intent.hasExtra(EXTRA_PASSWORD)) {
-                    onCommandConfigureLine(
-                            intent.getStringExtra(EXTRA_LINE_NAME),
-                            intent.getStringExtra(EXTRA_PASSWORD));
-                } else {
-                    onCommandConfigureLine();
-                }
-                break;
-            default:
-                Log.e(LOG_TAG, "Unexpected intent action: " + action);
-        }
+    public void onDestroy() {
+        tbmApiConnection.unbind(this);
     }
 
-    private static class AuthPair {
-        final String name, password;
-
-        AuthPair(@NonNull String name, @NonNull String password) {
-            this.name = name;
-            this.password = password;
-        }
+    @Override
+    public IBinder onBind(Intent intent) {
+        return new Binder(this);
     }
 
-    private AuthPair getAcctAuth() {
+    public AuthPair getAcctAuth() {
         SharedPreferences config = getSharedPreferences(
                 getString(R.string.tbm_settings_key), Context.MODE_PRIVATE);
         String acctName = config.getString(getString(R.string.tbm_setting_acctname), null);
@@ -136,132 +108,85 @@ public class AcctDataService extends IntentService {
                 .remove(getString(R.string.tbm_setting_acctname))
                 .remove(getString(R.string.tbm_setting_password))
                 .commit();
-        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
-        lc.clearAuthInfos();
-        lc.clearProxyConfigs();
+        try {
+            TbmLinphoneConfigurator.getInstance().clearLineConfig();
+        } catch (LinphoneCoreException e) {
+            Log.e(LOG_TAG, "Error clearing line config", e);
+        }
         startActivity(new Intent(this, InitConfigActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 
-    private void onCommandGetCredit() {
+    public int getCredit() throws IOException, JSONException {
         AuthPair acct = getAcctAuth();
         if (acct == null) {
-            return;
+            throw new HttpError(401);
         }
-        Intent status = new Intent(ACTION_STATUS);
-        try {
-            JSONObject result = getRestClient().buildRequest()
-                    .auth(acct.name, acct.password)
-                    .toUri("idens/")
-                    .toUri(acct.name + "/")
-                    .toUri("saldo/")
-                    .fetch();
-            status.putExtra(EXTRA_CREDIT, result.getInt("saldo"));
-        } catch (JSONException|IOException e) {
-            Log.e(LOG_TAG, "Error fetching saldo", e);
-            fillInStatusError(e, status, true);
-        }
-        LocalBroadcastManager.getInstance(this).sendBroadcast(status);
+        RestRequest request = createRequest(acct);
+        request.toUri("idens/" + acct.name + "/saldo/");
+        return request.fetchJson().getInt("saldo");
     }
 
-    private void onCommandResetPassword(String acctName, String password) {
+    public boolean resetPassword(String acctName, String password) throws JSONException, IOException {
         byte[] newPwBinary = new byte[12];
         new SecureRandom().nextBytes(newPwBinary);
         String newPw = Base64.encodeToString(newPwBinary,
                 Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
+        getSharedPreferences(getString(R.string.tbm_settings_key), Context.MODE_PRIVATE)
+                .edit()
+                .putString(getString(R.string.tbm_setting_acctname), acctName)
+                .putString(getString(R.string.tbm_setting_password), newPw)
+                .commit();
         try {
-            getSharedPreferences(getString(R.string.tbm_settings_key), Context.MODE_PRIVATE)
-                    .edit()
-                    .putString(getString(R.string.tbm_setting_acctname), acctName)
-                    .putString(getString(R.string.tbm_setting_password), newPw)
-                    .commit();
-            getRestClient().buildRequest()
-                    .auth(acctName, password)
-                    .toUri("idens/")
-                    .toUri(acctName + "/")
-                    .toUri("pw")
-                    .method("PUT")
-                    .body(new JSONObject().put("value", newPw))
-                    .fetch();
-            LocalBroadcastManager.getInstance(this).sendBroadcast(
-                    new Intent(ACTION_PASSWORD_RESET));
-        } catch (JSONException|IOException e) {
-            Log.e(LOG_TAG, "Error resetting account password", e);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(fillInStatusError(e, false));
+            RestRequest request = tbmApiConnection.getService().createRequest();
+            request.setAuth(acctName, password);
+            request.toUri("idens/" + acctName + "/pw");
+            request.setMethod("PUT");
+            request.setBody(new JSONObject().put("value", newPw));
+            request.fetch();
+            return true;
+        } catch (HttpError e) {
+            if (e.getResponseCode() == 401) {
+                return false;
+            }
+            throw e;
         }
     }
 
     private AuthPair resetLinePassword(AuthPair acct) throws JSONException, IOException {
-        JSONObject result = getRestClient().buildRequest()
-                .auth(acct.name, acct.password)
-                .toUri("idens/")
-                .toUri(acct.name + "/")
-                .toUri("lines/")
-                .fetch();
-        JsonRestClient.RequestBuilder requestBuilder = getRestClient().buildRequest()
-                .auth(acct.name, acct.password)
-                .toUri("idens/")
-                .toUri(acct.name + "/")
-                .toUri("lines/")
-                .method("POST")
-                .body(new JSONObject());
-        JSONArray lines = result.getJSONArray("lines");
+        RestRequest request = createRequest(acct);
+        request.toUri("idens/" + acct.name + "/lines/");
+        RestRequest postRequest = request.clone();
+        JSONArray lines = request.fetchJson().getJSONArray("lines");
+
+        postRequest.setMethod("POST");
+        postRequest.setBody(new JSONObject());
+        String name;
+        JSONObject result;
         if (lines.length() > 0) {
-            String name = lines.getJSONObject(0).getString("name");
-            result = requestBuilder
-                    .toUri(name + "/")
-                    .toUri("pw")
-                    .fetch();
+            name = lines.getJSONObject(0).getString("name");
+            postRequest.toUri(name + "/pw");
             Log.d(LOG_TAG, "Resetting voip line " + name);
-            return new AuthPair(name, result.getString("pw"));
+            result = postRequest.fetchJson();
         } else {
             Log.d(LOG_TAG, "Requesting new voip line");
-            result = requestBuilder.fetch();
-            return new AuthPair(result.getString("name"), result.getString("pw"));
+            result = postRequest.fetchJson();
+            name = result.getString("name");
         }
+        return new AuthPair(name, result.getString("pw"));
     }
 
-    private void onCommandConfigureLine() {
+    public void configureLine()
+            throws LinphoneCoreException, InterruptedException, IOException, JSONException {
         AuthPair acct = getAcctAuth();
         if (acct == null) {
             Log.w(LOG_TAG, "Can't configure line because no account saved");
             return;
         }
-        try {
-            AuthPair lineAuth = resetLinePassword(acct);
-            pauser.pause(3, TimeUnit.SECONDS);  // TODO configure somewhere
-            startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE)
-                    .putExtra(EXTRA_LINE_NAME, lineAuth.name)
-                    .putExtra(EXTRA_PASSWORD, lineAuth.password));
-        } catch (JSONException|IOException e) {
-            Log.e(LOG_TAG, "Error reconfiguring line", e);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(fillInStatusError(e, true));
-        } catch (InterruptedException e) {
-            Log.e(LOG_TAG, "Interrupted while reconfiguring line", e);
-        }
-    }
-
-    private void onCommandConfigureLine(String username, String password) {
-        final String realm = getString(R.string.tbm_sip_realm);
-        try {
-            LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
-            lc.clearAuthInfos();
-            lc.clearProxyConfigs();
-            LinphoneAddress proxyAddr = LinphoneCoreFactory.instance().createLinphoneAddress(
-                    "sip:" + realm);
-            proxyAddr.setTransport(TransportType.LinphoneTransportTcp);
-            LinphoneProxyConfig proxyConfig = lc.createProxyConfig(
-                    "sip:" + username + "@" + realm, proxyAddr.asStringUriOnly(), null, true);
-            proxyConfig.setExpires(300);  // TODO configure somewhere
-            LinphoneAuthInfo authInfo = LinphoneCoreFactory.instance().createAuthInfo(
-                    username, password, realm, realm);
-            lc.addProxyConfig(proxyConfig);
-            lc.addAuthInfo(authInfo);
-            lc.setDefaultProxyConfig(proxyConfig);
-            lc.refreshRegisters();
-        } catch (LinphoneCoreException e) {
-            Log.e(LOG_TAG, "Error saving line configuration", e);
-        }
+        AuthPair lineAuth = resetLinePassword(acct);
+        pauser.pause(3, TimeUnit.SECONDS);  // TODO configure somewhere
+        TbmLinphoneConfigurator.getInstance().configureLine(
+                getString(R.string.tbm_sip_realm), lineAuth.name, lineAuth.password);
     }
 
     public static String createHa1(String username, String password, String realm) {
@@ -282,62 +207,34 @@ public class AcctDataService extends IntentService {
         return createHa1(username, password, getString(R.string.tbm_sip_realm));
     }
 
-    private boolean shouldReconfigure() {
+    private boolean shouldReconfigure() throws IOException, JSONException {
         AuthPair acct = getAcctAuth();
         if (acct == null) {
             Log.d(LOG_TAG, "Can't reconfigure line, because there's no saved account");
             return false;
         }
-        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
-        LinphoneAuthInfo[] authInfos = lc.getAuthInfosList();
-        if (authInfos.length != 1) {
-            Log.d(LOG_TAG, "Should reconfigure because of local voip line count");
-            return true;
+        AuthPair existing;
+        try {
+            existing = TbmLinphoneConfigurator.getInstance().getLineConfig();
+        } catch (LinphoneCoreException e) {
+            Log.e(LOG_TAG, "Can't reconfigure because no LinphoneCore available");
+            return false;
         }
-        String lineName = authInfos[0].getUsername();
-        String lineHa1 = authInfos[0].getHa1();
-        Log.d(LOG_TAG, "Line name: " + lineName + " line HA1: " + lineHa1);
-        if (lineHa1 == null || lineName == null) {
+        if (existing == null) {
             Log.d(LOG_TAG, "Should reconfigure because local voip line misconfigured");
             return true;
         }
-        try {
-            JSONObject result = getRestClient().buildRequest()
-                    .auth(acct.name, acct.password)
-                    .toUri("idens/")
-                    .toUri(acct.name + "/")
-                    .toUri("lines/")
-                    .toUri(lineName + "/")
-                    .toUri("pw")
-                    .fetch();
-            return !lineHa1.equals(createHa1(lineName, result.getString("pw")));
-        } catch (JSONException|IOException e) {
-            Log.e(LOG_TAG, "Error retrieving line password", e);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(fillInStatusError(e, true));
-            return false;
-        }
+        RestRequest request = createRequest(acct);
+        request.toUri("idens/" + acct.name + "/lines/" + existing.name + "/pw");
+        String pw = request.fetchJson().getString("pw");
+        return !existing.password.equals(createHa1(existing.name, pw));
     }
 
-    private void onCommandEnsureLine() {
+    public void ensureLine()
+            throws IOException, JSONException, LinphoneCoreException, InterruptedException {
         if (shouldReconfigure()) {
-            startService(new Intent(this, AcctDataService.class).setAction(ACTION_CONFIGURE_LINE));
+            configureLine();
         }
-    }
-
-    private Intent fillInStatusError(Exception error, Intent statusIntent, boolean usedStoredAuth) {
-        if (error instanceof HttpError && ((HttpError) error).getResponseCode() == 401) {
-            if (usedStoredAuth) {
-                resetAuthConfig();
-            }
-            statusIntent.putExtra(EXTRA_PASSWORD_OK, false);
-        } else {
-            statusIntent.putExtra(EXTRA_CONNECTION_OK, false);
-        }
-        return statusIntent;
-    }
-
-    private Intent fillInStatusError(Exception error, boolean usedStoredAuth) {
-        return fillInStatusError(error, new Intent(ACTION_STATUS), usedStoredAuth);
     }
 
     interface Pauser {

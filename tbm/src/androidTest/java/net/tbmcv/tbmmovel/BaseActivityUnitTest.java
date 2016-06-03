@@ -1,16 +1,14 @@
 package net.tbmcv.tbmmovel;
 
 import android.app.Activity;
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.Intent;
 import android.test.ActivityUnitTestCase;
 import android.widget.EditText;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityUnitTestCase<A> {
     private final Class<A> activityClass;
@@ -28,9 +26,12 @@ public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityU
         setActivityContext(contextWrapper);
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    protected static void await(CountDownLatch latch) throws InterruptedException {
+        assertTrue("Timeout", latch.await(2, TimeUnit.SECONDS));
+    }
+
+    protected static void await(AnswerPromise<?> promise) throws InterruptedException {
+        await(promise.getCallLatch());
     }
 
     protected StartServiceTrapContextWrapper getStartServiceTrap() {

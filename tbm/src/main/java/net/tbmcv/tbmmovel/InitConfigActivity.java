@@ -19,13 +19,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.telephony.TelephonyManager;
@@ -37,6 +37,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.json.JSONException;
 import org.linphone.LinphoneActivity;
 import org.linphone.LinphoneManager;
 import org.linphone.LinphoneService;
@@ -44,10 +45,13 @@ import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
 import org.linphone.core.LinphoneCoreListenerBase;
 
+import java.io.IOException;
+
 public class InitConfigActivity extends FragmentActivity {
     static final String LOG_TAG = "InitConfigActivity";
 
-    private LocalBroadcastReceiverManager localReceivers;
+    private final LocalServiceConnection<AcctDataService> acctDataConnection =
+            new LocalServiceConnection<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,33 +65,8 @@ public class InitConfigActivity extends FragmentActivity {
             ((EditText) findViewById(R.id.usernameEntry)).setText(number.substring(3));
         }
 
-        localReceivers = new LocalBroadcastReceiverManager(this);
-
-        localReceivers.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                startActivity(new Intent(context, LinphoneActivity.class)
-                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                finish();
-            }
-        }, new IntentFilter(AcctDataService.ACTION_PASSWORD_RESET));
-
-        localReceivers.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                int error_msg = 0;
-                if (!intent.getBooleanExtra(AcctDataService.EXTRA_PASSWORD_OK, true)) {
-                    error_msg = R.string.tbm_login_error_auth;
-                    ((EditText) findViewById(R.id.passwordEntry)).setText("");
-                } else if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
-                    error_msg = R.string.tbm_login_error_net;
-                }
-                if (error_msg != 0) {
-                    Toast.makeText(context, error_msg, Toast.LENGTH_LONG).show();
-                    setControlsEnabled(true);
-                }
-            }
-        }, new IntentFilter(AcctDataService.ACTION_STATUS));
+        bindService(new Intent(this, AcctDataService.class),
+                acctDataConnection, Context.BIND_AUTO_CREATE);
 
         TextWatcher validator = new TextWatcher() {
             @Override
@@ -106,10 +85,11 @@ public class InitConfigActivity extends FragmentActivity {
         setControlsEnabled(true);
     }
 
+
     @Override
     protected void onDestroy() {
+        acctDataConnection.unbind(this);
         super.onDestroy();
-        localReceivers.unregisterAll();
     }
 
     @Override
@@ -128,6 +108,7 @@ public class InitConfigActivity extends FragmentActivity {
         return true;
     }
 
+    @UiThread
     private void setControlsEnabled(boolean enabled) {
         findViewById(R.id.okButton).setEnabled(enabled && inputValid());
         findViewById(R.id.helpButton).setEnabled(enabled);
@@ -147,8 +128,8 @@ public class InitConfigActivity extends FragmentActivity {
     public void onOkButtonClick(View view) {
         setControlsEnabled(false);
 
-        String acctName = "c/" + ((EditText) findViewById(R.id.usernameEntry)).getText();
-        String tmpPw = ((EditText) findViewById(R.id.passwordEntry)).getText().toString();
+        final String acctName = "c/" + ((EditText) findViewById(R.id.usernameEntry)).getText();
+        final String tmpPw = ((EditText) findViewById(R.id.passwordEntry)).getText().toString();
 
         try {
             TbmLinphoneConfigurator.getInstance().setDefaultSettings();
@@ -157,10 +138,35 @@ public class InitConfigActivity extends FragmentActivity {
             Log.e(LOG_TAG, "Error setting default settings", e);
         }
 
-        startService(new Intent(this, AcctDataService.class)
-                .setAction(AcctDataService.ACTION_RESET_PASSWORD)
-                .putExtra(AcctDataService.EXTRA_ACCT_NAME, acctName)
-                .putExtra(AcctDataService.EXTRA_PASSWORD, tmpPw));
+        new AsyncTask<Object, Object, Integer>() {
+            @Override
+            protected Integer doInBackground(Object... params) {
+                Integer error_msg = null;
+                try {
+                    if (!acctDataConnection.getService().resetPassword(acctName, tmpPw)) {
+                        error_msg = R.string.tbm_login_error_auth;
+                    }
+                } catch (JSONException|IOException e) {
+                    error_msg = R.string.tbm_login_error_net;
+                }
+                return error_msg;
+            }
+
+            @Override
+            protected void onPostExecute(Integer error_msg) {
+                if (error_msg != null) {
+                    if (error_msg == R.string.tbm_login_error_auth) {
+                        ((EditText) findViewById(R.id.passwordEntry)).setText("");
+                    }
+                    Toast.makeText(InitConfigActivity.this, error_msg, Toast.LENGTH_LONG).show();
+                    setControlsEnabled(true);
+                } else {
+                    startActivity(new Intent(InitConfigActivity.this, LinphoneActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                    finish();
+                }
+            }
+        }.execute();
     }
 
     public void onHelpButtonClick(View view) {

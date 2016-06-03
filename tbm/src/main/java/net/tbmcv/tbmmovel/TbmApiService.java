@@ -1,6 +1,6 @@
 package net.tbmcv.tbmmovel;
 /*
-TbmApi.java
+TbmApiService.java
 Copyright (C) 2016  TBM Comunicações, Lda.
 
 This program is free software; you can redistribute it and/or
@@ -17,47 +17,36 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-import android.content.Context;
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.CertificateFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-public abstract class TbmApi {
-    static TbmApi instance;
+public class TbmApiService extends Service {
+    private SSLContext sslContext;
+    private URL baseUrl;
 
-    public static synchronized TbmApi getInstance(Context context) {
-        if (instance == null) {
-            try {
-                instance = new TbmApi.Default(context);
-            } catch (IOException | GeneralSecurityException e) {
-                throw new Error(e);  // TODO
-            }
+    public static class Binder extends LocalServiceBinder<TbmApiService> {
+        public Binder(TbmApiService service) {
+            super(service);
         }
-        return instance;
     }
 
-    public abstract URL getBaseUrl();
-
-    public abstract JsonRestClient getRestClient();
-
-    public static class Default extends TbmApi {
-        private final SSLContext sslContext;
-        private final URL baseUrl;
-
-        private Default(Context context) throws IOException, GeneralSecurityException {
+    public void onCreate() {
+        try {
             sslContext = SSLContext.getInstance("TLS");
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
                     TrustManagerFactory.getDefaultAlgorithm());
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
-            InputStream certStream = context.getResources().openRawResource(R.raw.tbmds_cert);
+            InputStream certStream = getResources().openRawResource(R.raw.tbmds_cert);
             try {
                 keyStore.setCertificateEntry("tbmds",
                         CertificateFactory.getInstance("X.509").generateCertificate(certStream));
@@ -66,24 +55,27 @@ public abstract class TbmApi {
             }
             trustManagerFactory.init(keyStore);
             sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
-            baseUrl = new URL(context.getString(R.string.tbm_api_base_url));
+            baseUrl = new URL(getString(R.string.tbm_api_base_url));
+        } catch (Exception e) {
+            throw new AssertionError(e);  // TODO
         }
+    }
 
-        @Override
-        public JsonRestClient getRestClient() {
-            return new HttpsJsonRestClient(getBaseUrl(), sslContext) {
-                @Override
-                public JsonRestClient.RequestBuilder buildRequest() {
-                    return super.buildRequest()
-                            .connectTimeout(4000)
-                            .readTimeout(8000);
-                }
-            };
-        }
+    @Override
+    public IBinder onBind(Intent intent) {
+        return new Binder(this);
+    }
 
-        @Override
-        public URL getBaseUrl() {
-            return baseUrl;
-        }
+    public RestRequest createRequest() {
+        RestRequest request = new RestRequest();
+        request.setSslContext(sslContext);
+        request.setBaseUrl(baseUrl);
+        request.setConnectTimeout(4000);
+        request.setReadTimeout(8000);
+        return request;
+    }
+
+    public URL getBaseUrl() {
+        return baseUrl;
     }
 }

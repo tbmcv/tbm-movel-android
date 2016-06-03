@@ -18,45 +18,34 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 
 public class SaldoFragment extends Fragment {
     private static final int UNKNOWN_CREDIT = Integer.MIN_VALUE;
+    static final String LOG_TAG = "SaldoFragment";
 
     private NumberFormat creditFormat;
     private int currentCredit = UNKNOWN_CREDIT;
 
-    private final BroadcastReceiver statusReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int credit = intent.getIntExtra(AcctDataService.EXTRA_CREDIT, UNKNOWN_CREDIT);
-            if (credit != UNKNOWN_CREDIT) {
-                setCredit(credit);
-            }
-            if (!intent.getBooleanExtra(AcctDataService.EXTRA_CONNECTION_OK, true)) {
-                Activity activity = getActivity();
-                if (activity != null) {
-                    Toast.makeText(activity,
-                            R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
-                }
-            }
-        }
-    };
+    private final LocalServiceConnection<AcctDataService> acctDataConnection =
+            new LocalServiceConnection<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,15 +56,21 @@ public class SaldoFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.tbm_fragment_saldo, container, false);
+    public void onStart() {
+        super.onStart();
+        getContext().bindService(new Intent(getContext(), AcctDataService.class),
+                acctDataConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(
-                statusReceiver, new IntentFilter(AcctDataService.ACTION_STATUS));
+    public void onStop() {
+        acctDataConnection.unbind(getContext());
+        super.onStop();
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.tbm_fragment_saldo, container, false);
     }
 
     @Override
@@ -84,12 +79,6 @@ public class SaldoFragment extends Fragment {
         loadCredit();
         ensureLine();
         onCreditUpdate();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(statusReceiver);
     }
 
     protected void setCredit(int credit) {
@@ -106,14 +95,41 @@ public class SaldoFragment extends Fragment {
     }
 
     protected void loadCredit() {
-        Activity activity = getActivity();
-        activity.startService(new Intent(activity, AcctDataService.class)
-                .setAction(AcctDataService.ACTION_GET_CREDIT));
+        new AsyncTask<Object, Object, Integer>() {
+            @Override
+            protected Integer doInBackground(Object... params) {
+                try {
+                    return acctDataConnection.getService().getCredit();
+                } catch (IOException|JSONException e) {
+                    Activity activity = getActivity();
+                    if (activity != null) {
+                        Toast.makeText(activity,
+                                R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
+                    }
+                    return null;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Integer credit) {
+                if (credit != null) {
+                    setCredit(credit);
+                }
+            }
+        }.execute();
     }
 
     protected void ensureLine() {
-        Activity activity = getActivity();
-        activity.startService(new Intent(activity, AcctDataService.class)
-                .setAction(AcctDataService.ACTION_ENSURE_LINE));
+        new AsyncTask<Object, Object, Object>() {
+            @Override
+            protected Object doInBackground(Object... params) {
+                try {
+                    acctDataConnection.getService().ensureLine();
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, "Error ensuring line configured", e);
+                }
+                return null;
+            }
+        }.execute();
     }
 }

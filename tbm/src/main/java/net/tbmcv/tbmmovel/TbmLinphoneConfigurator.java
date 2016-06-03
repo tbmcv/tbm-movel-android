@@ -18,9 +18,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 import org.linphone.LinphoneManager;
+import org.linphone.core.LinphoneAddress;
+import org.linphone.core.LinphoneAuthInfo;
 import org.linphone.core.LinphoneCore;
 import org.linphone.core.LinphoneCoreException;
+import org.linphone.core.LinphoneCoreFactory;
 import org.linphone.core.LinphoneCoreListener;
+import org.linphone.core.LinphoneProxyConfig;
 import org.linphone.core.PayloadType;
 
 public class TbmLinphoneConfigurator {
@@ -60,5 +64,53 @@ public class TbmLinphoneConfigurator {
 
     public boolean codecDefaultEnabled(PayloadType codec) {
         return codec.getRate() == 8000 && "GSM".equals(codec.getMime());
+    }
+
+    public void configureLine(String realm, String username, String password)
+            throws LinphoneCoreException {
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        if (lc == null) {
+            throw new LinphoneCoreException("No LinphoneCore available");
+        }
+        lc.clearAuthInfos();
+        lc.clearProxyConfigs();
+        LinphoneAddress proxyAddr = LinphoneCoreFactory.instance().createLinphoneAddress(
+                "sip:" + realm);
+        proxyAddr.setTransport(LinphoneAddress.TransportType.LinphoneTransportTcp);
+        LinphoneProxyConfig proxyConfig = lc.createProxyConfig(
+                "sip:" + username + "@" + realm, proxyAddr.asStringUriOnly(), null, true);
+        proxyConfig.setExpires(300);  // TODO configure somewhere
+        LinphoneAuthInfo authInfo = LinphoneCoreFactory.instance().createAuthInfo(
+                username, password, realm, realm);
+        lc.addProxyConfig(proxyConfig);
+        lc.addAuthInfo(authInfo);
+        lc.setDefaultProxyConfig(proxyConfig);
+        lc.refreshRegisters();
+    }
+
+    public AuthPair getLineConfig() throws LinphoneCoreException {
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        if (lc == null) {
+            throw new LinphoneCoreException("No LinphoneCore available");
+        }
+        LinphoneAuthInfo[] authInfos = lc.getAuthInfosList();
+        if (authInfos.length != 1) {
+            return null;
+        }
+        String lineName = authInfos[0].getUsername();
+        String lineHa1 = authInfos[0].getHa1();
+        if (lineHa1 == null || lineName == null) {
+            return null;
+        }
+        return new AuthPair(lineName, lineHa1);
+    }
+
+    public void clearLineConfig() throws LinphoneCoreException {
+        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        if (lc == null) {
+            throw new LinphoneCoreException("No LinphoneCore available");
+        }
+        lc.clearAuthInfos();
+        lc.clearProxyConfigs();
     }
 }

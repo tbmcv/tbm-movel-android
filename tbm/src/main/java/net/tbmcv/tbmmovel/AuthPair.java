@@ -1,7 +1,7 @@
 package net.tbmcv.tbmmovel;
 /*
-JsonRestClient.java
-Copyright (C) 2016  Daniel Getz
+AuthPair.java
+Copyright (C) 2016  TBM Comunicações, Lda.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -17,30 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.support.annotation.NonNull;
 
-import java.io.IOException;
-import java.net.URI;
+public class AuthPair {
+    public final String name, password;
 
-public interface JsonRestClient {
-    RequestBuilder buildRequest();
-
-    interface RequestBuilder {
-        JSONObject fetch() throws IOException, JSONException;
-
-        RequestBuilder auth(String username, String password);
-
-        RequestBuilder method(String method);
-
-        RequestBuilder body(JSONObject body);
-
-        RequestBuilder toUri(URI uri);
-
-        RequestBuilder toUri(String uri);
-
-        RequestBuilder connectTimeout(int timeout);
-
-        RequestBuilder readTimeout(int timeout);
+    public AuthPair(@NonNull String name, @NonNull String password) {
+        this.name = name;
+        this.password = password;
     }
 }

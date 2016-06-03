@@ -71,9 +71,6 @@ public class LinphoneLauncherActivity extends Activity {
 	}
 
 	protected void onServiceReady() {
-		startService(new Intent(this, AcctDataService.class)
-				.setAction(AcctDataService.ACTION_ENSURE_LINE));
-
 		LinphoneService.instance().setActivityToLaunchOnIncomingReceived(LinphoneActivity.class);
 		mHandler.postDelayed(new Runnable() {
 			@Override
