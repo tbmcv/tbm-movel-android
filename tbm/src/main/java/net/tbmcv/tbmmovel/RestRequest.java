@@ -44,9 +44,15 @@ public class RestRequest implements Cloneable {
     }
 
     public interface Connection {
-        String execute() throws IOException;
+        void execute() throws IOException;
 
-        void cancel();
+        String getBody() throws IOException;
+
+        int getResponseCode() throws IOException;
+
+        String getHeader(String key) throws IOException;
+
+        void close();
 
         RestRequest getRequest();
     }
@@ -54,7 +60,8 @@ public class RestRequest implements Cloneable {
     public static final Fetcher defaultFetcher = new Fetcher() {
         @Override
         public String fetch(Connection connection) throws IOException {
-            return connection.execute();
+            connection.execute();
+            return connection.getBody();
         }
     };
 
@@ -67,6 +74,8 @@ public class RestRequest implements Cloneable {
     private SSLContext sslContext;
     private int connectTimeout;
     private int readTimeout;
+    private String ifNoneMatch;
+    private int xWaitChange;
 
     public Fetcher getFetcher() {
         return fetcher;
@@ -102,6 +111,14 @@ public class RestRequest implements Cloneable {
         this.uri = this.uri.resolve(uri);
     }
 
+    public void setIfNoneMatch(String etag) {
+        this.ifNoneMatch = etag;
+    }
+
+    public void setWaitChange(int timeout) {
+        this.xWaitChange = timeout;
+    }
+
     public void setBaseUrl(URL baseUrl) {
         this.baseUrl = baseUrl;
     }
@@ -132,28 +149,37 @@ public class RestRequest implements Cloneable {
         prepareConnection(connection);
         return new Connection() {
             @Override
-            public String execute() throws IOException {
+            public void execute() throws IOException {
                 connection.connect();
-                try {
-                    if (body != null) {
-                        OutputStream outputStream = connection.getOutputStream();
-                        outputStream.write(body.toString().getBytes("UTF-8"));
-                        outputStream.flush();
-                    }
-
-                    int responseCode = connection.getResponseCode();
-                    if (responseCode >= 400) {
-                        throw new HttpError(responseCode);
-                    }
-
-                    return readContent(connection);
-                } finally {
-                    connection.disconnect();
+                if (body != null) {
+                    OutputStream outputStream = connection.getOutputStream();
+                    outputStream.write(body.toString().getBytes("UTF-8"));
+                    outputStream.flush();
                 }
             }
 
             @Override
-            public void cancel() {
+            public String getBody() throws IOException {
+                int responseCode = getResponseCode();
+                if (responseCode >= 400) {
+                    throw new HttpError(responseCode);
+                }
+
+                return readContent(connection);
+            }
+
+            @Override
+            public int getResponseCode() throws IOException {
+                return connection.getResponseCode();
+            }
+
+            @Override
+            public String getHeader(String key) throws IOException {
+                return connection.getHeaderField(key);
+            }
+
+            @Override
+            public void close() {
                 connection.disconnect();
             }
 
@@ -165,7 +191,12 @@ public class RestRequest implements Cloneable {
     }
 
     public String fetch() throws IOException {
-        return fetcher.fetch(createConnection());
+        Connection connection = createConnection();
+        try {
+            return fetcher.fetch(connection);
+        } finally {
+            connection.close();
+        }
     }
 
     public JSONObject fetchJson() throws IOException, JSONException {
@@ -217,6 +248,12 @@ public class RestRequest implements Cloneable {
         if (method != null) {
             connection.setRequestMethod(method);
         }
+        if (ifNoneMatch != null) {
+            connection.setRequestProperty("If-None-Match", ifNoneMatch);
+            if (xWaitChange > 0) {
+                connection.setRequestProperty("X-Wait-Change", Integer.toString(xWaitChange));
+            }
+        }
 
         // timeouts default to 0, both here and in URLConnection
         connection.setConnectTimeout(connectTimeout);
@@ -225,7 +262,7 @@ public class RestRequest implements Cloneable {
 
     protected String readContent(HttpURLConnection connection) throws IOException {
         int len = connection.getContentLength();
-        if (len == 0) {
+        if (len <= 0) {
             return null;
         }
         InputStream inputStream = connection.getInputStream();

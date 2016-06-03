@@ -27,6 +27,8 @@ import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -199,6 +201,35 @@ public class RestRequestTest extends TestCase {
         HttpURLConnection mockConnection = getMockConnection();
         InOrder inOrder = inOrder(mockConnection);
         inOrder.verify(mockConnection).setReadTimeout(timeout);
+        inOrder.verify(mockConnection).connect();
+        inOrder.verify(mockConnection).disconnect();
+    }
+
+    public void testSetIfNoneMatch() throws Exception {
+        final String etag = "abcdefg1234567890";
+        setResponse("");
+        RestRequest request = createRequest();
+        request.setIfNoneMatch(etag);
+        request.fetch();
+        HttpURLConnection mockConnection = getMockConnection();
+        InOrder inOrder = inOrder(mockConnection);
+        inOrder.verify(mockConnection).setRequestProperty(matches("(?i)If-None-Match"), eq(etag));
+        inOrder.verify(mockConnection).connect();
+        inOrder.verify(mockConnection).disconnect();
+    }
+
+    public void testSetWaitChange() throws Exception {
+        final String etag = "abcdefg1234567890";
+        final int timeout = 731;
+        setResponse("");
+        RestRequest request = createRequest();
+        request.setIfNoneMatch(etag);
+        request.setWaitChange(timeout);
+        request.fetch();
+        HttpURLConnection mockConnection = getMockConnection();
+        InOrder inOrder = inOrder(mockConnection);
+        inOrder.verify(mockConnection).setRequestProperty(
+                matches("(?i)X-Wait-Change"), eq(Integer.toString(timeout)));
         inOrder.verify(mockConnection).connect();
         inOrder.verify(mockConnection).disconnect();
     }

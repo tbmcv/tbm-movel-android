@@ -18,6 +18,8 @@ public class MockRestRequest extends RestRequest {
     private int connectTimeout;
     private int readTimeout;
     private Object body;
+    private String ifNoneMatch;
+    private int xWaitChange;
 
     public static void mockTbmApiRequests(TbmApiService mockService, final Fetcher fetcher) {
         when(mockService.createRequest()).thenAnswer(new Answer<RestRequest>() {
@@ -128,5 +130,25 @@ public class MockRestRequest extends RestRequest {
 
     public Object getBody() {
         return body;
+    }
+
+    @Override
+    public void setIfNoneMatch(String etag) {
+        super.setIfNoneMatch(etag);
+        this.ifNoneMatch = etag;
+    }
+
+    public String getIfNoneMatch() {
+        return ifNoneMatch;
+    }
+
+    @Override
+    public void setWaitChange(int timeout) {
+        super.setWaitChange(timeout);
+        this.xWaitChange = timeout;
+    }
+
+    public int getWaitChange() {
+        return xWaitChange;
     }
 }
