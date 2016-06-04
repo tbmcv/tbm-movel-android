@@ -1,6 +1,6 @@
 package net.tbmcv.tbmmovel;
 /*
-LocalServiceBinder.java
+LocalServiceConnection.java
 Copyright (C) 2016  TBM Comunicações, Lda.
 
 This program is free software; you can redistribute it and/or
@@ -38,7 +38,7 @@ public class LocalServiceConnection<S extends Service> implements ServiceConnect
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        this.service = ((LocalServiceBinder<S>) service).getService();
+        setService(((LocalServiceBinder<S>) service).getService());
         for (Listener<? super S> listener : listeners) {
             listener.serviceConnected(this.service);
         }
@@ -46,18 +46,26 @@ public class LocalServiceConnection<S extends Service> implements ServiceConnect
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        service = null;
+        setService(null);
         for (Listener<? super S> listener : listeners) {
             listener.serviceDisconnected();
         }
     }
 
-    public S getService() {
+    protected synchronized void setService(S service) {
+        this.service = service;
+    }
+
+    public synchronized S getService() {
         return service;
     }
 
+    public boolean isBound() {
+        return getService() != null;
+    }
+
     public void unbind(Context context) {
-        if (service != null) {
+        if (isBound()) {
             context.unbindService(this);
         }
     }
