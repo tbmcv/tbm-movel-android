@@ -20,34 +20,55 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
 import java.util.Collection;
-import java.util.EventListener;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-public class LocalServiceConnection<S extends Service> implements ServiceConnection {
-    private final Collection<Listener<? super S>> listeners = new CopyOnWriteArraySet<>();
+/**
+ * Convenience class for connecting to local bound services that use LocalServiceBinder.
+ *
+ * Instead of passing a ServiceConnection to bindService() and unbindService(),
+ * call bind() and unbind(), and add a listener or call isBound() to find out when the service
+ * is ready.
+ *
+ * Unbind is idempotent, so it can be called whenever the service is not needed.
+ */
+public class LocalServiceConnection<S extends Service> implements LocalServiceListener<S> {
+    private final Collection<LocalServiceListener<? super S>> listeners = new CopyOnWriteArraySet<>();
     private S service;
 
-    public interface Listener<S extends Service> extends EventListener {
-        void serviceConnected(S service);
-        void serviceDisconnected();
-    }
+    private final ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            ((LocalServiceBinder<? extends S>) service).connectWhenReady(LocalServiceConnection.this);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            serviceDisconnected();
+        }
+    };
 
     @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-        setService(((LocalServiceBinder<S>) service).getService());
-        for (Listener<? super S> listener : listeners) {
-            listener.serviceConnected(this.service);
+    public void serviceConnected(S service) {
+        setService(service);
+        for (LocalServiceListener<? super S> listener : listeners) {
+            listener.serviceConnected(service);
         }
     }
 
     @Override
-    public void onServiceDisconnected(ComponentName name) {
-        setService(null);
-        for (Listener<? super S> listener : listeners) {
+    public void serviceDisconnected() {
+        synchronized (this) {
+            if (!isBound()) {
+                return;
+            }
+            setService(null);
+        }
+        for (LocalServiceListener<? super S> listener : listeners) {
             listener.serviceDisconnected();
         }
     }
@@ -64,17 +85,29 @@ public class LocalServiceConnection<S extends Service> implements ServiceConnect
         return getService() != null;
     }
 
+    public void bind(Context context, Intent intent, int flags) {
+        context.bindService(intent, connection, flags);
+    }
+
+    public void bind(Context context, Intent intent) {
+        bind(context, intent, Service.BIND_AUTO_CREATE);
+    }
+
+    public void bind(Context context, Class<S> cls) {
+        bind(context, new Intent(context, cls), Service.BIND_AUTO_CREATE);
+    }
+
     public void unbind(Context context) {
         if (isBound()) {
-            context.unbindService(this);
+            context.unbindService(connection);
         }
     }
 
-    public void addListener(Listener<? super S> listener) {
+    public void addListener(LocalServiceListener<? super S> listener) {
         listeners.add(listener);
     }
 
-    public void removeListener(Listener<? super S> listener) {
+    public void removeListener(LocalServiceListener<? super S> listener) {
         listeners.remove(listener);
     }
 }

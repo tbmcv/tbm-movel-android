@@ -18,7 +18,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -50,17 +49,25 @@ public class SaldoService extends Service {
 
     public static class Binder extends LocalServiceBinder<SaldoService> {
         public Binder(SaldoService service) {
-            super(service);
+            super(service, false);
         }
+    }
+
+    protected final Binder binder = new Binder(this);
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
         credit = UNKNOWN_CREDIT;
-        acctDataConnection.addListener(new LocalServiceConnection.Listener<AcctDataService>() {
+        acctDataConnection.addListener(new LocalServiceListener<AcctDataService>() {
             @Override
             public void serviceConnected(AcctDataService service) {
+                binder.setReady();
                 pollThread = new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -80,8 +87,7 @@ public class SaldoService extends Service {
             @Override
             public void serviceDisconnected() { }
         });
-        bindService(new Intent(this, AcctDataService.class),
-                acctDataConnection, Context.BIND_AUTO_CREATE);
+        acctDataConnection.bind(this, AcctDataService.class);
     }
 
     protected void pollLoop() throws InterruptedException {
@@ -148,12 +154,6 @@ public class SaldoService extends Service {
             currentPollConnection = null;
         }
         acctDataConnection.unbind(this);
-    }
-
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return new Binder(this);
     }
 
     public int getCredit() {

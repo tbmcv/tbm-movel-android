@@ -8,6 +8,10 @@ public abstract class BaseFragmentUnitTest<F extends Fragment>
     static final String FRAGMENT_TAG = "FragmentTag";
 
     public static final class TestActivity extends FragmentActivity {
+        @Override
+        public void onPostResume() {
+            super.onPostResume();
+        }
     }
 
     protected abstract F createFragment();
@@ -24,11 +28,7 @@ public abstract class BaseFragmentUnitTest<F extends Fragment>
                 .add(android.R.id.content, createFragment(), FRAGMENT_TAG)
                 .commit();
         getInstrumentation().callActivityOnResume(activity);
-        for (Fragment fragment : activity.getSupportFragmentManager().getFragments()) {
-            fragment.onStart();
-            fragment.onResume();
-        }
+        activity.onPostResume();
         getInstrumentation().waitForIdleSync();
-        activity.getSupportFragmentManager().executePendingTransactions();
     }
 }

@@ -49,9 +49,11 @@ public class AcctDataService extends Service {
 
     public static class Binder extends LocalServiceBinder<AcctDataService> {
         public Binder(AcctDataService service) {
-            super(service);
+            super(service, false);
         }
     }
+
+    private final Binder binder = new Binder(this);
 
     public RestRequest createRequest(AuthPair acct) throws HttpError {
         RestRequest request = tbmApiConnection.getService().createRequest();
@@ -75,9 +77,17 @@ public class AcctDataService extends Service {
 
     @Override
     public void onCreate() {
+        tbmApiConnection.addListener(new LocalServiceListener<TbmApiService>() {
+            @Override
+            public void serviceConnected(TbmApiService service) {
+                binder.setReady();
+            }
+
+            @Override
+            public void serviceDisconnected() { }
+        });
+        tbmApiConnection.bind(this, TbmApiService.class);
         super.onCreate();
-        bindService(new Intent(this, TbmApiService.class),
-                tbmApiConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -87,7 +97,7 @@ public class AcctDataService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return new Binder(this);
+        return binder;
     }
 
     public AuthPair getAcctAuth() {

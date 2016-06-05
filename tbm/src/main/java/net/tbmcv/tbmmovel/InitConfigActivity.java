@@ -65,8 +65,7 @@ public class InitConfigActivity extends FragmentActivity {
             ((EditText) findViewById(R.id.usernameEntry)).setText(number.substring(3));
         }
 
-        bindService(new Intent(this, AcctDataService.class),
-                acctDataConnection, Context.BIND_AUTO_CREATE);
+        acctDataConnection.bind(this, AcctDataService.class);
 
         TextWatcher validator = new TextWatcher() {
             @Override

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigActivity> {
     AcctDataService mockService;
+    AcctDataService.Binder acctDataBinder;
 
     public InitConfigActivityUnitTest() {
         super(InitConfigActivity.class);
@@ -27,9 +28,8 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         super.setUp();
         TbmLinphoneConfigurator.instance = mock(TbmLinphoneConfigurator.class);
         mockService = mock(AcctDataService.class);
-        getStartServiceTrap().setBoundService(
-                AcctDataService.class,
-                new AcctDataService.Binder(mockService));
+        acctDataBinder = new AcctDataService.Binder(mockService);
+        getStartServiceTrap().setBoundService(AcctDataService.class, acctDataBinder);
     }
 
     @Override
@@ -45,6 +45,7 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         if (!LinphoneManager.isInstanciated()) {
             LinphoneManager.createAndStart(getActivity());
         }
+        acctDataBinder.setReady();
     }
 
     private void performLogin(String username, String password) {

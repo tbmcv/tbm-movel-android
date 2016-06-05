@@ -16,11 +16,9 @@ import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -37,18 +35,25 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
     private TbmApiService mockTbmApiService;
     private RestRequest.Fetcher mockFetcher;
     private ArgumentCaptor<MockRestRequest.Connection> requestCaptor;
+    private TbmApiService.Binder tbmApiBinder;
 
     protected void setUp() throws Exception {
         super.setUp();
         mockLinphoneConfigurator = mock(TbmLinphoneConfigurator.class);
         TbmLinphoneConfigurator.instance = mockLinphoneConfigurator;
         mockTbmApiService = mock(TbmApiService.class);
-        getStartServiceTrap().setBoundService(
-                TbmApiService.class, new LocalServiceBinder<>(mockTbmApiService));
+        tbmApiBinder = new TbmApiService.Binder(mockTbmApiService);
+        getStartServiceTrap().setBoundService(TbmApiService.class, tbmApiBinder);
         mockFetcher = mock(RestRequest.Fetcher.class);
         MockRestRequest.mockTbmApiRequests(mockTbmApiService, mockFetcher);
         AcctDataService.pauser = mockPauser;
         requestCaptor = ArgumentCaptor.forClass(MockRestRequest.Connection.class);
+    }
+
+    @Override
+    protected void bindService() {
+        super.bindService();
+        tbmApiBinder.setReady();
     }
 
     @Override

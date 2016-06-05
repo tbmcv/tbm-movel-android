@@ -17,35 +17,41 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import org.json.JSONException;
-
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 
+import static net.tbmcv.tbmmovel.SaldoService.UNKNOWN_CREDIT;
+
 public class SaldoFragment extends Fragment {
-    private static final int UNKNOWN_CREDIT = Integer.MIN_VALUE;
     static final String LOG_TAG = "SaldoFragment";
 
     private NumberFormat creditFormat;
     private int currentCredit = UNKNOWN_CREDIT;
 
-    private final LocalServiceConnection<AcctDataService> acctDataConnection =
-            new LocalServiceConnection<>();
+    private LocalServiceConnection<AcctDataService> acctDataConnection;
+    private LocalServiceConnection<SaldoService> saldoConnection;
+
+    private final BroadcastReceiver saldoReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            setCredit(intent.getIntExtra(SaldoService.EXTRA_CREDIT, UNKNOWN_CREDIT));
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,17 +59,34 @@ public class SaldoFragment extends Fragment {
         formatSymbols.setGroupingSeparator('.');
         creditFormat = new DecimalFormat("#,##0'$00'", formatSymbols);
         super.onCreate(savedInstanceState);
+        acctDataConnection = new LocalServiceConnection<>();
+        saldoConnection = new LocalServiceConnection<>();
+        acctDataConnection.addListener(new LocalServiceListener<AcctDataService>() {
+            @Override
+            public void serviceConnected(AcctDataService service) {
+                if (isResumed()) {
+                    ensureLine();
+                }
+            }
+
+            @Override
+            public void serviceDisconnected() { }
+        });
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        getContext().bindService(new Intent(getContext(), AcctDataService.class),
-                acctDataConnection, Context.BIND_AUTO_CREATE);
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(
+                saldoReceiver, new IntentFilter(SaldoService.ACTION_UPDATE));
+        saldoConnection.bind(getContext(), SaldoService.class);
+        acctDataConnection.bind(getContext(), AcctDataService.class);
     }
 
     @Override
     public void onStop() {
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(saldoReceiver);
+        saldoConnection.unbind(getContext());
         acctDataConnection.unbind(getContext());
         super.onStop();
     }
@@ -76,9 +99,10 @@ public class SaldoFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadCredit();
-        ensureLine();
         onCreditUpdate();
+        if (acctDataConnection.isBound()) {
+            ensureLine();
+        }
     }
 
     protected void setCredit(int credit) {
@@ -92,31 +116,6 @@ public class SaldoFragment extends Fragment {
             ((TextView) view.findViewById(R.id.creditValue)).setText(
                     currentCredit == UNKNOWN_CREDIT ? "" : creditFormat.format(currentCredit));
         }
-    }
-
-    protected void loadCredit() {
-        new AsyncTask<Object, Object, Integer>() {
-            @Override
-            protected Integer doInBackground(Object... params) {
-                try {
-                    return acctDataConnection.getService().getCredit();
-                } catch (IOException|JSONException e) {
-                    Activity activity = getActivity();
-                    if (activity != null) {
-                        Toast.makeText(activity,
-                                R.string.tbm_login_error_net, Toast.LENGTH_LONG).show();
-                    }
-                    return null;
-                }
-            }
-
-            @Override
-            protected void onPostExecute(Integer credit) {
-                if (credit != null) {
-                    setCredit(credit);
-                }
-            }
-        }.execute();
     }
 
     protected void ensureLine() {

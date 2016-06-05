@@ -29,6 +29,7 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
     }
 
     private AcctDataService mockAcctDataService;
+    private AcctDataService.Binder acctDataBinder;
     private RestRequest.Fetcher mockFetcher;
     private ArgumentCaptor<MockRestRequest.Connection> requestCaptor;
     private BlockingQueue<Intent> broadcasts;
@@ -37,23 +38,28 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
     protected void setUp() throws Exception {
         super.setUp();
         mockAcctDataService = mock(AcctDataService.class);
-        getStartServiceTrap().setBoundService(
-                AcctDataService.class, new LocalServiceBinder<>(mockAcctDataService));
+        acctDataBinder = new AcctDataService.Binder(mockAcctDataService);
+        getStartServiceTrap().setBoundService(AcctDataService.class, acctDataBinder);
         mockFetcher = mock(RestRequest.Fetcher.class);
         MockRestRequest.mockAcctDataRequests(mockAcctDataService, mockFetcher);
         requestCaptor = ArgumentCaptor.forClass(MockRestRequest.Connection.class);
-        broadcasts = new LinkedBlockingQueue<>();
+        final BlockingQueue<Intent> broadcastQueue = new LinkedBlockingQueue<>();
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (broadcasts != null) {
-                    broadcasts.add(intent);
-                }
+                broadcastQueue.add(intent);
             }
         };
+        broadcasts = broadcastQueue;
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(
                 receiver, new IntentFilter(SaldoService.ACTION_UPDATE));
         SaldoService.pauser = mockPauser;
+    }
+
+    @Override
+    protected void bindService() {
+        super.bindService();
+        acctDataBinder.setReady();
     }
 
     @Override

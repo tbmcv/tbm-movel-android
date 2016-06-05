@@ -1,10 +1,12 @@
 package net.tbmcv.tbmmovel;
 
+import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.widget.TextView;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
     @Override
@@ -12,31 +14,38 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
         return new SaldoFragment();
     }
 
-    AcctDataService mockService;
+    AcctDataService mockAcctDataService;
+    AcctDataService.Binder acctDataBinder;
+    SaldoService mockSaldoService;
+    SaldoService.Binder saldoBinder;
 
-    @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mockService = mock(AcctDataService.class);
-        getStartServiceTrap().setBoundService(
-                AcctDataService.class,
-                new AcctDataService.Binder(mockService));
+        mockAcctDataService = mock(AcctDataService.class);
+        acctDataBinder = new AcctDataService.Binder(mockAcctDataService);
+        getStartServiceTrap().setBoundService(AcctDataService.class, acctDataBinder);
+        mockSaldoService = mock(SaldoService.class);
+        saldoBinder = new SaldoService.Binder(mockSaldoService);
+        getStartServiceTrap().setBoundService(SaldoService.class, saldoBinder);
+    }
+
+    @Override
+    protected void startAndResumeAll() {
+        super.startAndResumeAll();
+        acctDataBinder.setReady();
+        saldoBinder.setReady();
     }
 
     public void testEnsureLineCalled() throws Exception {
         startAndResumeAll();
-        new AssertWaiter() {
-            @Override
-            protected void test() throws Exception {
-                verify(mockService).ensureLine();
-            }
-        }.await();
+        verify(mockAcctDataService, timeout(2000).atLeastOnce()).ensureLine();
     }
 
     protected void checkSaldoResponseDisplayed(int saldo, final String formattedSaldo)
             throws Exception {
-        when(mockService.getCredit()).thenReturn(saldo);
         startAndResumeAll();
+        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
+                new Intent(SaldoService.ACTION_UPDATE).putExtra(SaldoService.EXTRA_CREDIT, saldo));
         final TextView creditView = (TextView) getActivity().findViewById(R.id.creditValue);
         new AssertWaiter() {
             @Override

@@ -20,14 +20,65 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import android.app.Service;
 import android.os.Binder;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
+/**
+ * Implementation of IBinder for local bound services.
+ *
+ * Can be created in a "not yet ready" state, and the reference to the service received via a
+ * callback only after the state changes to "ready".
+ */
 public class LocalServiceBinder<S extends Service> extends Binder {
     private final S service;
+    private Collection<LocalServiceListener<? super S>> listeners;
+    private boolean ready;
+
+    public LocalServiceBinder(S service, boolean ready) {
+        this.service = service;
+        this.ready = ready;
+        if (!ready) {
+            listeners = new ArrayList<>();
+        }
+    }
 
     public LocalServiceBinder(S service) {
-        this.service = service;
+        this(service, true);
     }
 
     public S getService() {
         return service;
+    }
+
+    public synchronized boolean isReady() {
+        return ready;
+    }
+
+    public void connectWhenReady(LocalServiceListener<? super S> listener) {
+        boolean ready;
+        synchronized (this) {
+            ready = isReady();
+            if (!ready) {
+                listeners.add(listener);
+            }
+        }
+        if (ready) {
+            listener.serviceConnected(getService());
+        }
+    }
+
+    public void setReady() {
+        Collection<LocalServiceListener<? super S>> listeners;
+        synchronized (this) {
+            if (ready) {
+                return;
+            }
+            ready = true;
+            listeners = this.listeners;
+            this.listeners = null;
+        }
+        for (LocalServiceListener<? super S> listener : listeners) {
+            listener.serviceConnected(service);
+        }
     }
 }
