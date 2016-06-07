@@ -21,11 +21,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,8 +36,6 @@ import java.text.NumberFormat;
 import static net.tbmcv.tbmmovel.SaldoService.UNKNOWN_CREDIT;
 
 public class SaldoFragment extends Fragment {
-    static final String LOG_TAG = "SaldoFragment";
-
     private NumberFormat creditFormat;
     private int currentCredit = UNKNOWN_CREDIT;
 
@@ -65,7 +61,7 @@ public class SaldoFragment extends Fragment {
             @Override
             public void serviceConnected(AcctDataService service) {
                 if (isResumed()) {
-                    ensureLine();
+                    service.checkLine();
                 }
             }
 
@@ -101,7 +97,7 @@ public class SaldoFragment extends Fragment {
         super.onResume();
         onCreditUpdate();
         if (acctDataConnection.isBound()) {
-            ensureLine();
+            acctDataConnection.getService().checkLine();
         }
     }
 
@@ -116,19 +112,5 @@ public class SaldoFragment extends Fragment {
             ((TextView) view.findViewById(R.id.creditValue)).setText(
                     currentCredit == UNKNOWN_CREDIT ? "" : creditFormat.format(currentCredit));
         }
-    }
-
-    protected void ensureLine() {
-        new AsyncTask<Object, Object, Object>() {
-            @Override
-            protected Object doInBackground(Object... params) {
-                try {
-                    acctDataConnection.getService().ensureLine();
-                } catch (Exception e) {
-                    Log.e(LOG_TAG, "Error ensuring line configured", e);
-                }
-                return null;
-            }
-        }.execute();
     }
 }

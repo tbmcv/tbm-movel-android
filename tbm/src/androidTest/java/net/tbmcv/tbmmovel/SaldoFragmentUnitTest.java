@@ -38,7 +38,7 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
 
     public void testEnsureLineCalled() throws Exception {
         startAndResumeAll();
-        verify(mockAcctDataService, timeout(2000).atLeastOnce()).ensureLine();
+        verify(mockAcctDataService, timeout(2000).atLeastOnce()).checkLine();
     }
 
     protected void checkSaldoResponseDisplayed(int saldo, final String formattedSaldo)

@@ -14,6 +14,7 @@ import org.mockito.stubbing.Answer;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -22,13 +23,30 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
+public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest.TestingAcctDataService> {
     public AcctDataServiceTest() {
-        super(AcctDataService.class);
+        super(TestingAcctDataService.class);
+    }
+
+    public static class TestingAcctDataService extends AcctDataService {
+        synchronized void waitIdle(long millis) throws TimeoutException, InterruptedException {
+            long end = System.currentTimeMillis() + millis;
+            while (state != NOTHING_REQUESTED && state != SHUTTING_DOWN) {
+                long remaining = end - System.currentTimeMillis();
+                if (remaining <= 0) {
+                    throw new TimeoutException();
+                }
+                wait(remaining);
+            }
+        }
+
+        void waitIdle() throws TimeoutException, InterruptedException {
+            waitIdle(2000);
+        }
     }
 
     private TbmLinphoneConfigurator mockLinphoneConfigurator;
@@ -178,7 +196,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertNotSame(oldPw, storedPw);
     }
 
-    public void testNewVoipLineRequest() throws Exception {
+    public void testResetLineNewLineRequest() throws Exception {
         String acctName = "c/5123456";
         String password = "blah";
         setStoredAcct(acctName, password);
@@ -186,8 +204,8 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 .thenReturn(new JSONObject().put("lines", new JSONArray()).toString())
                 .thenReturn(new JSONObject().put("name", "").put("pw", "").toString());
         bindService();
-        getService().configureLine();
-        verify(mockFetcher, times(2)).fetch(requestCaptor.capture());
+        getService().resetLine();
+        verify(mockFetcher, timeout(2000).times(2)).fetch(requestCaptor.capture());
 
         MockRestRequest mockRequest = requestCaptor.getAllValues().get(0).getRequest();
         assertEquals(acctName, mockRequest.getUsername());
@@ -204,7 +222,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertTrue(mockRequest.getBody() instanceof JSONObject);
     }
 
-    public void testNewVoipLineReconfigures() throws Exception {
+    public void testResetLineConfiguresNewLine() throws Exception {
         String acctName = "c/5123456";
         String password = "blah";
         String lineName = "tbm7777";
@@ -215,14 +233,14 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                 .thenReturn(new JSONObject().put("name", lineName).put("pw", linePassword).toString());
         doNothing().when(mockPauser).pause(anyLong(), any(TimeUnit.class));
         bindService();
-        getService().configureLine();
+        getService().resetLine();
 
-        assertTrue(verifyPauseMillis() >= 1000);
-        verify(mockLinphoneConfigurator).configureLine(
+        assertTrue(verifyPauseMillis(timeout(2000)) >= 1000);
+        verify(mockLinphoneConfigurator, timeout(1000)).configureLine(
                 getContext().getString(R.string.tbm_sip_realm), lineName, linePassword);
     }
 
-    public void testReconfigureVoipLineRequest() throws Exception {
+    public void testResetLineRequest() throws Exception {
         String acctName = "c/5110023";
         String password = "segredos";
         String lineName = "tbm2222";
@@ -236,8 +254,8 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                                         .put("display", null))).toString())
                 .thenReturn(new JSONObject().put("pw", "whatever").toString());
         bindService();
-        getService().configureLine();
-        verify(mockFetcher, times(2)).fetch(requestCaptor.capture());
+        getService().resetLine();
+        verify(mockFetcher, timeout(2000).times(2)).fetch(requestCaptor.capture());
 
         MockRestRequest mockRequest = requestCaptor.getAllValues().get(0).getRequest();
         assertEquals(acctName, mockRequest.getUsername());
@@ -254,7 +272,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         assertTrue(mockRequest.getBody() instanceof JSONObject);
     }
 
-    public void testReconfigureVoipLineReconfigures() throws Exception {
+    public void testResetLineReconfigures() throws Exception {
         String acctName = "c/5110023";
         String password = "segredos";
         String lineName = "tbm2222";
@@ -269,33 +287,29 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
                                         .put("display", null))).toString())
                 .thenReturn(new JSONObject().put("pw", linePassword).toString());
         bindService();
-        getService().configureLine();
-        assertTrue(verifyPauseMillis() >= 1000);
-        verify(mockLinphoneConfigurator).configureLine(
+        getService().resetLine();
+        assertTrue(verifyPauseMillis(timeout(2000)) >= 1000);
+        verify(mockLinphoneConfigurator, timeout(1000)).configureLine(
                 getContext().getString(R.string.tbm_sip_realm), lineName, linePassword);
     }
 
-    public void testConfigureLineUnconfiguredActivitySwitch() throws Exception {
+    public void testResetLineUnconfiguredActivitySwitch() throws Exception {
         clearPrefs();
         bindService();
-        getService().configureLine();
+        getService().resetLine();
         checkInitConfigActivitySwitch();
     }
 
-    public void testConfigureLineMisconfiguredActivitySwitch() throws Exception {
+    public void testResetLineMisconfiguredActivitySwitch() throws Exception {
         setStoredAcct("c/9152519", "dzemla");
         when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenThrow(new HttpError(401));
         bindService();
-        try {
-            getService().configureLine();
-        } catch (HttpError e) {
-            /* fall through */
-        }
+        getService().resetLine();
         checkInitConfigActivitySwitch();
     }
 
-    private void setupEnsureLine(final String acctName, String acctPw, final String lineName,
-                                 String storedLinePw, final String apiLinePw)
+    private void setupCheckLine(final String acctName, String acctPw, final String lineName,
+                                String storedLinePw, final String apiLinePw)
             throws InterruptedException, JSONException, IOException, LinphoneCoreException {
         setStoredAcct(acctName, acctPw);
         AuthPair storedAuth = null;
@@ -328,45 +342,46 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataService> {
         });
     }
 
-    public void testEnsureLineKeepsCorrectCreds() throws Exception {
+    public void testCheckLineKeepsCorrectCreds() throws Exception {
         String pw = "98w7efyu";
-        setupEnsureLine("c/9119119", "joao*who?", "tbm8814", pw, pw);
+        setupCheckLine("c/9119119", "joao*who?", "tbm8814", pw, pw);
         bindService();
-        getService().ensureLine();
+        getService().checkLine();
+        getService().waitIdle();
         verify(mockLinphoneConfigurator, never()).clearLineConfig();
         verify(mockLinphoneConfigurator, never()).configureLine(anyString(), anyString(), anyString());
     }
 
-    public void testEnsureLineReconfiguresWhenCredsDifferent() throws Exception {
+    public void testCheckLineReconfiguresWhenCredsDifferent() throws Exception {
         String lineName = "tbm8324";
         String oldStoredPw = "jk324h";
         String currentPw = "23kj4h";
-        setupEnsureLine("c/9881889", "duvinha", lineName, oldStoredPw, currentPw);
+        setupCheckLine("c/9881889", "duvinha", lineName, oldStoredPw, currentPw);
         bindService();
-        getService().ensureLine();
+        getService().checkLine();
         ArgumentCaptor<String> newPwCaptor = ArgumentCaptor.forClass(String.class);
-        verify(mockLinphoneConfigurator).configureLine(
+        verify(mockLinphoneConfigurator, timeout(2000)).configureLine(
                 eq(getContext().getString(R.string.tbm_sip_realm)), eq(lineName), newPwCaptor.capture());
         assertNotSame(oldStoredPw, newPwCaptor.getValue());
         assertNotSame(currentPw, newPwCaptor.getValue());
     }
 
-    public void testEnsureLineReconfiguresWhenUnconfigured() throws Exception {
+    public void testCheckLineReconfiguresWhenUnconfigured() throws Exception {
         String lineName = "tbm8324";
         String currentPw = "23kj4h";
-        setupEnsureLine("c/9881889", "duvinha", lineName, null, currentPw);
+        setupCheckLine("c/9881889", "duvinha", lineName, null, currentPw);
         bindService();
-        getService().ensureLine();
+        getService().checkLine();
         ArgumentCaptor<String> newPwCaptor = ArgumentCaptor.forClass(String.class);
-        verify(mockLinphoneConfigurator).configureLine(
+        verify(mockLinphoneConfigurator, timeout(2000)).configureLine(
                 eq(getContext().getString(R.string.tbm_sip_realm)), eq(lineName), newPwCaptor.capture());
         assertNotSame(currentPw, newPwCaptor.getValue());
     }
 
-    public void testEnsureLineUnconfiguredActivitySwitch() throws Exception {
+    public void testCheckLineUnconfiguredActivitySwitch() throws Exception {
         clearPrefs();
         bindService();
-        getService().ensureLine();
+        getService().checkLine();
         checkInitConfigActivitySwitch();
     }
 

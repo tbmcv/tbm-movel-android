@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -116,7 +117,7 @@ public class SaldoService extends Service {
                 final RestRequest.Fetcher oldFetcher = request.getFetcher();
                 request.setFetcher(new RestRequest.Fetcher() {
                     @Override
-                    public String fetch(RestRequest.Connection connection) throws IOException {
+                    public String fetch(@NonNull RestRequest.Connection connection) throws IOException {
                         currentPollConnection = connection;
                         String body = oldFetcher.fetch(connection);
                         lastETag = connection.getHeader("etag");
@@ -131,9 +132,7 @@ public class SaldoService extends Service {
                 } finally {
                     currentPollConnection = null;
                 }
-                if (result != null) {
-                    setCredit(result.getInt("saldo"));
-                }
+                setCredit(result.getInt("saldo"));
                 pauser.pause(5, TimeUnit.SECONDS);   // TODO configure somewhere
             } catch (InterruptedIOException e) {
                 break;

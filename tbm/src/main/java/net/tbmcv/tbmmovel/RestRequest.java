@@ -17,6 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Base64;
 
 import org.json.JSONException;
@@ -40,17 +42,17 @@ import javax.net.ssl.SSLContext;
 public class RestRequest implements Cloneable {
 
     public interface Fetcher {
-        String fetch(Connection connection) throws IOException;
+        @Nullable String fetch(@NonNull Connection connection) throws IOException;
     }
 
     public interface Connection {
         void execute() throws IOException;
 
-        String getBody() throws IOException;
+        @Nullable String getBody() throws IOException;
 
         int getResponseCode() throws IOException;
 
-        String getHeader(String key) throws IOException;
+        @Nullable String getHeader(@NonNull String key) throws IOException;
 
         void close();
 
@@ -59,7 +61,7 @@ public class RestRequest implements Cloneable {
 
     public static final Fetcher defaultFetcher = new Fetcher() {
         @Override
-        public String fetch(Connection connection) throws IOException {
+        public String fetch(@NonNull Connection connection) throws IOException {
             connection.execute();
             return connection.getBody();
         }
@@ -81,11 +83,11 @@ public class RestRequest implements Cloneable {
         return fetcher;
     }
 
-    public void setFetcher(Fetcher fetcher) {
+    public void setFetcher(@NonNull Fetcher fetcher) {
         this.fetcher = fetcher;
     }
 
-    public void setAuth(String username, String password) {
+    public void setAuth(@NonNull String username, @NonNull String password) {
         try {
             auth = "Basic " + Base64.encodeToString(
                     (username + ':' + password).getBytes("UTF-8"),
@@ -103,11 +105,11 @@ public class RestRequest implements Cloneable {
         this.body = body;
     }
 
-    public void toUri(URI uri) {
+    public void toUri(@NonNull URI uri) {
         this.uri = this.uri.resolve(uri);
     }
 
-    public void toUri(String uri) {
+    public void toUri(@NonNull String uri) {
         this.uri = this.uri.resolve(uri);
     }
 
@@ -144,6 +146,7 @@ public class RestRequest implements Cloneable {
         }
     }
 
+    @NonNull
     public Connection createConnection() throws IOException {
         final HttpURLConnection connection = openConnection(uri);
         prepareConnection(connection);
@@ -174,7 +177,7 @@ public class RestRequest implements Cloneable {
             }
 
             @Override
-            public String getHeader(String key) throws IOException {
+            public String getHeader(@NonNull String key) throws IOException {
                 return connection.getHeaderField(key);
             }
 
@@ -190,6 +193,7 @@ public class RestRequest implements Cloneable {
         };
     }
 
+    @Nullable
     public String fetch() throws IOException {
         Connection connection = createConnection();
         try {
@@ -199,10 +203,11 @@ public class RestRequest implements Cloneable {
         }
     }
 
+    @NonNull
     public JSONObject fetchJson() throws IOException, JSONException {
         String result = fetch();
         if (result == null) {
-            return null;
+            throw new JSONException("Empty result");
         }
         JSONTokener jsonTokener = new JSONTokener(result);
         Object jsonValue = jsonTokener.nextValue();
@@ -213,11 +218,13 @@ public class RestRequest implements Cloneable {
         }
     }
 
-    protected URL createURL(URI uri) throws MalformedURLException {
+    @NonNull
+    protected URL createURL(@NonNull URI uri) throws MalformedURLException {
         return new URL(baseUrl, uri.toString());
     }
 
-    protected HttpURLConnection openConnection(URI uri) throws IOException {
+    @NonNull
+    protected HttpURLConnection openConnection(@NonNull URI uri) throws IOException {
         URL url = createURL(uri);
         URLConnection urlConnection = url.openConnection();
         if (sslContext != null) {
@@ -238,7 +245,7 @@ public class RestRequest implements Cloneable {
         }
     }
 
-    protected void prepareConnection(HttpURLConnection connection) throws IOException {
+    protected void prepareConnection(@NonNull HttpURLConnection connection) throws IOException {
         if (body != null) {
             connection.setDoOutput(true);
         }
@@ -260,7 +267,8 @@ public class RestRequest implements Cloneable {
         connection.setReadTimeout(readTimeout);
     }
 
-    protected String readContent(HttpURLConnection connection) throws IOException {
+    @Nullable
+    protected String readContent(@NonNull HttpURLConnection connection) throws IOException {
         int len = connection.getContentLength();
         if (len <= 0) {
             return null;

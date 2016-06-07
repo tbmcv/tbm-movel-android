@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import org.linphone.LinphoneManager;
 import org.linphone.core.LinphoneAddress;
 import org.linphone.core.LinphoneAuthInfo;
@@ -40,7 +43,7 @@ public class TbmLinphoneConfigurator {
     }
 
     public void setDefaultCodecs() throws LinphoneCoreException {
-        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+        LinphoneCore lc = getLinphoneCore();
         lc.enableAdaptiveRateControl(false);
         lc.enableKeepAlive(true);
         for (PayloadType codec : lc.getAudioCodecs()) {
@@ -48,14 +51,15 @@ public class TbmLinphoneConfigurator {
         }
     }
 
-    public void setDefaultNetworkSettings() {
-        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
+    public void setDefaultNetworkSettings() throws LinphoneCoreException {
+        LinphoneCore lc = getLinphoneCore();
         lc.enableKeepAlive(true);
         lc.enableDnsSrv(false);
         lc.setStunServer(null);
     }
 
-    public void startEchoCalibration(LinphoneCoreListener listener) throws LinphoneCoreException {
+    public void startEchoCalibration(@NonNull LinphoneCoreListener listener)
+            throws LinphoneCoreException {
         LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
         if (lc != null && lc.needsEchoCalibration()) {
             lc.startEchoCalibration(listener);
@@ -66,12 +70,9 @@ public class TbmLinphoneConfigurator {
         return codec.getRate() == 8000 && "GSM".equals(codec.getMime());
     }
 
-    public void configureLine(String realm, String username, String password)
+    public void configureLine(@NonNull String realm, @NonNull String username, @NonNull String password)
             throws LinphoneCoreException {
-        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
-        if (lc == null) {
-            throw new LinphoneCoreException("No LinphoneCore available");
-        }
+        LinphoneCore lc = getLinphoneCore();
         lc.clearAuthInfos();
         lc.clearProxyConfigs();
         LinphoneAddress proxyAddr = LinphoneCoreFactory.instance().createLinphoneAddress(
@@ -88,11 +89,9 @@ public class TbmLinphoneConfigurator {
         lc.refreshRegisters();
     }
 
+    @Nullable
     public AuthPair getLineConfig() throws LinphoneCoreException {
-        LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
-        if (lc == null) {
-            throw new LinphoneCoreException("No LinphoneCore available");
-        }
+        LinphoneCore lc = getLinphoneCore();
         LinphoneAuthInfo[] authInfos = lc.getAuthInfosList();
         if (authInfos.length != 1) {
             return null;
@@ -106,11 +105,17 @@ public class TbmLinphoneConfigurator {
     }
 
     public void clearLineConfig() throws LinphoneCoreException {
+        LinphoneCore lc = getLinphoneCore();
+        lc.clearAuthInfos();
+        lc.clearProxyConfigs();
+    }
+
+    @NonNull
+    public static LinphoneCore getLinphoneCore() throws LinphoneCoreException {
         LinphoneCore lc = LinphoneManager.getLcIfManagerNotDestroyedOrNull();
         if (lc == null) {
             throw new LinphoneCoreException("No LinphoneCore available");
         }
-        lc.clearAuthInfos();
-        lc.clearProxyConfigs();
+        return lc;
     }
 }

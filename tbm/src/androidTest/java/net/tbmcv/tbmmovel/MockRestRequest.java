@@ -1,5 +1,7 @@
 package net.tbmcv.tbmmovel;
 
+import android.support.annotation.NonNull;
+
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -33,20 +35,16 @@ public class MockRestRequest extends RestRequest {
     }
 
     public static void mockAcctDataRequests(AcctDataService mockService, final Fetcher fetcher) {
-        try {
-            when(mockService.createRequest(any(AuthPair.class))).thenAnswer(new Answer<RestRequest>() {
-                @Override
-                public RestRequest answer(InvocationOnMock invocation) throws Throwable {
-                    RestRequest request = new MockRestRequest();
-                    request.setFetcher(fetcher);
-                    AuthPair auth = (AuthPair) invocation.getArguments()[0];
-                    request.setAuth(auth.name, auth.password);
-                    return request;
-                }
-            });
-        } catch (HttpError e) {
-            throw new AssertionError(e);
-        }
+        when(mockService.createRequest(any(AuthPair.class))).thenAnswer(new Answer<RestRequest>() {
+            @Override
+            public RestRequest answer(InvocationOnMock invocation) throws Throwable {
+                RestRequest request = new MockRestRequest();
+                request.setFetcher(fetcher);
+                AuthPair auth = (AuthPair) invocation.getArguments()[0];
+                request.setAuth(auth.name, auth.password);
+                return request;
+            }
+        });
     }
 
     public interface Connection extends RestRequest.Connection {
@@ -54,6 +52,7 @@ public class MockRestRequest extends RestRequest {
         MockRestRequest getRequest();
     }
 
+    @NonNull
     @Override
     public Connection createConnection() throws IOException {
         Connection mockConnection = mock(Connection.class);
@@ -62,7 +61,7 @@ public class MockRestRequest extends RestRequest {
     }
 
     @Override
-    public void setAuth(String username, String password) {
+    public void setAuth(@NonNull String username, @NonNull String password) {
         super.setAuth(username, password);
         this.username = username;
         this.password = password;
@@ -87,13 +86,13 @@ public class MockRestRequest extends RestRequest {
     }
 
     @Override
-    public void toUri(URI uri) {
+    public void toUri(@NonNull URI uri) {
         super.toUri(uri);
         this.uri = this.uri.resolve(uri);
     }
 
     @Override
-    public void toUri(String uri) {
+    public void toUri(@NonNull String uri) {
         super.toUri(uri);
         this.uri = this.uri.resolve(uri);
     }
