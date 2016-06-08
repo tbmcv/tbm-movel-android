@@ -25,6 +25,7 @@ import android.os.IBinder;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Base64;
 import android.util.Log;
 
@@ -51,6 +52,8 @@ import java.util.concurrent.TimeUnit;
  * Automatically checks and (re)configures the voip line.
  */
 public class AcctDataService extends Service {
+    public static final String ACTION_ACCT_CHANGED = "net.tbmcv.tbmmovel.ACCT_CHANGED";
+
     static final String LOG_TAG = "AcctDataService";
 
     @IntDef({NOTHING_REQUESTED, REQUESTED_CHECK, REQUESTED_RESET, SHUTTING_DOWN})
@@ -166,6 +169,11 @@ public class AcctDataService extends Service {
         notifyAll();
     }
 
+    protected void notifyAcctAuthChange() {
+        notifyAndInterrupt();
+        LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_ACCT_CHANGED));
+    }
+
     protected void lineConfigurationLoop() throws ShuttingDown {
         //noinspection InfiniteLoopStatement
         while (true) {
@@ -249,7 +257,7 @@ public class AcctDataService extends Service {
                 .remove(getString(R.string.tbm_setting_acctname))
                 .remove(getString(R.string.tbm_setting_password))
                 .commit();
-        notifyAndInterrupt();
+        notifyAcctAuthChange();
         try {
             TbmLinphoneConfigurator.getInstance().clearLineConfig();
         } catch (LinphoneCoreException e) {
@@ -265,7 +273,7 @@ public class AcctDataService extends Service {
                 .putString(getString(R.string.tbm_setting_acctname), acctName)
                 .putString(getString(R.string.tbm_setting_password), password)
                 .commit();
-        notifyAndInterrupt();
+        notifyAcctAuthChange();
     }
 
     /**

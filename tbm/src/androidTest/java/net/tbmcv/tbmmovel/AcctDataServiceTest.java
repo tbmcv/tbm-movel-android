@@ -1,6 +1,9 @@
 package net.tbmcv.tbmmovel;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 
 import org.json.JSONArray;
@@ -54,6 +57,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
     private RestRequest.Fetcher mockFetcher;
     private ArgumentCaptor<MockRestRequest.Connection> requestCaptor;
     private TbmApiService.Binder tbmApiBinder;
+    private LocalBroadcastReceiverManager broadcastReceivers;
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -66,6 +70,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
         MockRestRequest.mockTbmApiRequests(mockTbmApiService, mockFetcher);
         AcctDataService.pauser = mockPauser;
         requestCaptor = ArgumentCaptor.forClass(MockRestRequest.Connection.class);
+        broadcastReceivers = new LocalBroadcastReceiverManager(getContext());
     }
 
     @Override
@@ -76,6 +81,7 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
 
     @Override
     protected void tearDown() throws Exception {
+        broadcastReceivers.unregisterAll();
         super.tearDown();
         AcctDataService.pauser = new RealPauser();
         TbmLinphoneConfigurator.instance = new TbmLinphoneConfigurator();
@@ -194,6 +200,19 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
         String storedPw = prefs.getString(context.getString(R.string.tbm_setting_password), null);
         assertNotNull(storedPw);
         assertNotSame(oldPw, storedPw);
+    }
+
+    public void testPwResetBroadcastsUpdate() throws Exception {
+        bindService();
+
+        BroadcastReceiver mockReceiver = mock(BroadcastReceiver.class);
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        broadcastReceivers.registerReceiver(
+                mockReceiver, new IntentFilter(AcctDataService.ACTION_ACCT_CHANGED));
+        getService().resetPassword("c/9123210", "blah");
+        verify(mockReceiver, timeout(2000)).onReceive(
+                any(Context.class), intentCaptor.capture());
+        assertEquals(AcctDataService.ACTION_ACCT_CHANGED, intentCaptor.getValue().getAction());
     }
 
     public void testResetLineNewLineRequest() throws Exception {
@@ -388,5 +407,46 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
     public void testCreateHa1() {
         assertEquals("9bc3f707a46d0bf0403b5dc2270d29b2",
                 AcctDataService.createHa1("thisguy", "bruteforcethis", "here"));
+    }
+
+    public void testCreateRequest() throws Exception {
+        final AuthPair auth = new AuthPair("c/9009009", "pswd");
+        final String result = "hello";
+        bindService();
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenReturn(result);
+        RestRequest request = getService().createRequest(auth);
+        assertEquals(result, request.fetch());
+        verify(mockFetcher).fetch(requestCaptor.capture());
+        assertEquals(request, requestCaptor.getValue().getRequest());
+    }
+
+    public void testCreateRequest401Resets() throws Exception {
+        final AuthPair auth = new AuthPair("c/9009009", "pswd");
+        setStoredAcct(auth.name, auth.password);
+        bindService();
+
+        BroadcastReceiver mockReceiver = mock(BroadcastReceiver.class);
+        ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        broadcastReceivers.registerReceiver(
+                mockReceiver, new IntentFilter(AcctDataService.ACTION_ACCT_CHANGED));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenThrow(new HttpError(401));
+
+        RestRequest request = getService().createRequest(auth);
+        try {
+            request.fetch();
+            fail("401 not thrown");
+        } catch (HttpError e) {
+            assertEquals(401, e.getResponseCode());
+        }
+
+        Context context = getContext();
+        assertNull(clearPrefs().getString(context.getString(R.string.tbm_setting_acctname), null));
+        assertNull(clearPrefs().getString(context.getString(R.string.tbm_setting_password), null));
+
+        assertActivityStarted(InitConfigActivity.class);
+
+        verify(mockReceiver, timeout(2000)).onReceive(
+                any(Context.class), intentCaptor.capture());
+        assertEquals(AcctDataService.ACTION_ACCT_CHANGED, intentCaptor.getValue().getAction());
     }
 }
