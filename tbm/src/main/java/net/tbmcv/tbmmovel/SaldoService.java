@@ -44,7 +44,6 @@ public class SaldoService extends Service {
             new LocalServiceConnection<>();
     private Thread pollThread;
     private volatile int credit;
-    private volatile RestRequest.Connection currentPollConnection;
 
     /* only used in pollLoop() */
     private String lastETag;
@@ -127,21 +126,14 @@ public class SaldoService extends Service {
                 request.setFetcher(new RestRequest.Fetcher() {
                     @Override
                     public String fetch(@NonNull RestRequest.Connection connection) throws IOException {
-                        currentPollConnection = connection;
                         String body = oldFetcher.fetch(connection);
                         lastETag = connection.getHeader("etag");
                         return body;
                     }
                 });
 
-                JSONObject result;
-                try {
-                    Log.d(LOG_TAG, "Sending request");
-                    result = request.fetchJson();
-                } finally {
-                    currentPollConnection = null;
-                }
-                setCredit(result.getInt("saldo"));
+                Log.d(LOG_TAG, "Sending request");
+                setCredit(request.fetchJson().getInt("saldo"));
                 pauser.pause(5, TimeUnit.SECONDS);   // TODO configure somewhere
             } catch (SocketTimeoutException e) {
                 Log.w(LOG_TAG, "Socket timed out", e);
@@ -161,11 +153,6 @@ public class SaldoService extends Service {
     @Override
     public void onDestroy() {
         pollThread.interrupt();
-        RestRequest.Connection connection = currentPollConnection;
-        if (connection != null) {
-            connection.close();
-            currentPollConnection = null;
-        }
         acctDataConnection.unbind(this);
     }
 
