@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -142,5 +143,23 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
         assertTrue(waitChange > 0);
         int connectTimeout = mockRequest.getConnectTimeout();
         assertTrue(connectTimeout == 0 || connectTimeout >= (waitChange + 1) * 1000);
+    }
+
+    public void testWaitForAcctAuth() throws Exception {
+        when(mockAcctDataService.getAcctAuth()).thenReturn(null);
+        bindService();
+        Intent intent = broadcasts.poll(2, TimeUnit.SECONDS);
+        assertEquals(SaldoService.UNKNOWN_CREDIT, intent.getIntExtra(
+                SaldoService.EXTRA_CREDIT, 123));
+        assertEquals(SaldoService.UNKNOWN_CREDIT, getService().getCredit());
+        verify(mockFetcher, never()).fetch(any(RestRequest.Connection.class));
+
+        when(mockAcctDataService.getAcctAuth()).thenReturn(new AuthPair("c/9121314", "xyz"));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenReturn(
+                new JSONObject().put("saldo", 4).toString());
+        preparePause();
+        LocalBroadcastManager.getInstance(getContext()).sendBroadcast(
+                new Intent(AcctDataService.ACTION_ACCT_CHANGED));
+        verify(mockFetcher, timeout(2000).atLeastOnce()).fetch(any(RestRequest.Connection.class));
     }
 }

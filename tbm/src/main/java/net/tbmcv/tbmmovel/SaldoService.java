@@ -18,14 +18,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -42,6 +44,7 @@ public class SaldoService extends Service {
 
     private final LocalServiceConnection<AcctDataService> acctDataConnection =
             new LocalServiceConnection<>();
+    private BroadcastReceiver broadcastReceiver;
     private Thread pollThread;
     private volatile int credit;
 
@@ -71,10 +74,8 @@ public class SaldoService extends Service {
                 Log.i(LOG_TAG, "Poll thread started");
                 try {
                     pollLoop();
-                    Log.w(LOG_TAG, "We're here???");
-                } catch (InterruptedException e) {
-                    Log.d(LOG_TAG, "Poll thread interrupted");
-                    /* ignore */
+                } catch (ShuttingDown e) {
+                    /* fall through */
                 } catch (Exception e) {
                     Log.e(LOG_TAG, "Unexpected exception in poll thread", e);
                 } finally {
@@ -82,6 +83,14 @@ public class SaldoService extends Service {
                 }
             }
         });
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                interruptPollLoop();
+            }
+        };
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                broadcastReceiver, new IntentFilter(AcctDataService.ACTION_ACCT_CHANGED));
         acctDataConnection.addListener(new LocalServiceListener<AcctDataService>() {
             @Override
             public void serviceConnected(AcctDataService service) {
@@ -97,9 +106,51 @@ public class SaldoService extends Service {
         acctDataConnection.bind(this, AcctDataService.class);
     }
 
-    protected void pollLoop() throws InterruptedException {
+    private boolean pollLoopNotified, shuttingDown;
+
+    protected static class ShuttingDown extends Exception { }
+
+    protected synchronized void notifyPollLoop() {
+        pollLoopNotified = true;
+    }
+
+    protected synchronized void interruptPollLoop() {
+        pollLoopNotified = true;
+        pollThread.interrupt();
+    }
+
+    protected synchronized void shutdownPollLoop() {
+        shuttingDown = true;
+        pollThread.interrupt();
+    }
+
+    protected synchronized void waitForPollLoopNotify() throws ShuttingDown {
+        checkShuttingDown();
+        while (!pollLoopNotified) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                checkShuttingDown();
+            }
+        }
+        Log.d(LOG_TAG, "Poll loop woken up");
+        pollLoopNotified = false;
+    }
+
+    protected synchronized void clearPollLoopNotify() throws ShuttingDown {
+        pollLoopNotified = false;
+    }
+
+    protected synchronized void checkShuttingDown() throws ShuttingDown {
+        if (shuttingDown) {
+            throw new ShuttingDown();
+        }
+    }
+
+    protected void pollLoop() throws ShuttingDown {
         lastETag = null;
-        while (!Thread.interrupted()) {
+        while (true) {
+            checkShuttingDown();
             AcctDataService service = acctDataConnection.getService();
             if (service == null) {
                 Log.w(LOG_TAG, "No AcctDataService!");
@@ -108,10 +159,13 @@ public class SaldoService extends Service {
             AuthPair acct = service.getAcctAuth();
             if (acct == null) {
                 setCredit(UNKNOWN_CREDIT);
-                Log.d(LOG_TAG, "Pausing because no account config");
-                pauser.pause(15, TimeUnit.SECONDS);   // TODO configure somewhere
+                Log.d(LOG_TAG, "Waiting because no account config");
+                waitForPollLoopNotify();
                 continue;
+            } else {
+                clearPollLoopNotify();
             }
+            int pauseSeconds;
             try {
                 RestRequest request = service.createRequest(acct);
                 request.toUri("idens/" + acct.name + "/saldo/");
@@ -134,25 +188,33 @@ public class SaldoService extends Service {
 
                 Log.d(LOG_TAG, "Sending request");
                 setCredit(request.fetchJson().getInt("saldo"));
-                pauser.pause(5, TimeUnit.SECONDS);   // TODO configure somewhere
+                pauseSeconds = 5;   // TODO configure somewhere
             } catch (SocketTimeoutException e) {
                 Log.w(LOG_TAG, "Socket timed out", e);
-                pauser.pause(15, TimeUnit.SECONDS);   // TODO configure somewhere
+                pauseSeconds = 15;   // TODO configure somewhere
             } catch (InterruptedIOException e) {
                 Log.d(LOG_TAG, "Poll fetch interrupted");
-                break;
+                pauseSeconds = 0;
             } catch (IOException|JSONException e) {
                 Log.e(LOG_TAG, "Error getting credit", e);
                 lastETag = null;
-                pauser.pause(15, TimeUnit.SECONDS);   // TODO configure somewhere
+                pauseSeconds = 15;   // TODO configure somewhere
+            }
+            if (pauseSeconds > 0) {
+                try {
+                    Log.d(LOG_TAG, "Pausing for " + pauseSeconds + " seconds");
+                    pauser.pause(pauseSeconds, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Log.d(LOG_TAG, "Poll loop pause interrupted");
+                }
             }
         }
-        Log.d(LOG_TAG, "Poll thread interrupted");
     }
 
     @Override
     public void onDestroy() {
-        pollThread.interrupt();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        shutdownPollLoop();
         acctDataConnection.unbind(this);
     }
 

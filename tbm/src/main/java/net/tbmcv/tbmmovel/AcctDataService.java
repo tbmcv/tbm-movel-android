@@ -195,10 +195,15 @@ public class AcctDataService extends Service {
         lineResetThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                Log.i(LOG_TAG, "Line config thread started");
                 try {
                     lineConfigurationLoop();
                 } catch (ShuttingDown e) {
                     /* just exit */
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, "Unexpected exception in line config thread", e);
+                } finally {
+                    Log.i(LOG_TAG, "Line config thread finished");
                 }
             }
         });
