@@ -9,11 +9,14 @@ import junit.framework.TestCase;
 
 import org.mockito.ArgumentCaptor;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 public class LocalServiceConnectionTest extends TestCase {
     Service mockService;
@@ -36,6 +39,9 @@ public class LocalServiceConnectionTest extends TestCase {
         connectionCaptor = ArgumentCaptor.forClass(ServiceConnection.class);
         listenerCaptor = ArgumentCaptor.forClass(
                 (Class<LocalServiceListener<Service>>) (Class<?>) LocalServiceListener.class);
+        //noinspection WrongConstant
+        when(mockContext.bindService(any(Intent.class), any(ServiceConnection.class), anyInt()))
+                .thenReturn(true);
     }
 
     public void testBindConnect() {
@@ -43,6 +49,7 @@ public class LocalServiceConnectionTest extends TestCase {
         Intent intent = new Intent();
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_NOT_FOREGROUND;
         connection.bind(mockContext, intent, flags);
+        //noinspection WrongConstant
         verify(mockContext).bindService(eq(intent), connectionCaptor.capture(), eq(flags));
         ServiceConnection sc = connectionCaptor.getValue();
         sc.onServiceConnected(null, mockBinder);
@@ -67,6 +74,7 @@ public class LocalServiceConnectionTest extends TestCase {
         Intent intent = new Intent();
         int flags = Context.BIND_AUTO_CREATE | Context.BIND_NOT_FOREGROUND;
         connection.bind(mockContext, intent, flags);
+        //noinspection WrongConstant
         verify(mockContext).bindService(eq(intent), connectionCaptor.capture(), eq(flags));
         ServiceConnection sc = connectionCaptor.getValue();
         sc.onServiceConnected(null, mockBinder);

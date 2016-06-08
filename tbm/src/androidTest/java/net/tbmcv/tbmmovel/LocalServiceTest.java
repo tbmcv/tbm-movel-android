@@ -14,6 +14,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class LocalServiceTest extends TestCase {
 
@@ -40,8 +41,12 @@ public class LocalServiceTest extends TestCase {
     protected ServiceConnection setupAndBind() {
         localConnection = new LocalServiceConnection<>();
         mockContext = mock(Context.class);
+        //noinspection WrongConstant
+        when(mockContext.bindService(any(Intent.class), any(ServiceConnection.class), anyInt()))
+                .thenReturn(true);
         localConnection.bind(mockContext, TestService.class);
         connectionCaptor = ArgumentCaptor.forClass(ServiceConnection.class);
+        //noinspection WrongConstant
         verify(mockContext).bindService(any(Intent.class), connectionCaptor.capture(), anyInt());
         service = new TestService();
         ServiceConnection serviceConnection = connectionCaptor.getValue();
