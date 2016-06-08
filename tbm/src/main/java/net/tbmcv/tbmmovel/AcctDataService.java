@@ -184,6 +184,16 @@ public class AcctDataService extends Service {
 
     @Override
     public void onCreate() {
+        lineResetThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    lineConfigurationLoop();
+                } catch (ShuttingDown e) {
+                    /* just exit */
+                }
+            }
+        });
         tbmApiConnection.addListener(new LocalServiceListener<TbmApiService>() {
             @Override
             public void serviceConnected(TbmApiService service) {
@@ -199,16 +209,6 @@ public class AcctDataService extends Service {
         });
         tbmApiConnection.bind(this, TbmApiService.class);
         super.onCreate();
-        lineResetThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    lineConfigurationLoop();
-                } catch (ShuttingDown e) {
-                    /* just exit */
-                }
-            }
-        });
         checkLine();
         Log.d(LOG_TAG, "onCreate() finished");
     }
