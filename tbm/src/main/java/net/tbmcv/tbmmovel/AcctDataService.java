@@ -187,11 +187,15 @@ public class AcctDataService extends Service {
         tbmApiConnection.addListener(new LocalServiceListener<TbmApiService>() {
             @Override
             public void serviceConnected(TbmApiService service) {
+                Log.d(LOG_TAG, "TbmApiService ready; so we're ready");
                 binder.setReady();
+                lineResetThread.start();
             }
 
             @Override
-            public void serviceDisconnected() { }
+            public void serviceDisconnected() {
+                Log.w(LOG_TAG, "TbmApiService disappeared!");
+            }
         });
         tbmApiConnection.bind(this, TbmApiService.class);
         super.onCreate();
@@ -206,7 +210,7 @@ public class AcctDataService extends Service {
             }
         });
         checkLine();
-        lineResetThread.start();
+        Log.d(LOG_TAG, "onCreate() finished");
     }
 
     @Override

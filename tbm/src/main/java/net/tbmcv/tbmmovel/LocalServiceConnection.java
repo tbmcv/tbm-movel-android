@@ -39,11 +39,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class LocalServiceConnection<S extends Service> implements LocalServiceListener<S> {
     private final Collection<LocalServiceListener<? super S>> listeners = new CopyOnWriteArraySet<>();
     private S service;
+    private boolean ready;
 
     private final ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            ((LocalServiceBinder<? extends S>) service).connectWhenReady(LocalServiceConnection.this);
+            LocalServiceBinder<? extends S> binder = (LocalServiceBinder<? extends S>) service;
+            setService(binder.getService(), false);
+            binder.connectWhenReady(LocalServiceConnection.this);
         }
 
         @Override
@@ -54,7 +57,7 @@ public class LocalServiceConnection<S extends Service> implements LocalServiceLi
 
     @Override
     public void serviceConnected(S service) {
-        setService(service);
+        setService(service, true);
         for (LocalServiceListener<? super S> listener : listeners) {
             listener.serviceConnected(service);
         }
@@ -66,27 +69,30 @@ public class LocalServiceConnection<S extends Service> implements LocalServiceLi
             if (!isBound()) {
                 return;
             }
-            setService(null);
+            setService(null, false);
         }
         for (LocalServiceListener<? super S> listener : listeners) {
             listener.serviceDisconnected();
         }
     }
 
-    protected synchronized void setService(S service) {
+    protected synchronized void setService(S service, boolean ready) {
         this.service = service;
+        this.ready = ready;
     }
 
     public synchronized S getService() {
-        return service;
+        return ready ? service : null;
     }
 
     public boolean isBound() {
-        return getService() != null;
+        return ready;
     }
 
     public void bind(Context context, Intent intent, int flags) {
-        context.bindService(intent, connection, flags);
+        if (!context.bindService(intent, connection, flags)) {
+            throw new AssertionError("Couldn't bind service: " + intent);
+        }
     }
 
     public void bind(Context context, Intent intent) {
@@ -98,9 +104,12 @@ public class LocalServiceConnection<S extends Service> implements LocalServiceLi
     }
 
     public void unbind(Context context) {
-        if (isBound()) {
-            context.unbindService(connection);
+        synchronized (this) {
+            if (service == null) {
+                return;
+            }
         }
+        context.unbindService(connection);
     }
 
     public void addListener(LocalServiceListener<? super S> listener) {

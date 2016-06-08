@@ -65,6 +65,17 @@ public class InitConfigActivity extends FragmentActivity {
             ((EditText) findViewById(R.id.usernameEntry)).setText(number.substring(3));
         }
 
+        acctDataConnection.addListener(new LocalServiceListener<AcctDataService>() {
+            @Override
+            public void serviceConnected(AcctDataService service) {
+                setControlsEnabled(true);
+            }
+
+            @Override
+            public void serviceDisconnected() {
+                setControlsEnabled(false);
+            }
+        });
         acctDataConnection.bind(this, AcctDataService.class);
 
         TextWatcher validator = new TextWatcher() {
@@ -109,7 +120,8 @@ public class InitConfigActivity extends FragmentActivity {
 
     @UiThread
     private void setControlsEnabled(boolean enabled) {
-        findViewById(R.id.okButton).setEnabled(enabled && inputValid());
+        findViewById(R.id.okButton).setEnabled(
+                enabled && inputValid() && acctDataConnection.isBound());
         findViewById(R.id.helpButton).setEnabled(enabled);
         findViewById(R.id.passwordEntry).setEnabled(enabled);
         findViewById(R.id.usernameEntry).setEnabled(enabled);

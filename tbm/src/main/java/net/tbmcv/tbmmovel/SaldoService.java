@@ -29,6 +29,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 public class SaldoService extends Service {
@@ -65,28 +66,34 @@ public class SaldoService extends Service {
     public void onCreate() {
         super.onCreate();
         credit = UNKNOWN_CREDIT;
+        pollThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(LOG_TAG, "Poll thread started");
+                try {
+                    pollLoop();
+                    Log.w(LOG_TAG, "We're here???");
+                } catch (InterruptedException e) {
+                    Log.d(LOG_TAG, "Poll thread interrupted");
+                    /* ignore */
+                } catch (Exception e) {
+                    Log.e(LOG_TAG, "Unexpected exception in poll thread", e);
+                } finally {
+                    Log.i(LOG_TAG, "Poll thread finished");
+                }
+            }
+        });
         acctDataConnection.addListener(new LocalServiceListener<AcctDataService>() {
             @Override
             public void serviceConnected(AcctDataService service) {
                 binder.setReady();
-                pollThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.i(LOG_TAG, "Poll thread started");
-                        try {
-                            pollLoop();
-                        } catch (InterruptedException e) {
-                            /* ignore */
-                        } finally {
-                            Log.i(LOG_TAG, "Poll thread finished");
-                        }
-                    }
-                });
                 pollThread.start();
             }
 
             @Override
-            public void serviceDisconnected() { }
+            public void serviceDisconnected() {
+                Log.w(LOG_TAG, "AcctDataService disappeared!");
+            }
         });
         acctDataConnection.bind(this, AcctDataService.class);
     }
@@ -96,6 +103,7 @@ public class SaldoService extends Service {
         while (!Thread.interrupted()) {
             AcctDataService service = acctDataConnection.getService();
             if (service == null) {
+                Log.w(LOG_TAG, "No AcctDataService!");
                 break;
             }
             AuthPair acct = service.getAcctAuth();
@@ -111,7 +119,8 @@ public class SaldoService extends Service {
                 if (lastETag != null) {
                     request.setIfNoneMatch(lastETag);
                     request.setWaitChange(300);   // TODO configure somewhere
-                    request.setConnectTimeout(300 * 1000 + 5000);
+                    request.setConnectTimeout((300 + 5) * 1000);
+                    request.setReadTimeout((300 + 10) * 1000);
                 }
 
                 final RestRequest.Fetcher oldFetcher = request.getFetcher();
@@ -134,7 +143,11 @@ public class SaldoService extends Service {
                 }
                 setCredit(result.getInt("saldo"));
                 pauser.pause(5, TimeUnit.SECONDS);   // TODO configure somewhere
+            } catch (SocketTimeoutException e) {
+                Log.w(LOG_TAG, "Socket timed out", e);
+                pauser.pause(15, TimeUnit.SECONDS);   // TODO configure somewhere
             } catch (InterruptedIOException e) {
+                Log.d(LOG_TAG, "Poll fetch interrupted");
                 break;
             } catch (IOException|JSONException e) {
                 Log.e(LOG_TAG, "Error getting credit", e);
@@ -142,6 +155,7 @@ public class SaldoService extends Service {
                 pauser.pause(15, TimeUnit.SECONDS);   // TODO configure somewhere
             }
         }
+        Log.d(LOG_TAG, "Poll thread interrupted");
     }
 
     @Override

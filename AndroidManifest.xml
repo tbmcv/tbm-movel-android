@@ -163,7 +163,9 @@
 		
 		<service android:name="org.linphone.gcm.GCMService" />
 
+		<service android:name="net.tbmcv.tbmmovel.TbmApiService" />
 		<service android:name="net.tbmcv.tbmmovel.AcctDataService" />
+		<service android:name="net.tbmcv.tbmmovel.SaldoService" />
 
 		<activity android:name="net.tbmcv.tbmmovel.InitConfigActivity"
 			android:launchMode="singleTask">

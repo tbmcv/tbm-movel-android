@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -30,6 +31,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 public class TbmApiService extends Service {
+    static final String LOG_TAG = "TbmApiService";
+
     private SSLContext sslContext;
     private URL baseUrl;
 
@@ -39,7 +42,9 @@ public class TbmApiService extends Service {
         }
     }
 
+    @Override
     public void onCreate() {
+        Log.d(LOG_TAG, "onCreate() begins");
         try {
             sslContext = SSLContext.getInstance("TLS");
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
@@ -59,6 +64,7 @@ public class TbmApiService extends Service {
         } catch (Exception e) {
             throw new AssertionError(e);  // TODO
         }
+        Log.d(LOG_TAG, "onCreate() finished");
     }
 
     @Override
