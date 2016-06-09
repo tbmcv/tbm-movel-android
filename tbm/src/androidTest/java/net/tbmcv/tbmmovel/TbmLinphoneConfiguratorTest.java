@@ -106,4 +106,16 @@ public class TbmLinphoneConfiguratorTest extends AndroidTestCase {
         TbmLinphoneConfigurator.getInstance().configureLine(realm, lineName, password);
         assertVoipLine(realm, lineName, password);
     }
+
+    public void testGSMEnabled() throws Exception {
+        TbmLinphoneConfigurator.getInstance().setDefaultSettings();
+        LinphoneCore lc = LinphoneManager.getLc();
+        assertTrue(lc.isPayloadTypeEnabled(lc.findPayloadType("GSM", 8000)));
+    }
+
+    public void testNoAdaptiveRateControl() throws Exception {
+        TbmLinphoneConfigurator.getInstance().setDefaultSettings();
+        LinphoneCore lc = LinphoneManager.getLc();
+        assertFalse(lc.isAdaptiveRateControlEnabled());
+    }
 }

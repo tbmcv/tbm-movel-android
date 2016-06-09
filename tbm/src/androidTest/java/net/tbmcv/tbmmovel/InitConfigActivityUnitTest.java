@@ -8,10 +8,12 @@ import android.widget.EditText;
 
 import org.linphone.LinphoneActivity;
 import org.linphone.LinphoneManager;
-import org.linphone.core.LinphoneCore;
+import org.linphone.core.LinphoneCoreListener;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,6 +59,14 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
         getInstrumentation().waitForIdleSync();
     }
 
+    public void testLoginCallsResetPassword() throws Exception {
+        final String phoneNumber = "9122112";
+        final String password = "444332";
+        launch();
+        performLogin(phoneNumber, password);
+        verify(mockService, timeout(2000)).resetPassword("c/" + phoneNumber, password);
+    }
+
     public void testLoginResetSuccessLaunchesMainActivity() throws Exception {
         launch();
         when(mockService.resetPassword(anyString(), anyString())).thenReturn(true);
@@ -69,6 +79,15 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
                 assertTrue("Finish not called", isFinishCalled());
             }
         }.await();
+    }
+
+    public void testLoginResetConfiguresLinphone() throws Exception {
+        launch();
+        when(mockService.resetPassword(anyString(), anyString())).thenReturn(true);
+        performLogin("9999999", "987654");
+        verify(TbmLinphoneConfigurator.instance, timeout(2000)).setDefaultSettings();
+        verify(TbmLinphoneConfigurator.instance, timeout(1000))
+                .startEchoCalibration(any(LinphoneCoreListener.class));
     }
 
     public void testControlsDisabled() throws Exception {
@@ -111,18 +130,6 @@ public class InitConfigActivityUnitTest extends BaseActivityUnitTest<InitConfigA
                 assertFalse(getActivity().findViewById(R.id.okButton).isEnabled());
             }
         }.await();
-    }
-
-    public void testGSMEnabled() {
-        launch();
-        LinphoneCore lc = LinphoneManager.getLc();
-        assertTrue(lc.isPayloadTypeEnabled(lc.findPayloadType("GSM", 8000)));
-    }
-
-    public void testNoAdaptiveRateControl() {
-        launch();
-        LinphoneCore lc = LinphoneManager.getLc();
-        assertFalse(lc.isAdaptiveRateControlEnabled());
     }
 
     private TelephonyManager mockTelephonyManager(String line1Number) {
