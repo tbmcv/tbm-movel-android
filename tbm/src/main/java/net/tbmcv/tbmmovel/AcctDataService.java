@@ -451,7 +451,6 @@ public class AcctDataService extends Service {
             }
             // Ready to check the server's line password
             try {
-
                 RestRequest request = createRequest(acct);
                 request.toUri("idens/" + acct.name + "/lines/" + existing.name + "/pw");
                 String pw = request.fetchJson().getString("pw");
@@ -464,9 +463,13 @@ public class AcctDataService extends Service {
                 /* no need to log */
             } catch (JSONException | IOException e) {
                 Log.e(LOG_TAG, "Error checking line password", e);
+                try {
+                    pauser.pause(15, TimeUnit.SECONDS);  // TODO configure
+                } catch (InterruptedException ie) {
+                    // Continue loop. If we're really supposed to quit, state will be
+                    // SHUTTING_DOWN.
+                }
             }
-            // Continue loop. If we're really supposed to quit, state will be
-            // SHUTTING_DOWN.
         }
     }
 }
