@@ -2,8 +2,11 @@ package net.tbmcv.tbmmovel;
 
 import android.app.Activity;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.support.annotation.CallSuper;
 import android.test.ServiceTestCase;
 
@@ -22,6 +25,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -124,5 +128,17 @@ public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
 
     protected static void assertUriEquals(String expected, Object actual) {
         assertUriEquals(URI.create(expected), actual);
+    }
+
+    protected BroadcastReceiver getNetworkReceiver() {
+        ArgumentCaptor<BroadcastReceiver> networkReceiverCaptor
+                = ArgumentCaptor.forClass(BroadcastReceiver.class);
+        ArgumentCaptor<IntentFilter> intentFilterCaptor
+                = ArgumentCaptor.forClass(IntentFilter.class);
+        verify(getContext(), timeout(2000)).registerReceiver(
+                networkReceiverCaptor.capture(), intentFilterCaptor.capture());
+        assertTrue(intentFilterCaptor.getValue().matchAction(
+                ConnectivityManager.CONNECTIVITY_ACTION));
+        return networkReceiverCaptor.getValue();
     }
 }

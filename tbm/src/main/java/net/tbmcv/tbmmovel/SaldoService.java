@@ -22,6 +22,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
@@ -104,6 +105,8 @@ public class SaldoService extends Service {
             }
         });
         acctDataConnection.bind(this, AcctDataService.class);
+        registerReceiver(
+                broadcastReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     private boolean pollLoopNotified, shuttingDown;
@@ -155,6 +158,10 @@ public class SaldoService extends Service {
             if (service == null) {
                 Log.w(LOG_TAG, "No AcctDataService!");
                 break;
+            } else if (!NetworkUtil.isNetworkConnected(this)) {
+                Log.d(LOG_TAG, "Waiting because network is down");
+                waitForPollLoopNotify();
+                continue;
             }
             AuthPair acct = service.getAcctAuth();
             if (acct == null) {
@@ -214,6 +221,7 @@ public class SaldoService extends Service {
     @Override
     public void onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        unregisterReceiver(broadcastReceiver);
         shutdownPollLoop();
         acctDataConnection.unbind(this);
     }

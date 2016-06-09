@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.support.v4.content.LocalBroadcastManager;
 
 import org.json.JSONObject;
@@ -18,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.matches;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -35,6 +38,8 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
     private ArgumentCaptor<MockRestRequest.Connection> requestCaptor;
     private BlockingQueue<Intent> broadcasts;
     private BroadcastReceiver receiver;
+    private ConnectivityManager connectivityManager;
+    private NetworkInfo networkInfo;
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -55,6 +60,13 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(
                 receiver, new IntentFilter(SaldoService.ACTION_UPDATE));
         SaldoService.pauser = mockPauser;
+
+        connectivityManager = mock(ConnectivityManager.class);
+        when(getContext().getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(connectivityManager);
+        networkInfo = mock(NetworkInfo.class);
+        when(connectivityManager.getActiveNetworkInfo()).thenReturn(networkInfo);
+        when(networkInfo.isConnected()).thenReturn(true);
     }
 
     @Override
@@ -160,6 +172,24 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
         preparePause();
         LocalBroadcastManager.getInstance(getContext()).sendBroadcast(
                 new Intent(AcctDataService.ACTION_ACCT_CHANGED));
+        verify(mockFetcher, timeout(2000).atLeastOnce()).fetch(any(RestRequest.Connection.class));
+    }
+
+    public void testWaitsForNetwork() throws Exception {
+        final String acctName = "c/9333333";
+        final String pw = "anything";
+        when(mockAcctDataService.getAcctAuth()).thenReturn(new AuthPair(acctName, pw));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).thenReturn(
+                new JSONObject().put("saldo", 1001).toString());
+        when(networkInfo.isConnected()).thenReturn(false);
+        preparePause();
+        bindService();
+        verify(mockFetcher, after(1000).never()).fetch(any(RestRequest.Connection.class));
+
+        BroadcastReceiver networkReceiver = getNetworkReceiver();
+        when(networkInfo.isConnected()).thenReturn(true);
+        networkReceiver.onReceive(
+                getContext(), new Intent(ConnectivityManager.CONNECTIVITY_ACTION));
         verify(mockFetcher, timeout(2000).atLeastOnce()).fetch(any(RestRequest.Connection.class));
     }
 }

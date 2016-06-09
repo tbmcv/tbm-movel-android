@@ -24,7 +24,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
@@ -400,13 +399,6 @@ public class AcctDataService extends Service {
         return createHa1(username, password, getString(R.string.tbm_sip_realm));
     }
 
-    private boolean networkConnected() {
-        NetworkInfo networkInfo =
-                ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE))
-                        .getActiveNetworkInfo();
-        return networkInfo != null && networkInfo.isConnected();
-    }
-
     /**
      * Loops and waits, monitoring state, until we should reconfigure the voip line.
      * @return the current stored account
@@ -426,7 +418,7 @@ public class AcctDataService extends Service {
                     } else if (lineWasCorrect && state == REQUESTED_CHECK) {
                         state = NOTHING_REQUESTED;
                         lineWasCorrect = false;
-                    } else if (state >= REQUESTED_CHECK && networkConnected()) {
+                    } else if (state >= REQUESTED_CHECK && NetworkUtil.isNetworkConnected(this)) {
                         acct = getAcctAuth();
                         if (acct == null) {
                             Log.d(LOG_TAG, "Can't reconfigure line, because no saved account");

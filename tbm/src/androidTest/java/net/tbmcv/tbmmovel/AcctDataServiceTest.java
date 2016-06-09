@@ -418,18 +418,6 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
         checkInitConfigActivitySwitch();
     }
 
-    private BroadcastReceiver getNetworkReceiver() {
-        ArgumentCaptor<BroadcastReceiver> networkReceiverCaptor
-                = ArgumentCaptor.forClass(BroadcastReceiver.class);
-        ArgumentCaptor<IntentFilter> intentFilterCaptor
-                = ArgumentCaptor.forClass(IntentFilter.class);
-        verify(getContext(), timeout(2000)).registerReceiver(
-                networkReceiverCaptor.capture(), intentFilterCaptor.capture());
-        assertTrue(intentFilterCaptor.getValue().matchAction(
-                ConnectivityManager.CONNECTIVITY_ACTION));
-        return networkReceiverCaptor.getValue();
-    }
-
     public void testCheckLineWaitsForNetwork() throws Exception {
         String lineName = "tbm8324";
         String currentPw = "23kj4h";
