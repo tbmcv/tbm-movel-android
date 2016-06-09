@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.CallSuper;
 import android.test.ActivityUnitTestCase;
 import android.widget.EditText;
 
@@ -19,6 +20,7 @@ public abstract class BaseActivityUnitTest<A extends Activity> extends ActivityU
         this.activityClass = activityClass;
     }
 
+    @CallSuper
     @Override
     protected void setUp() throws Exception {
         super.setUp();

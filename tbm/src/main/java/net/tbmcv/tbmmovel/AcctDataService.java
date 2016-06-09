@@ -18,9 +18,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
@@ -71,6 +75,7 @@ public class AcctDataService extends Service {
     protected int state = NOTHING_REQUESTED;
 
     private Thread lineResetThread;
+    private BroadcastReceiver networkConnectivityReceiver;
 
     private final LocalServiceConnection<TbmApiService> tbmApiConnection =
             new LocalServiceConnection<>();
@@ -192,6 +197,7 @@ public class AcctDataService extends Service {
 
     @Override
     public void onCreate() {
+        super.onCreate();
         lineResetThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -221,13 +227,23 @@ public class AcctDataService extends Service {
             }
         });
         tbmApiConnection.bind(this, TbmApiService.class);
-        super.onCreate();
+        networkConnectivityReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                notifyAndInterrupt();
+            }
+        };
+        registerReceiver(
+                networkConnectivityReceiver,
+                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
         checkLine();
         Log.d(LOG_TAG, "onCreate() finished");
     }
 
     @Override
     public void onDestroy() {
+        unregisterReceiver(networkConnectivityReceiver);
         shutdownLineLoop();
         tbmApiConnection.unbind(this);
     }
@@ -384,6 +400,13 @@ public class AcctDataService extends Service {
         return createHa1(username, password, getString(R.string.tbm_sip_realm));
     }
 
+    private boolean networkConnected() {
+        NetworkInfo networkInfo =
+                ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE))
+                        .getActiveNetworkInfo();
+        return networkInfo != null && networkInfo.isConnected();
+    }
+
     /**
      * Loops and waits, monitoring state, until we should reconfigure the voip line.
      * @return the current stored account
@@ -403,7 +426,7 @@ public class AcctDataService extends Service {
                     } else if (lineWasCorrect && state == REQUESTED_CHECK) {
                         state = NOTHING_REQUESTED;
                         lineWasCorrect = false;
-                    } else if (state >= REQUESTED_CHECK) {
+                    } else if (state >= REQUESTED_CHECK && networkConnected()) {
                         acct = getAcctAuth();
                         if (acct == null) {
                             Log.d(LOG_TAG, "Can't reconfigure line, because no saved account");
@@ -436,6 +459,7 @@ public class AcctDataService extends Service {
             }
             // Ready to check the server's line password
             try {
+
                 RestRequest request = createRequest(acct);
                 request.toUri("idens/" + acct.name + "/lines/" + existing.name + "/pw");
                 String pw = request.fetchJson().getString("pw");

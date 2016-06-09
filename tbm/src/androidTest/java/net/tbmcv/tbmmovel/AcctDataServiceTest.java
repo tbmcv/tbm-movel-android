@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,6 +25,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -58,6 +61,8 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
     private ArgumentCaptor<MockRestRequest.Connection> requestCaptor;
     private TbmApiService.Binder tbmApiBinder;
     private LocalBroadcastReceiverManager broadcastReceivers;
+    private ConnectivityManager connectivityManager;
+    private NetworkInfo networkInfo;
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -66,11 +71,20 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
         mockTbmApiService = mock(TbmApiService.class);
         tbmApiBinder = new TbmApiService.Binder(mockTbmApiService);
         getStartServiceTrap().setBoundService(TbmApiService.class, tbmApiBinder);
+
         mockFetcher = mock(RestRequest.Fetcher.class);
         MockRestRequest.mockTbmApiRequests(mockTbmApiService, mockFetcher);
+
         AcctDataService.pauser = mockPauser;
         requestCaptor = ArgumentCaptor.forClass(MockRestRequest.Connection.class);
         broadcastReceivers = new LocalBroadcastReceiverManager(getContext());
+
+        connectivityManager = mock(ConnectivityManager.class);
+        when(getContext().getSystemService(Context.CONNECTIVITY_SERVICE))
+                .thenReturn(connectivityManager);
+        networkInfo = mock(NetworkInfo.class);
+        when(connectivityManager.getActiveNetworkInfo()).thenReturn(networkInfo);
+        when(networkInfo.isConnected()).thenReturn(true);
     }
 
     @Override
@@ -402,6 +416,35 @@ public class AcctDataServiceTest extends BaseServiceUnitTest<AcctDataServiceTest
         bindService();
         getService().checkLine();
         checkInitConfigActivitySwitch();
+    }
+
+    private BroadcastReceiver getNetworkReceiver() {
+        ArgumentCaptor<BroadcastReceiver> networkReceiverCaptor
+                = ArgumentCaptor.forClass(BroadcastReceiver.class);
+        ArgumentCaptor<IntentFilter> intentFilterCaptor
+                = ArgumentCaptor.forClass(IntentFilter.class);
+        verify(getContext(), timeout(2000)).registerReceiver(
+                networkReceiverCaptor.capture(), intentFilterCaptor.capture());
+        assertTrue(intentFilterCaptor.getValue().matchAction(
+                ConnectivityManager.CONNECTIVITY_ACTION));
+        return networkReceiverCaptor.getValue();
+    }
+
+    public void testCheckLineWaitsForNetwork() throws Exception {
+        String lineName = "tbm8324";
+        String currentPw = "23kj4h";
+        setupCheckLine("c/9881889", "duvinha", lineName, null, currentPw);
+        when(networkInfo.isConnected()).thenReturn(false);
+        bindService();
+
+        getService().checkLine();
+        verify(mockFetcher, after(1000).never()).fetch(any(RestRequest.Connection.class));
+
+        BroadcastReceiver networkReceiver = getNetworkReceiver();
+        when(networkInfo.isConnected()).thenReturn(true);
+        networkReceiver.onReceive(
+                getContext(), new Intent(ConnectivityManager.CONNECTIVITY_ACTION));
+        verify(mockFetcher, timeout(2000).atLeastOnce()).fetch(any(RestRequest.Connection.class));
     }
 
     public void testCreateHa1() {

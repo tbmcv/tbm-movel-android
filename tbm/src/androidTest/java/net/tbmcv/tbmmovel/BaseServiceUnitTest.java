@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.CallSuper;
 import android.test.ServiceTestCase;
 
 import org.mockito.ArgumentCaptor;
@@ -20,6 +21,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -39,16 +41,6 @@ public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
 
     protected static void await(AnswerPromise<?> promise) throws InterruptedException {
         await(promise.getCallLatch());
-    }
-
-    protected static class SemaphoreAnswer implements Answer<Object> {
-        final Semaphore semaphore = new Semaphore(0);
-
-        @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
-            semaphore.acquire();
-            return null;
-        }
     }
 
     protected Semaphore preparePause() {
@@ -83,20 +75,22 @@ public class BaseServiceUnitTest<S extends Service> extends ServiceTestCase<S> {
         return verifyPauseMillis(times(1));
     }
 
+    @CallSuper
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         mockPauser = mock(Pauser.class);
-        setContext(new TestingContext(getContext()));
+        setContext(spy(new TestingContext(getContext())));
     }
 
+    @CallSuper
     @Override
     protected void tearDown() throws Exception {
         AnswerPromise.cleanup();
         super.tearDown();
     }
 
-    private class TestingContext extends StartServiceTrapContextWrapper {
+    protected class TestingContext extends StartServiceTrapContextWrapper {
         TestingContext(Context base) {
             super(base);
         }
