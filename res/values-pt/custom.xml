@@ -14,7 +14,7 @@
 	<string name="notification_registered">Registado em %s </string>
 	<string name="notification_register_failure">Falha ao registar em %s</string>
 	<string name="about_text">TBM Móvel %s telefone SIP (rfc 3261) compatível, sob a licença GNU Public License V2</string>
-	<string name="about_link">http://www.tbmcv.com/pt/movel\n\nBaseado no Linphone © 2015 Belledonne Communications</string>
+	<string name="about_link">http://www.tbmcv.com/pt/movel\n\n© 2016 TBM Comunicações, Lda.\n\nBaseado no Linphone © 2015 Belledonne Communications</string>
 
 	<string name="setup_welcome">Este assistente lhe ajuda a usar uma conta SIP para as suas chamadas.</string>
 	<string name="setup_create_account">Criar uma conta em linphone.org</string>
