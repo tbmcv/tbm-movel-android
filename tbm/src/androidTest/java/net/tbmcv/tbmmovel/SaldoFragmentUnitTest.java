@@ -1,5 +1,6 @@
 package net.tbmcv.tbmmovel;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.TextView;
@@ -7,6 +8,7 @@ import android.widget.TextView;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
     @Override
@@ -41,11 +43,7 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
         verify(mockAcctDataService, timeout(2000).atLeastOnce()).checkLine();
     }
 
-    protected void checkSaldoResponseDisplayed(int saldo, final String formattedSaldo)
-            throws Exception {
-        startAndResumeAll();
-        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
-                new Intent(SaldoService.ACTION_UPDATE).putExtra(SaldoService.EXTRA_CREDIT, saldo));
+    protected void assertSaldoDisplayChangesTo(final String formattedSaldo) throws Exception {
         final TextView creditView = (TextView) getActivity().findViewById(R.id.creditValue);
         new AssertWaiter() {
             @Override
@@ -54,6 +52,19 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
                 assertEquals(formattedSaldo, creditView.getText().toString().trim());
             }
         }.await();
+    }
+
+    protected void sendSaldoUpdate(int saldo) {
+        when(mockSaldoService.getCredit()).thenReturn(saldo);
+        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(
+                new Intent(SaldoService.ACTION_UPDATE).putExtra(SaldoService.EXTRA_CREDIT, saldo));
+    }
+
+    protected void checkSaldoResponseDisplayed(int saldo, final String formattedSaldo)
+            throws Exception {
+        startAndResumeAll();
+        sendSaldoUpdate(saldo);
+        assertSaldoDisplayChangesTo(formattedSaldo);
     }
 
     public void testSaldoResponseDisplayedZero() throws Exception {
@@ -78,5 +89,26 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
 
     public void testSaldoResponseDisplayedNegativeLarge() throws Exception {
         checkSaldoResponseDisplayed(-99876, "-99.876$00");
+    }
+
+    public void testSaldoDisplayAfterResume() throws Exception {
+        startAndResumeAll();
+        sendSaldoUpdate(23);
+        getInstrumentation().callActivityOnPause(getActivity());
+        sendSaldoUpdate(75);
+        resumeActivity();
+        assertSaldoDisplayChangesTo("75$00");
+    }
+
+    public void testSaldoDisplayAfterStopAndStart() throws Exception {
+        startAndResumeAll();
+        sendSaldoUpdate(-2);
+        Activity activity = getActivity();
+        getInstrumentation().callActivityOnPause(activity);
+        getInstrumentation().callActivityOnStop(activity);
+        sendSaldoUpdate(130);
+        getInstrumentation().callActivityOnStart(activity);
+        resumeActivity();
+        assertSaldoDisplayChangesTo("130$00");
     }
 }

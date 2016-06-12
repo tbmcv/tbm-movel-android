@@ -37,7 +37,6 @@ import static net.tbmcv.tbmmovel.SaldoService.UNKNOWN_CREDIT;
 
 public class SaldoFragment extends Fragment {
     private NumberFormat creditFormat;
-    private int currentCredit = UNKNOWN_CREDIT;
 
     private LocalServiceConnection<AcctDataService> acctDataConnection;
     private LocalServiceConnection<SaldoService> saldoConnection;
@@ -45,7 +44,7 @@ public class SaldoFragment extends Fragment {
     private final BroadcastReceiver saldoReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            setCredit(intent.getIntExtra(SaldoService.EXTRA_CREDIT, UNKNOWN_CREDIT));
+            onCreditUpdate(intent.getIntExtra(SaldoService.EXTRA_CREDIT, UNKNOWN_CREDIT));
         }
     };
 
@@ -101,16 +100,17 @@ public class SaldoFragment extends Fragment {
         }
     }
 
-    protected void setCredit(int credit) {
-        currentCredit = credit;
-        onCreditUpdate();
-    }
-
-    protected void onCreditUpdate() {
+    protected void onCreditUpdate(int currentCredit) {
         View view = getView();
         if (view != null) {
             ((TextView) view.findViewById(R.id.creditValue)).setText(
                     currentCredit == UNKNOWN_CREDIT ? "" : creditFormat.format(currentCredit));
+        }
+    }
+
+    protected void onCreditUpdate() {
+        if (getView() != null && saldoConnection.isBound()) {
+            onCreditUpdate(saldoConnection.getService().getCredit());
         }
     }
 }

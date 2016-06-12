@@ -20,6 +20,12 @@ public abstract class BaseFragmentUnitTest<F extends Fragment>
         super(TestActivity.class);
     }
 
+    protected void resumeActivity() {
+        TestActivity activity = getActivity();
+        getInstrumentation().callActivityOnResume(activity);
+        activity.onPostResume();
+    }
+
     protected void startAndResumeAll() {
         launch();
         TestActivity activity = getActivity();
@@ -27,8 +33,7 @@ public abstract class BaseFragmentUnitTest<F extends Fragment>
         activity.getSupportFragmentManager().beginTransaction()
                 .add(android.R.id.content, createFragment(), FRAGMENT_TAG)
                 .commit();
-        getInstrumentation().callActivityOnResume(activity);
-        activity.onPostResume();
+        resumeActivity();
         getInstrumentation().waitForIdleSync();
     }
 }
