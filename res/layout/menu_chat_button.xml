@@ -12,7 +12,7 @@
 		android:adjustViewBounds="true"
 		android:contentDescription="@string/content_description_chat_button"
 		android:src="@drawable/chat" />
-
+<!--
     <TextView
         android:id="@+id/text"
         android:layout_width="wrap_content"
@@ -23,5 +23,5 @@
         android:textColor="@drawable/text_color"
         android:text="@string/button_chat"
         android:textSize="12sp" />
-    
+-->
 </RelativeLayout>
