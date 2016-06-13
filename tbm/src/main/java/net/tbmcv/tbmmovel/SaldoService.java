@@ -203,9 +203,14 @@ public class SaldoService extends Service {
                 Log.d(LOG_TAG, "Poll fetch interrupted");
                 pauseSeconds = 0;
             } catch (IOException|JSONException e) {
-                Log.e(LOG_TAG, "Error getting credit", e);
-                lastETag = null;
-                pauseSeconds = 15;   // TODO configure somewhere
+                if (e instanceof HttpError && ((HttpError) e).getResponseCode() == 304) {
+                    Log.d(LOG_TAG, "Saldo unchanged");
+                    pauseSeconds = 5;   // TODO configure somewhere
+                } else {
+                    Log.e(LOG_TAG, "Error getting credit", e);
+                    lastETag = null;
+                    pauseSeconds = 15;   // TODO configure somewhere
+                }
             }
             if (pauseSeconds > 0) {
                 try {

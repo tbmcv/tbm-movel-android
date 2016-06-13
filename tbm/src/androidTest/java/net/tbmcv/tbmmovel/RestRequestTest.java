@@ -235,7 +235,7 @@ public class RestRequestTest extends TestCase {
     }
 
     public final void testHttpError() throws Exception {
-        int[] codes = {401, 400, 500, 600, 404};
+        int[] codes = {304, 401, 400, 500, 600, 404};
         for (int code : codes) {
             when(getMockConnection().getResponseCode()).thenReturn(code);
             try {

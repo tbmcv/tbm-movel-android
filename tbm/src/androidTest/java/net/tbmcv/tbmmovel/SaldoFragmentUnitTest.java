@@ -103,10 +103,12 @@ public class SaldoFragmentUnitTest extends BaseFragmentUnitTest<SaldoFragment> {
     public void testSaldoDisplayAfterStopAndStart() throws Exception {
         startAndResumeAll();
         sendSaldoUpdate(-2);
+        getInstrumentation().waitForIdleSync();
         Activity activity = getActivity();
         getInstrumentation().callActivityOnPause(activity);
         getInstrumentation().callActivityOnStop(activity);
         sendSaldoUpdate(130);
+        getInstrumentation().waitForIdleSync();
         getInstrumentation().callActivityOnStart(activity);
         resumeActivity();
         assertSaldoDisplayChangesTo("130$00");

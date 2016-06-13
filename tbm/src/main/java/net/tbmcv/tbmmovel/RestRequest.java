@@ -164,7 +164,7 @@ public class RestRequest implements Cloneable {
             @Override
             public String getBody() throws IOException {
                 int responseCode = getResponseCode();
-                if (responseCode >= 400) {
+                if (responseCode >= 300) {
                     throw new HttpError(responseCode);
                 }
 

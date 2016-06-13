@@ -8,6 +8,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.support.v4.content.LocalBroadcastManager;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
@@ -127,20 +128,40 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
         assertUriEquals("/idens/" + acctName + "/saldo/", mockRequest.getUri());
     }
 
-    public void testSecondRequestETag() throws Exception {
-        final String acctName = "c/9222222";
-        final String pw = "nothing";
-        final String etag = "a1b2c3";
-        when(mockAcctDataService.getAcctAuth()).thenReturn(new AuthPair(acctName, pw));
-        when(mockFetcher.fetch(any(RestRequest.Connection.class))).then(new Answer<String>() {
+    protected Answer<String> returnWithETag(final String result, final String etag) {
+        return new Answer<String>() {
             @Override
             public String answer(InvocationOnMock invocation) throws Throwable {
                 RestRequest.Connection mockConnection =
                         (RestRequest.Connection) invocation.getArguments()[0];
                 when(mockConnection.getHeader(matches("(?i)etag"))).thenReturn(etag);
-                return new JSONObject().put("saldo", 3).toString();
+                return result;
             }
-        });
+        };
+    }
+
+    protected Answer<String> saldoResponse(int saldo, String etag) throws JSONException {
+        return returnWithETag(new JSONObject().put("saldo", saldo).toString(), etag);
+    }
+
+    protected Answer<String> throwWithETag(final int httpCode, final String etag) {
+        return new Answer<String>() {
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                RestRequest.Connection mockConnection =
+                        (RestRequest.Connection) invocation.getArguments()[0];
+                when(mockConnection.getHeader(matches("(?i)etag"))).thenReturn(etag);
+                throw new HttpError(httpCode);
+            }
+        };
+    }
+
+    public void testSecondRequestETag() throws Exception {
+        final String acctName = "c/9222222";
+        final String pw = "nothing";
+        final String etag = "a1b2c3";
+        when(mockAcctDataService.getAcctAuth()).thenReturn(new AuthPair(acctName, pw));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class))).then(saldoResponse(3, etag));
         Semaphore pauseSem = preparePause();
         bindService();
         pauseSem.release();
@@ -155,6 +176,54 @@ public class SaldoServiceTest extends BaseServiceUnitTest<SaldoService> {
         assertTrue(waitChange > 0);
         int connectTimeout = mockRequest.getConnectTimeout();
         assertTrue(connectTimeout == 0 || connectTimeout >= (waitChange + 1) * 1000);
+    }
+
+    public void testGetCreditAfter304() throws Exception {
+        final String etag = "a1b2c3";
+        final int saldo = 55;
+        when(mockAcctDataService.getAcctAuth()).thenReturn(new AuthPair("c/5432109", "ack"));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class)))
+                .then(saldoResponse(saldo, etag))
+                .then(throwWithETag(304, etag));
+        Semaphore pauseSem = preparePause();
+        bindService();
+        pauseSem.release();
+        verify(mockFetcher, timeout(2000).atLeast(2)).fetch(requestCaptor.capture());
+        assertEquals(saldo, getService().getCredit());
+    }
+
+    public void testNoLocalBroadcastAfter304() throws Exception {
+        final String oldEtag = "a1b2c3", newEtag = "qwerty";
+        final int oldSaldo = 300, newSaldo = 296;
+        when(mockAcctDataService.getAcctAuth()).thenReturn(new AuthPair("c/5432109", "ack"));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class)))
+                .then(saldoResponse(oldSaldo, oldEtag))
+                .then(throwWithETag(304, oldEtag))
+                .then(saldoResponse(newSaldo, newEtag));
+        Semaphore pauseSem = preparePause();
+        bindService();
+        pauseSem.release(2);
+        verify(mockFetcher, timeout(2000).atLeast(3)).fetch(requestCaptor.capture());
+        assertEquals(oldSaldo, broadcasts.poll(2, TimeUnit.SECONDS).getIntExtra(
+                SaldoService.EXTRA_CREDIT, SaldoService.UNKNOWN_CREDIT));
+        assertEquals(newSaldo, broadcasts.poll(1, TimeUnit.SECONDS).getIntExtra(
+                SaldoService.EXTRA_CREDIT, SaldoService.UNKNOWN_CREDIT));
+    }
+
+    public void testETagAfter304() throws Exception {
+        final String oldEtag = "a1b2c3", newEtag = "qwerty";
+        final int oldSaldo = 300, newSaldo = 296;
+        when(mockAcctDataService.getAcctAuth()).thenReturn(new AuthPair("c/5432109", "ack"));
+        when(mockFetcher.fetch(any(RestRequest.Connection.class)))
+                .then(saldoResponse(oldSaldo, oldEtag))
+                .then(throwWithETag(304, oldEtag))
+                .then(saldoResponse(newSaldo, newEtag));
+        Semaphore pauseSem = preparePause();
+        bindService();
+        pauseSem.release(2);
+        verify(mockFetcher, timeout(2000).atLeast(3)).fetch(requestCaptor.capture());
+        MockRestRequest mockRequest = requestCaptor.getAllValues().get(2).getRequest();
+        assertEquals(oldEtag, mockRequest.getIfNoneMatch());
     }
 
     public void testWaitForAcctAuth() throws Exception {
